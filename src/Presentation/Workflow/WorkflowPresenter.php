@@ -11,7 +11,6 @@ use Donut\Gui\StepPath;
 use Donut\Parser\ParseException;
 use Donut\Parser\WorkflowParser;
 use Donut\Validator\Validator;
-use Nette\Application\BadRequestException;
 use Nette\Application\UI\Presenter;
 
 
@@ -29,22 +28,32 @@ final class WorkflowPresenter extends Presenter
 
 	public function renderDetail(string $name): void
 	{
-		$path = self::projectDir() . '/workflows/' . $name . '.json';
+		$directory = self::projectDir() . '/workflows/';
+		$path = $directory . $name . '.json';
+		$this->template->error = null;
 
 		if (!\is_file($path)) {
-			$this->error("Workflow \"{$name}\" neexistuje.");
+			$this->template->error = "Workflow \"{$name}\" neexistuje. Hledal jsem v: {$directory}";
+			return;
 		}
 
-		$workflow = (new WorkflowParser)->parseFile($path);
+		try {
+			$workflow = (new WorkflowParser)->parseFile($path);
+
+		} catch (ParseException $e) {
+			$this->template->error = $e->getMessage();
+			return;
+		}
+
 		$blocks = new BlockRepository(self::projectDir() . '/blocks');
 		$result = (new Validator($blocks))->validate($workflow);
+		$problems = ProblemMap::fromResult($result);
 
 		$this->template->workflow = $workflow;
 		$this->template->blocks = $blocks;
-		$this->template->problems = ProblemMap::fromResult($result);
+		$this->template->problems = $problems;
 		$this->template->rootPath = StepPath::root($workflow->name);
-		$this->template->workflowProblems = ProblemMap::fromResult($result)
-			->at($workflow->name . '.json');
+		$this->template->workflowProblems = $problems->at($workflow->name . '.json');
 	}
 
 

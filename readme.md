@@ -4,7 +4,8 @@ Autorské prostředí pro workflow a kameny donutu. **Jen pro čtení** — nic
 nezapisuje. Ukazuje, co by řekl validátor, ještě než workflow doběhne na
 skutečnou kartu.
 
-Návrhový dokument: [`../docs/superpowers/specs/2026-08-05-gui-design.md`](../docs/superpowers/specs/2026-08-05-gui-design.md).
+Návrhový dokument: „2026-08-05-gui-design.md" ve specifikacích repozitáře
+`donut-org/donut` (`docs/superpowers/specs/`).
 
 
 ## Instalace
@@ -79,4 +80,5 @@ Tohle je vrstva 1 ze tří (viz `docs/zadani.md`, bod 5). Zatím chybí:
 - vizualizace toku klíčů (kde klíč vzniká, kdo ho čte)
 - builder — formulářové skládání kroků
 
-Podrobnosti a proč jsou tyhle vrstvy odložené: [`../docs/superpowers/specs/2026-08-05-gui-design.md`](../docs/superpowers/specs/2026-08-05-gui-design.md).
+Podrobnosti a proč jsou tyhle vrstvy odložené: viz „2026-08-05-gui-design.md"
+výše.

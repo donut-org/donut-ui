@@ -15,16 +15,19 @@
 
 			{elseif $step instanceof Donut\Format\SetStep}
 				<strong>set</strong> <code>{$step->key}</code> = <code>{$step->value->getSource()}</code>
+				{if $step->name} — {$step->name}{/if}
 
 			{elseif $step instanceof Donut\Format\IfStep}
 				<strong>if</strong>
 				<code>{$step->condition->left->getSource()}</code>
 				{$step->condition->op}
 				{if $step->condition->right}<code>{$step->condition->right->getSource()}</code>{/if}
+				{if $step->name} — {$step->name}{/if}
 
 			{elseif $step instanceof Donut\Format\ForeachStep}
 				<strong>foreach</strong>
 				<code>{$step->over->getSource()}</code> as <code>{$step->as}</code>
+				{if $step->name} — {$step->name}{/if}
 			{/if}
 
 			{foreach $problems->at($at) as $problem}

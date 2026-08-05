@@ -49,6 +49,12 @@ final class WorkflowPresenter extends Presenter
 		$template = $this->template;
 		$template->error = null;
 
+		// $name je z query stringu. WorkflowRepository::get() ho hledá jako
+		// klíč v seznamu skutečně existujících souborů, takže lomítka samy
+		// o sobě nikam neukradou — basename() je navíc, aby to platilo, i
+		// kdyby se cesta k souboru někdy zase skládala ručně.
+		$name = \basename($name);
+
 		try {
 			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
 			$workflow = $repository->get($name);

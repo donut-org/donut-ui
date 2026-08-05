@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Block;
 
 use Donut\BlockRepository;
-use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
+use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
 use Nette\Application\UI\Presenter;
 
@@ -14,7 +14,7 @@ final class BlockPresenter extends Presenter
 {
 	public function renderDefault(): void
 	{
-		$dir = WorkflowPresenter::projectDir() . '/blocks';
+		$dir = WorkflowRepository::projectDir() . '/blocks';
 
 		try {
 			$repository = new BlockRepository($dir);

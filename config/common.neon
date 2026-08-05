@@ -1,0 +1,10 @@
+application:
+	mapping:
+		*: Donut\Gui\Presentation\*\**Presenter
+
+services:
+	# SimpleRouter stačí: adresy jsou v query stringu
+	# (?presenter=Workflow&action=detail&name=card-dev) a nic hezčího
+	# lokální autorský nástroj nepotřebuje. Bez routeru by aplikace
+	# nenastartovala — nette/application ho vyžaduje jako službu.
+	- Nette\Application\Routers\SimpleRouter(Workflow:default)

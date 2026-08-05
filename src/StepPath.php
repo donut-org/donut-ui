@@ -29,6 +29,16 @@ final class StepPath implements \Stringable
 	}
 
 
+	/**
+	 * Cesta pro problém, který nepatří žádnému kroku, ale celému workflow —
+	 * stejný tvar, jaký pro ně skládá Donut\Validator\Validator::validate().
+	 */
+	public static function workflow(string $workflowName): self
+	{
+		return new self("{$workflowName}.json");
+	}
+
+
 	public function index(int $i): self
 	{
 		return new self("{$this->path}[{$i}]");

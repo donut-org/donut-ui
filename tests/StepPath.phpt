@@ -32,6 +32,9 @@ Assert::same(
 	(string) StepPath::root('card-dev')->index(2)->child('steps')->index(0)
 );
 
+// Problém bez kroku, patřící celému workflow.
+Assert::same('card-dev.json', (string) StepPath::workflow('card-dev'));
+
 // Původní objekt se nemění — šablona prochází strom a jednu cestu větví
 // do víc dětí.
 $base = StepPath::root('w')->index(1);

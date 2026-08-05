@@ -60,7 +60,7 @@ final class WorkflowPresenter extends Presenter
 		$this->template->blocks = $blocks;
 		$this->template->problems = $problems;
 		$this->template->rootPath = StepPath::root($workflow->name);
-		$this->template->workflowProblems = $problems->at($workflow->name . '.json');
+		$this->template->workflowProblems = $problems->at(StepPath::workflow($workflow->name));
 	}
 
 

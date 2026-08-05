@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Donut\Gui\Presentation\Workflow;
 
+use Donut\BlockRepository;
 use Donut\Format\Workflow;
+use Donut\Gui\ProblemMap;
+use Donut\Gui\StepPath;
 use Donut\Parser\ParseException;
 use Donut\Parser\WorkflowParser;
+use Donut\Validator\Validator;
+use Nette\Application\BadRequestException;
 use Nette\Application\UI\Presenter;
 
 
@@ -19,6 +24,27 @@ final class WorkflowPresenter extends Presenter
 	public function renderDefault(): void
 	{
 		$this->template->workflows = $this->loadAll();
+	}
+
+
+	public function renderDetail(string $name): void
+	{
+		$path = self::projectDir() . '/workflows/' . $name . '.json';
+
+		if (!\is_file($path)) {
+			$this->error("Workflow \"{$name}\" neexistuje.");
+		}
+
+		$workflow = (new WorkflowParser)->parseFile($path);
+		$blocks = new BlockRepository(self::projectDir() . '/blocks');
+		$result = (new Validator($blocks))->validate($workflow);
+
+		$this->template->workflow = $workflow;
+		$this->template->blocks = $blocks;
+		$this->template->problems = ProblemMap::fromResult($result);
+		$this->template->rootPath = StepPath::root($workflow->name);
+		$this->template->workflowProblems = ProblemMap::fromResult($result)
+			->at($workflow->name . '.json');
 	}
 
 

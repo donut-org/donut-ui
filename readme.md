@@ -51,6 +51,25 @@ Adresy jsou v query stringu, např.
 `SimpleRouter`, žádné pěkné URL.
 
 
+## Testy a statická analýza
+
+`gui/` je samostatný composer projekt (viz `gui/composer.json`), testy
+a PHPStan se proto spouští z `gui/`, ne z kořene repozitáře:
+
+```bash
+cd gui
+vendor/bin/tester tests -C
+vendor/bin/phpstan analyse
+```
+
+`gui/phpstan.neon` běží na `level: max`, stejně jako kořenový
+`phpstan.neon` donutu — nula chyb platí pro obojí, ne jen pro `src/`
+a `tests/` donutu.
+
+CI matice donutu `gui/` zatím nespouští — je to jiný composer projekt
+a chystá se do vlastního repozitáře.
+
+
 ## Co zatím není
 
 Tohle je vrstva 1 ze tří (viz `docs/zadani.md`, bod 5). Zatím chybí:

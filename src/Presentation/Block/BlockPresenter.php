@@ -14,15 +14,18 @@ final class BlockPresenter extends Presenter
 {
 	public function renderDefault(): void
 	{
+		/** @var BlockDefaultTemplate $template */
+		$template = $this->template;
+
 		$dir = WorkflowRepository::projectDir() . '/blocks';
 
 		try {
 			$repository = new BlockRepository($dir);
 
 		} catch (ParseException $e) {
-			$this->template->blocks = [];
-			$this->template->error = $e->getMessage();
-			$this->template->dir = $dir;
+			$template->blocks = [];
+			$template->error = $e->getMessage();
+			$template->dir = $dir;
 
 			return;
 		}
@@ -40,8 +43,8 @@ final class BlockPresenter extends Presenter
 			}
 		}
 
-		$this->template->blocks = $blocks;
-		$this->template->error = null;
-		$this->template->dir = $dir;
+		$template->blocks = $blocks;
+		$template->error = null;
+		$template->dir = $dir;
 	}
 }

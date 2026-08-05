@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Donut\Gui\Presentation\Workflow;
+
+use Donut\BlockRepository;
+use Donut\Format\Workflow;
+use Donut\Gui\ProblemMap;
+use Donut\Gui\StepPath;
+use Donut\Validator\Problem;
+use Nette\Bridges\ApplicationLatte\Template;
+
+
+/**
+ * Šablona pro Workflow:detail — kroky workflow s problémy od validátoru.
+ *
+ * Mimo $error jsou proměnné vyplněné jen v úspěšné větvi renderDetail() —
+ * detail.latte se na $error ptá dřív, než na kteroukoliv z nich sáhne.
+ */
+final class WorkflowDetailTemplate extends Template
+{
+	public ?string $error = null;
+
+	public ?Workflow $workflow = null;
+
+	public ?BlockRepository $blocks = null;
+
+	public ?ProblemMap $problems = null;
+
+	public ?StepPath $rootPath = null;
+
+	/** @var list<Problem> */
+	public array $workflowProblems = [];
+}

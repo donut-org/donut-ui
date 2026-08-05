@@ -15,7 +15,8 @@
 		"tracy/tracy": "^2.12"
 	},
 	"require-dev": {
-		"nette/tester": "^2.6"
+		"nette/tester": "^2.6",
+		"phpstan/phpstan": "^2.2"
 	},
 	"autoload": {
 		"psr-4": {"Donut\\Gui\\": "src/"}

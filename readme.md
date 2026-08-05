@@ -14,8 +14,8 @@ cd gui
 composer install
 ```
 
-Adresář `gui/temp/` musí existovat a být zapisovatelný — používá ho Nette
-pro cache kontejneru a šablon.
+`gui/temp/` si Nette vytvoří samo — musí být jen zapisovatelný adresář
+`gui/`, do kterého se dá zapsat. Používá ho pro cache kontejneru a šablon.
 
 
 ## Spuštění
@@ -36,7 +36,8 @@ a otevřít <http://127.0.0.1:8000/>.
 Router script (`gui/www/index.php` jako poslední argument) je nutný,
 protože bez něj vestavěný PHP server udělá `chdir()` do docrootu (`-t`) a
 GUI by pak hledalo `blocks/` a `workflows/` v `gui/www` místo v adresáři
-projektu — tiše, bez chybové hlášky (HTTP 200, „V adresáři nic není").
+projektu — a tam žádný z těch adresářů není, takže obě stránky ohlásí
+„Adresář … neexistuje.".
 
 
 ## Co je vidět

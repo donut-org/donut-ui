@@ -30,7 +30,14 @@ final class BlockPresenter extends Presenter
 		$blocks = [];
 
 		foreach ($repository->getNames() as $name) {
-			$blocks[$name] = $repository->get($name);
+			try {
+				$blocks[$name] = $repository->get($name);
+
+			} catch (ParseException $e) {
+				// Vadný soubor nesmí schovat ostatní — stejné pravidlo jako
+				// u `donut --list`.
+				$blocks[$name] = $e->getMessage();
+			}
 		}
 
 		$this->template->blocks = $blocks;

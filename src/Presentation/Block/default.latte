@@ -1,0 +1,34 @@
+{block content}
+<p><a n:href="Workflow:default">← workflow</a></p>
+
+<h1>Kameny</h1>
+
+<p n:if="$error" class=error>{$error}</p>
+<p n:if="!$error && !$blocks">V adresáři <code>{$dir}</code> žádné kameny nejsou.</p>
+
+<div n:foreach="$blocks as $block">
+	<h2>{$block->name}</h2>
+	<p n:if="$block->description">{$block->description}</p>
+
+	<p>příkaz: <code>{$block->command}</code></p>
+
+	<p n:if="$block->stdin">
+		čte <strong>stdin</strong> —
+		{$block->stdin->required ? 'povinný' : 'volitelný'}
+		{$block->stdin->description}
+	</p>
+
+	<ul n:if="$block->inputs">
+		<li n:foreach="$block->inputs as $input">
+			<code>{$input->name}</code>
+			{$input->required ? 'povinný' : 'volitelný'}
+			{if $input->default !== null}(výchozí <code>{$input->default}</code>){/if}
+			{$input->description}
+		</li>
+	</ul>
+
+	<p n:if="$block->timeout !== null">timeout: {$block->timeout} s</p>
+	<p n:if="$block->allowFailure !== false">
+		allow_failure: {is_array($block->allowFailure) ? implode(', ', $block->allowFailure) : 'jakýkoliv exit kód'}
+	</p>
+</div>

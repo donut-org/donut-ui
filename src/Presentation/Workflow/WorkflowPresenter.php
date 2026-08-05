@@ -45,8 +45,15 @@ final class WorkflowPresenter extends Presenter
 			return;
 		}
 
-		$blocks = new BlockRepository(self::projectDir() . '/blocks');
-		$result = (new Validator($blocks))->validate($workflow);
+		try {
+			$blocks = new BlockRepository(self::projectDir() . '/blocks');
+			$result = (new Validator($blocks))->validate($workflow);
+
+		} catch (ParseException $e) {
+			$this->template->error = $e->getMessage();
+			return;
+		}
+
 		$problems = ProblemMap::fromResult($result);
 
 		$this->template->workflow = $workflow;

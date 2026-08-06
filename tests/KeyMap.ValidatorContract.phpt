@@ -26,7 +26,12 @@ $blocks = new BlockRepository($root . '/blocks');
 $parser = new WorkflowParser;
 $validator = new Validator($blocks);
 
+// glob() vrací list<string>|false — false jen když je vzor sám nevalidní,
+// což se tady nemůže stát, ale PHPStan (level: max) to neví.
 $files = \glob($root . '/workflows/*.json');
+Assert::true(\is_array($files), 'glob() nad referenční zátěží nesmí selhat');
+$files = \is_array($files) ? $files : [];
+
 Assert::count(4, $files, 'referenční zátěž má čtyři workflow');
 
 foreach ($files as $file) {

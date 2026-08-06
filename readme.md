@@ -15,8 +15,8 @@ cd gui
 composer install
 ```
 
-`gui/temp/` si Nette vytvoří samo — musí být jen zapisovatelný adresář
-`gui/`, do kterého se dá zapsat. Používá ho pro cache kontejneru a šablon.
+`gui/temp/` si Nette vytvoří samo, stačí aby adresář `gui/` byl zapisovatelný.
+Používá ho pro cache kontejneru a šablon.
 
 
 ## Spuštění

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Donut\Gui\Presentation\Workflow;
 
-use Donut\BlockRepository;
 use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
@@ -25,8 +24,6 @@ final class WorkflowDetailTemplate extends Template
 
 	public ?Workflow $workflow = null;
 
-	public ?BlockRepository $blocks = null;
-
 	public ?ProblemMap $problems = null;
 
 	public ?StepPath $rootPath = null;
@@ -35,6 +32,9 @@ final class WorkflowDetailTemplate extends Template
 
 	/** Jméno klíče z adresy; null = nic není vybrané. */
 	public ?string $selectedKey = null;
+
+	/** false = $selectedKey ve workflow není, klik nic nezvýrazní. */
+	public bool $selectedKeyExists = true;
 
 	/** @var list<Problem> */
 	public array $workflowProblems = [];

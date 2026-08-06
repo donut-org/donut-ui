@@ -77,7 +77,6 @@ final class WorkflowPresenter extends Presenter
 		$problems = ProblemMap::fromResult($result);
 
 		$template->workflow = $workflow;
-		$template->blocks = $blocks;
 		$template->problems = $problems;
 		$template->rootPath = StepPath::root($workflow->name);
 		$template->workflowProblems = $problems->at(StepPath::workflow($workflow->name));
@@ -86,5 +85,7 @@ final class WorkflowPresenter extends Presenter
 
 		// Prázdný řetězec z adresy znamená „nic nevybráno", ne klíč jménem "".
 		$template->selectedKey = ($key ?? '') === '' ? null : $key;
+		$template->selectedKeyExists = $template->selectedKey === null
+			|| \in_array($template->selectedKey, $template->keys->keys(), true);
 	}
 }

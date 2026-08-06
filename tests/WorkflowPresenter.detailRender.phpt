@@ -143,3 +143,9 @@ $html = renderDetailIn($root, 'sync', 'cards');
 Assert::contains('Vybraný klíč: <code>cards</code>', $html);
 Assert::contains('class="write"', $html);
 Assert::contains('class="read"', $html);
+
+// --- M7: klíč, který ve workflow není ---
+
+$html = renderDetailIn($root, 'card-dev', 'nesmysl');
+Assert::contains('Vybraný klíč: <code>nesmysl</code>', $html);
+Assert::contains('tento klíč se ve workflow nevyskytuje', $html);

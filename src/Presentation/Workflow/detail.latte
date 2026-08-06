@@ -28,6 +28,7 @@
 	<p n:if="$selectedKey !== null">
 		Vybraný klíč: <code>{$selectedKey}</code>
 		<a n:href="this, key: null">zrušit výběr</a>
+		<span n:if="!$selectedKeyExists" class=warning>— tento klíč se ve workflow nevyskytuje</span>
 	</p>
 
 	<h2>Kroky</h2>

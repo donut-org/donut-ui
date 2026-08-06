@@ -31,12 +31,20 @@ foreach ($files as $file) {
 	$result = $validator->validate($workflow);
 	$map = KeyMap::of($workflow);
 
-	$fromValidator = \array_unique([...$result->getReadKeys(), ...$result->getWrittenKeys()]);
-	\sort($fromValidator);
+	// Porovnat zvlášť zapsané a přečtené klíče — unifikace by skryla
+	// klíče zaznamenané v špatném směru
+	$guiWritten = \array_values(\array_filter($map->keys(), fn($k) => $map->writeSitesOf($k) !== []));
+	$guiRead = \array_values(\array_filter($map->keys(), fn($k) => $map->readSitesOf($k) !== []));
 
 	Assert::same(
-		\array_values($fromValidator),
-		$map->keys(),
-		"množina klíčů v {$workflow->name} se musí shodovat s validátorem",
+		$result->getWrittenKeys(),
+		$guiWritten,
+		"zapsané klíče v {$workflow->name} se musí shodovat s validátorem",
+	);
+
+	Assert::same(
+		$result->getReadKeys(),
+		$guiRead,
+		"přečtené klíče v {$workflow->name} se musí shodovat s validátorem",
 	);
 }

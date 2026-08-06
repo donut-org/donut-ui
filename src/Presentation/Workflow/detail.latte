@@ -25,6 +25,11 @@
 		</li>
 	</ul>
 
+	<p n:if="$selectedKey !== null">
+		Vybraný klíč: <code>{$selectedKey}</code>
+		<a n:href="this, key: null">zrušit výběr</a>
+	</p>
+
 	<h2>Kroky</h2>
-	{include steps, steps: $workflow->steps, path: $rootPath, problems: $problems}
+	{include steps, steps: $workflow->steps, path: $rootPath, problems: $problems, keys: $keys, selected: $selectedKey}
 {/if}

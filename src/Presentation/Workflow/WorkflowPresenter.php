@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Workflow;
 
 use Donut\BlockRepository;
+use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
 use Donut\Gui\StepPath;
 use Donut\Gui\WorkflowRepository;
@@ -43,7 +44,7 @@ final class WorkflowPresenter extends Presenter
 	}
 
 
-	public function renderDetail(string $name): void
+	public function renderDetail(string $name, ?string $key = null): void
 	{
 		/** @var WorkflowDetailTemplate $template */
 		$template = $this->template;
@@ -80,5 +81,10 @@ final class WorkflowPresenter extends Presenter
 		$template->problems = $problems;
 		$template->rootPath = StepPath::root($workflow->name);
 		$template->workflowProblems = $problems->at(StepPath::workflow($workflow->name));
+
+		$template->keys = KeyMap::of($workflow);
+
+		// Prázdný řetězec z adresy znamená „nic nevybráno", ne klíč jménem "".
+		$template->selectedKey = ($key ?? '') === '' ? null : $key;
 	}
 }

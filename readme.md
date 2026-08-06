@@ -47,9 +47,14 @@ projektu — a tam žádný z těch adresářů není, takže obě stránky ohl�
 - **detail workflow** — kroky ve stromu (`if`/`foreach` vnořené) a problémy
   z validátoru u kroku, kterého se týkají
 - **přehled kamenů** — kameny z `blocks/` s jejich deklarovanými vstupy
+- **tok klíčů** — u každého kroku je vidět, které klíče čte a které zapisuje;
+  klíč je klikatelný odkaz, který zvýrazní všechny kroky, kde figuruje (zápis
+  jinou barvou než čtení); výběr drží adresa (`&key=repo`), takže se dá poslat
+  odkazem; podmíněný zápis se pozná z toho, že zvýrazněný krok leží uvnitř
+  `if` nebo `foreach`
 
 Adresy jsou v query stringu, např.
-`?presenter=Workflow&action=detail&name=card-dev` — router je Nette
+`?name=card-dev&action=detail&key=repo` — router je Nette
 `SimpleRouter`, žádné pěkné URL.
 
 
@@ -74,10 +79,9 @@ a chystá se do vlastního repozitáře.
 
 ## Co zatím není
 
-Tohle je vrstva 1 ze tří (viz `docs/zadani.md`, bod 5). Zatím chybí:
+Tohle je vrstva 1 a 2 ze tří (viz `docs/zadani.md`, bod 5). Zatím chybí:
 
 - zápis (uložení workflow/kamene zpátky do JSONu)
-- vizualizace toku klíčů (kde klíč vzniká, kdo ho čte)
 - builder — formulářové skládání kroků
 
 Podrobnosti a proč jsou tyhle vrstvy odložené: viz „2026-08-05-gui-design.md"

@@ -183,6 +183,12 @@ final class KeyMap
 				self::record($writes, $writesHere, $step->as, $at);
 
 				self::walk($step->steps, $here->child('steps'), $writes, $reads);
+
+			} else {
+				// Nový typ kroku by tichým if/elseif řetězcem propadl beze
+				// zmínky — místo toho, aby chyběl jen klíč z jeho těla,
+				// spadne na tomhle na každém workflow, které ho použije.
+				throw new \LogicException('neznámý typ kroku ' . $step::class);
 			}
 		}
 	}

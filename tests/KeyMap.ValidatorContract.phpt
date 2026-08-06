@@ -6,6 +6,7 @@ use Donut\BlockRepository;
 use Donut\Gui\KeyMap;
 use Donut\Parser\WorkflowParser;
 use Donut\Validator\Validator;
+use Nette\Utils\FileSystem;
 use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
@@ -16,6 +17,8 @@ require __DIR__ . '/bootstrap.php';
 //
 // Jede nad referenční zátěží, protože ta má všechny čtyři typy kroků, obě
 // větve if i foreach, a hlídá ji přijímací test donutu na 0 chyb a 0 varování.
+// docs/workflows/donut/ je tu testovací data, ne kód — pravidlo „GUI nesmí
+// sáhnout mimo sebe" mluví o gui/src, ne o fixturách v testech.
 
 $root = __DIR__ . '/../../docs/workflows/donut';
 
@@ -48,3 +51,42 @@ foreach ($files as $file) {
 		"přečtené klíče v {$workflow->name} se musí shodovat s validátorem",
 	);
 }
+
+// Vlastní fixtura vedle referenční zátěže: v žádném ze čtyř referenčních
+// workflow neexistuje klíč, který by se vyskytoval jen uvnitř then, jen
+// uvnitř else, nebo jen v těle foreach — takže zahození celého podstromu ve
+// walk() nechá porovnání nahoře zelené (chybí na obou stranách stejně
+// nic, protože Validator ty klíče najde a KeyMap by je celé mlčky
+// nezaznamenal). Tahle fixtura má v každé z těch tří větví klíč, který se
+// nikde jinde neobjevuje, takže rozchod je vidět.
+$dir = TEMP_DIR . '/keymap-validator-contract';
+FileSystem::createDir($dir);
+$vetveBlocks = new BlockRepository($dir);
+$vetveWorkflow = $parser->parseArray([
+	'name' => 'w',
+	'inputs' => ['t' => []],
+	'steps' => [
+		[
+			'type' => 'if',
+			'condition' => ['left' => '{%t%}', 'op' => 'not_empty'],
+			'then' => [['type' => 'set', 'key' => 'jenVThen', 'value' => 'x']],
+			'else' => [['type' => 'set', 'key' => 'jenVElse', 'value' => 'x']],
+		],
+		[
+			'type' => 'foreach',
+			'over' => '{%t%}',
+			'as' => 'radek',
+			'steps' => [['type' => 'set', 'key' => 'jenVForeach', 'value' => '{%radek%}']],
+		],
+	],
+], 'w.json');
+
+$vetveResult = (new Validator($vetveBlocks))->validate($vetveWorkflow);
+$vetveMap = KeyMap::of($vetveWorkflow);
+
+$vetveGuiWritten = \array_values(\array_filter($vetveMap->keys(), fn($k) => $vetveMap->writeSitesOf($k) !== []));
+$vetveGuiRead = \array_values(\array_filter($vetveMap->keys(), fn($k) => $vetveMap->readSitesOf($k) !== []));
+
+Assert::same(['jenVElse', 'jenVForeach', 'jenVThen', 'radek'], $vetveGuiWritten);
+Assert::same($vetveResult->getWrittenKeys(), $vetveGuiWritten);
+Assert::same($vetveResult->getReadKeys(), $vetveGuiRead);

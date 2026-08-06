@@ -1,5 +1,7 @@
 {import 'steps.latte'}
 
+{block title n:if="!$error"}{$workflow->name} — Donut{/block}
+
 {block content}
 <p><a n:href="default">← workflow</a></p>
 

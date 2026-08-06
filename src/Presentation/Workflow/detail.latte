@@ -9,9 +9,9 @@
 	<h1>{$workflow->name}</h1>
 	<p n:if="$workflow->description">{$workflow->description}</p>
 
-	<div n:foreach="$workflowProblems as $problem" class="{$problem->severity === Donut\Validator\Problem::Error ? 'error' : 'warning'}">
-		{$problem->severity === Donut\Validator\Problem::Error ? '✕' : '⚠'} {$problem->message}
-	</div>
+	{foreach $workflowProblems as $problem}
+		{include problem, problem: $problem}
+	{/foreach}
 
 	<h2 n:if="$workflow->inputs">Vstupy</h2>
 	<ul n:if="$workflow->inputs">

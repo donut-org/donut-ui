@@ -1,3 +1,11 @@
+{* Severita → CSS třída a ikona na jednom místě, ne dvakrát opsané. *}
+{define problem, Donut\Validator\Problem $problem}
+<div class="{$problem->severity === Donut\Validator\Problem::Error ? 'error' : 'warning'}">
+	{$problem->severity === Donut\Validator\Problem::Error ? '✕' : '⚠'} {$problem->message}
+</div>
+{/define}
+
+
 {define steps, array $steps, Donut\Gui\StepPath $path, Donut\Gui\ProblemMap $problems}
 <ol>
 	{foreach $steps as $i => $step}
@@ -31,9 +39,7 @@
 			{/if}
 
 			{foreach $problems->at($at) as $problem}
-				<div class="{$problem->severity === Donut\Validator\Problem::Error ? 'error' : 'warning'}">
-					{$problem->severity === Donut\Validator\Problem::Error ? '✕' : '⚠'} {$problem->message}
-				</div>
+				{include problem, problem: $problem}
 			{/foreach}
 
 			{if $step instanceof Donut\Format\IfStep}

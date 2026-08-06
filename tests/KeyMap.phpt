@@ -151,3 +151,17 @@ $dupZapis = KeyMap::of($parser->parseArray([
 ], 'w.json'));
 
 Assert::same([(string) StepPath::root('w')->index(0)], $dupZapis->writeSitesOf('y'));
+
+// --- klíč složený jen z číslic (I2) ---
+
+// array_keys() by "456" tiše zkonvertovalo na int — writesAt()/keys() musí
+// vracet string, jinak classAt() proti stringu z URL nikdy neuspěje.
+$cislo = KeyMap::of($parser->parseArray([
+	'name' => 'w',
+	'inputs' => [],
+	'steps' => [['type' => 'set', 'key' => '456', 'value' => 'x']],
+], 'w.json'));
+
+Assert::same(['456'], $cislo->writesAt(StepPath::root('w')->index(0)));
+Assert::same('write', $cislo->classAt(StepPath::root('w')->index(0), '456'));
+Assert::same(['456'], $cislo->keys());

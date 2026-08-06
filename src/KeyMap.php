@@ -86,7 +86,11 @@ final class KeyMap
 	/** @return list<string> všechna jména klíčů, abecedně */
 	public function keys(): array
 	{
-		$keys = \array_keys($this->writesByKey + $this->readsByKey);
+		// array_keys() konvertuje klíče pole složené jen z číslic na int —
+		// "456" jako jméno klíče je platné (Template::isKeyName()), takže
+		// bez strval() by se sem dostal int a classAt() by proti němu
+		// porovnávala string striktně a nikdy neuspěla.
+		$keys = \array_map(\strval(...), \array_keys($this->writesByKey + $this->readsByKey));
 		\sort($keys);
 
 		return $keys;
@@ -218,7 +222,9 @@ final class KeyMap
 
 		return \array_map(
 			function (array $keys): array {
-				$names = \array_keys($keys);
+				// Stejný důvod jako v keys() — klíč pole $keys je pod
+				// numerickým jménem klíče int, strval() ho vrátí na string.
+				$names = \array_map(\strval(...), \array_keys($keys));
 				\sort($names);
 
 				return $names;

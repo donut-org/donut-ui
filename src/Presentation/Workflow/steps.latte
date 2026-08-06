@@ -10,47 +10,52 @@
 <ol>
 	{foreach $steps as $i => $step}
 		{var $at = $path->index($i)}
-		<li class="{$keys->classAt($at, $selected)}">
-			{if $step instanceof Donut\Format\RunStep}
-				<strong>run</strong> {$step->block}
-				{if $step->name} — {$step->name}{/if}
-				<ul n:if="$step->in">
-					<li n:foreach="$step->in as $key => $template">{$key}: <code>{$template->getSource()}</code></li>
-				</ul>
-				<ul n:if="$step->out">
-					<li n:foreach="$step->out as $channel => $key">{$channel} → <code>{$key}</code></li>
-				</ul>
+		<li>
+			{* Třída patří jen řádku kroku, ne <li> — to obaluje i vnořené
+			   <ol> s tělem then/else/foreach a background by se přenesl
+			   na celý podstrom. *}
+			<div n:class="$keys->classAt($at, $selected)">
+				{if $step instanceof Donut\Format\RunStep}
+					<strong>run</strong> {$step->block}
+					{if $step->name} — {$step->name}{/if}
+					<ul n:if="$step->in">
+						<li n:foreach="$step->in as $key => $template">{$key}: <code>{$template->getSource()}</code></li>
+					</ul>
+					<ul n:if="$step->out">
+						<li n:foreach="$step->out as $channel => $key">{$channel} → <code>{$key}</code></li>
+					</ul>
 
-			{elseif $step instanceof Donut\Format\SetStep}
-				<strong>set</strong> <code>{$step->key}</code> = <code>{$step->value->getSource()}</code>
-				{if $step->name} — {$step->name}{/if}
+				{elseif $step instanceof Donut\Format\SetStep}
+					<strong>set</strong> <code>{$step->key}</code> = <code>{$step->value->getSource()}</code>
+					{if $step->name} — {$step->name}{/if}
 
-			{elseif $step instanceof Donut\Format\IfStep}
-				<strong>if</strong>
-				<code>{$step->condition->left->getSource()}</code>
-				{$step->condition->op}
-				{if $step->condition->right}<code>{$step->condition->right->getSource()}</code>{/if}
-				{if $step->name} — {$step->name}{/if}
+				{elseif $step instanceof Donut\Format\IfStep}
+					<strong>if</strong>
+					<code>{$step->condition->left->getSource()}</code>
+					{$step->condition->op}
+					{if $step->condition->right}<code>{$step->condition->right->getSource()}</code>{/if}
+					{if $step->name} — {$step->name}{/if}
 
-			{elseif $step instanceof Donut\Format\ForeachStep}
-				<strong>foreach</strong>
-				<code>{$step->over->getSource()}</code> as <code>{$step->as}</code>
-				{if $step->name} — {$step->name}{/if}
-			{/if}
+				{elseif $step instanceof Donut\Format\ForeachStep}
+					<strong>foreach</strong>
+					<code>{$step->over->getSource()}</code> as <code>{$step->as}</code>
+					{if $step->name} — {$step->name}{/if}
+				{/if}
 
-			{foreach $problems->at($at) as $problem}
-				{include problem, problem: $problem}
-			{/foreach}
+				{foreach $problems->at($at) as $problem}
+					{include problem, problem: $problem}
+				{/foreach}
 
-			{var $reads = $keys->readsAt($at)}
-			{var $writes = $keys->writesAt($at)}
-			<div class=keys n:if="$reads || $writes">
-				<span n:if="$reads">čte
-					{foreach $reads as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
-				</span>
-				<span n:if="$writes">zapisuje
-					{foreach $writes as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
-				</span>
+				{var $reads = $keys->readsAt($at)}
+				{var $writes = $keys->writesAt($at)}
+				<div class=keys n:if="$reads || $writes">
+					<span n:if="$reads">čte
+						{foreach $reads as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
+					</span>
+					<span n:if="$writes">, zapisuje
+						{foreach $writes as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
+					</span>
+				</div>
 			</div>
 
 			{if $step instanceof Donut\Format\IfStep}

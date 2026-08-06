@@ -50,10 +50,8 @@
 				{var $writes = $keys->writesAt($at)}
 				<div class=keys n:if="$reads || $writes">
 					<span n:if="$reads">čte
-						{foreach $reads as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
-					</span>{if $reads && $writes}, {/if}<span n:if="$writes">zapisuje
-						{foreach $writes as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}
-					</span>
+						{foreach $reads as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}</span>{if $reads && $writes}, {/if}<span n:if="$writes">zapisuje
+						{foreach $writes as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}</span>
 				</div>
 			</div>
 

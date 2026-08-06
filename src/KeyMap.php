@@ -128,34 +128,43 @@ final class KeyMap
 			$here = $path->index($i);
 			$at = (string) $here;
 
+			// Jeden krok umí touž cestu ke stejnému klíči přidat víckrát —
+			// dva vstupy kamene čtoucí stejný klíč, nebo dva kanály out
+			// mířící do stejného klíče. Template::getKeys() dedupuje jen
+			// uvnitř jedné šablony, ne napříč šablonami/kanály jednoho
+			// kroku, takže bez těchhle sad by writeSitesOf()/readSitesOf()
+			// vrátily tutéž cestu vícekrát.
+			$writesHere = [];
+			$readsHere = [];
+
 			if ($step instanceof RunStep) {
 				// $step->in je klíčované jménem vstupu kamene; klíče mapy
 				// jsou až v šablonách, které jsou jeho hodnotami.
 				foreach ($step->in as $template) {
 					foreach ($template->getKeys() as $key) {
-						$reads[$key][] = $at;
+						self::record($reads, $readsHere, $key, $at);
 					}
 				}
 
 				foreach ($step->out as $key) {
-					$writes[$key][] = $at;
+					self::record($writes, $writesHere, $key, $at);
 				}
 
 			} elseif ($step instanceof SetStep) {
 				foreach ($step->value->getKeys() as $key) {
-					$reads[$key][] = $at;
+					self::record($reads, $readsHere, $key, $at);
 				}
 
-				$writes[$step->key][] = $at;
+				self::record($writes, $writesHere, $step->key, $at);
 
 			} elseif ($step instanceof IfStep) {
 				foreach ($step->condition->left->getKeys() as $key) {
-					$reads[$key][] = $at;
+					self::record($reads, $readsHere, $key, $at);
 				}
 
 				if ($step->condition->right !== null) {
 					foreach ($step->condition->right->getKeys() as $key) {
-						$reads[$key][] = $at;
+						self::record($reads, $readsHere, $key, $at);
 					}
 				}
 
@@ -164,14 +173,32 @@ final class KeyMap
 
 			} elseif ($step instanceof ForeachStep) {
 				foreach ($step->over->getKeys() as $key) {
-					$reads[$key][] = $at;
+					self::record($reads, $readsHere, $key, $at);
 				}
 
-				$writes[$step->as][] = $at;
+				self::record($writes, $writesHere, $step->as, $at);
 
 				self::walk($step->steps, $here->child('steps'), $writes, $reads);
 			}
 		}
+	}
+
+
+	/**
+	 * Zapíše cestu ke klíči, nejvýš jednou na krok — $seenHere je sada
+	 * klíčů, které tenhle krok do $target už zapsal.
+	 *
+	 * @param array<string, list<string>> $target
+	 * @param array<string, true>         $seenHere
+	 */
+	private static function record(array &$target, array &$seenHere, string $key, string $at): void
+	{
+		if (isset($seenHere[$key])) {
+			return;
+		}
+
+		$seenHere[$key] = true;
+		$target[$key][] = $at;
 	}
 
 

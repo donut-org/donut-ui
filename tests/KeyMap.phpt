@@ -117,3 +117,37 @@ Assert::same('write read', $ctePise->classAt(StepPath::root('w')->index(0), 'x')
 
 // cesta jde předat i jako řetězec
 Assert::same(['zeSetu'], $map->writesAt((string) $root->index(0)));
+Assert::same(['vstup'], $map->readsAt((string) $root->index(0)));
+Assert::same('write', $map->classAt((string) $root->index(0), 'zeSetu'));
+
+// --- týž klíč vícekrát v jednom kroku ---
+
+// dva vstupy kamene čtou tentýž klíč — krok je v seznamu jen jednou
+$dupCteni = KeyMap::of($parser->parseArray([
+	'name' => 'w',
+	'inputs' => ['x' => []],
+	'steps' => [
+		[
+			'type' => 'run', 'block' => 'echo',
+			'in' => ['text' => '{%x%}', 'name' => '{%x%}'],
+			'out' => [],
+		],
+	],
+], 'w.json'));
+
+Assert::same([(string) StepPath::root('w')->index(0)], $dupCteni->readSitesOf('x'));
+
+// dva kanály out mapují na tentýž klíč — krok je v seznamu jen jednou
+$dupZapis = KeyMap::of($parser->parseArray([
+	'name' => 'w',
+	'inputs' => [],
+	'steps' => [
+		[
+			'type' => 'run', 'block' => 'echo',
+			'in' => [],
+			'out' => ['result' => 'y', 'stderr' => 'y'],
+		],
+	],
+], 'w.json'));
+
+Assert::same([(string) StepPath::root('w')->index(0)], $dupZapis->writeSitesOf('y'));

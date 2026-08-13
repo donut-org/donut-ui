@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Latte\Engine;
 use Nette\Bridges\ApplicationLatte\UIExtension;
+use Nette\Bridges\FormsLatte\FormsExtension;
 use Nette\Utils\Finder;
 use Tester\Assert;
 
@@ -34,6 +35,10 @@ foreach ($templates as $file) {
 	// fungují n:href a další tagy z nette/application.
 	$engine = new Engine;
 	$engine->addExtension(new UIExtension(null));
+
+	// {form} a n:name pocházejí z nette/forms; bez téhle extension by
+	// edit.latte neprošlo kompilací.
+	$engine->addExtension(new FormsExtension);
 
 	try {
 		$engine->compile($file);

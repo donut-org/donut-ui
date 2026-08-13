@@ -1,0 +1,132 @@
+{block title}{$name ?? 'Nový kámen'} — Donut{/block}
+
+{block content}
+<p><a n:href="Block:default">← kameny</a></p>
+
+<h1>{$name ?? 'Nový kámen'}</h1>
+
+<p n:if="$error" class=error>{$error}</p>
+
+{if !$error}
+	<ul n:if="$problems" class=warning>
+		<li n:foreach="$problems as $problem">{$problem}</li>
+	</ul>
+
+	{form blockForm}
+		<ul n:if="$form->getErrors()" class=error>
+			<li n:foreach="$form->getErrors() as $chyba">{$chyba}</li>
+		</ul>
+
+		<p>{label name /} {input name}</p>
+		<p>{label description /} {input description}</p>
+		<p>{label command /} {input command}</p>
+
+		<h2>Argumenty</h2>
+		<p class=keys>Skupina, ve které se proměnná vyhodnotí na prázdno, vypadne celá.</p>
+
+		<div id=args>
+			<div class=arg-group n:foreach="$form['args']->getComponents() as $group">
+				<span n:foreach="$group->getComponents() as $arg">{input $arg}</span>
+				<button type=button class=add-arg>+ argument</button>
+				<button type=button class=del-group>× skupina</button>
+			</div>
+		</div>
+
+		<button type=button id=add-group>+ skupina</button>
+
+		<h2>Vstupy</h2>
+
+		<div id=inputs>
+			<div class=input-row n:foreach="$form['inputs']->getComponents() as $row">
+				{input $row['name']}
+				{input $row['required']} povinný
+				{input $row['default']}
+				{input $row['description']}
+				<button type=button class=del-input>×</button>
+			</div>
+		</div>
+
+		<button type=button id=add-input>+ vstup</button>
+
+		<h2>Stdin</h2>
+		<p>{input hasStdin} {label hasStdin /}</p>
+		<p>{input stdinRequired} {label stdinRequired /}</p>
+		<p>{label stdinDescription /} {input stdinDescription}</p>
+
+		<h2>Ostatní</h2>
+		<p>{label timeout /} {input timeout}</p>
+		<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
+
+		<p>{input save}</p>
+	{/form}
+
+	<script n:syntax="off">
+	// Řádky se nikdy nepřečíslovávají: nový dostane index o jedna vyšší, než
+	// je současné maximum, a smazání nechá v číslování díru. Server pole
+	// srovná přes array_values() v BlockMapperu. Přečíslovávání by mohlo
+	// tiše prohodit dva argumenty; takhle ta chyba nemá kde vzniknout.
+	const maxIndex = (nodes, re) => {
+		let max = -1;
+		nodes.forEach(n => {
+			const m = re.exec(n.getAttribute('name') || '');
+			if (m) max = Math.max(max, parseInt(m[1], 10));
+		});
+		return max;
+	};
+
+	const cloneRow = (row, rename) => {
+		const copy = row.cloneNode(true);
+		copy.querySelectorAll('input').forEach(i => {
+			i.setAttribute('name', rename(i.getAttribute('name')));
+			// cloneNode kopíruje i id — bez odebrání by měly dvě různé
+			// pole stejné id (Nette ho odvozuje z původního jména).
+			i.removeAttribute('id');
+			if (i.type === 'checkbox') i.checked = false; else i.value = '';
+		});
+		return copy;
+	};
+
+	document.getElementById('add-group').addEventListener('click', () => {
+		const box = document.getElementById('args');
+		const rows = box.querySelectorAll('.arg-group');
+		const next = maxIndex(box.querySelectorAll('input'), /^args\[(\d+)]/) + 1;
+		box.appendChild(cloneRow(
+			rows[rows.length - 1],
+			n => n.replace(/^args\[\d+]\[\d+]/, 'args[' + next + '][0]')
+		));
+	});
+
+	document.getElementById('add-input').addEventListener('click', () => {
+		const box = document.getElementById('inputs');
+		const rows = box.querySelectorAll('.input-row');
+		const next = maxIndex(box.querySelectorAll('input'), /^inputs\[(\d+)]/) + 1;
+		box.appendChild(cloneRow(
+			rows[rows.length - 1],
+			n => n.replace(/^inputs\[\d+]/, 'inputs[' + next + ']')
+		));
+	});
+
+	document.addEventListener('click', e => {
+		if (e.target.classList.contains('add-arg')) {
+			const group = e.target.closest('.arg-group');
+			const first = group.querySelector('span');
+			const g = /^args\[(\d+)]/.exec(first.querySelector('input').getAttribute('name'))[1];
+			const next = maxIndex(group.querySelectorAll('input'), /^args\[\d+]\[(\d+)]/) + 1;
+			group.insertBefore(
+				cloneRow(first, n => 'args[' + g + '][' + next + ']'),
+				e.target
+			);
+		}
+
+		if (e.target.classList.contains('del-group')) {
+			const box = document.getElementById('args');
+			if (box.querySelectorAll('.arg-group').length > 1) e.target.closest('.arg-group').remove();
+		}
+
+		if (e.target.classList.contains('del-input')) {
+			const box = document.getElementById('inputs');
+			if (box.querySelectorAll('.input-row').length > 1) e.target.closest('.input-row').remove();
+		}
+	});
+	</script>
+{/if}

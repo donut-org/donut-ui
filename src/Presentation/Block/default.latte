@@ -5,11 +5,15 @@
 
 <h1>Kameny</h1>
 
+<p><a n:href="Block:edit">+ nový kámen</a></p>
+
 <p n:if="$error" class=error>{$error}</p>
 <p n:if="!$error && !$blocks">V adresáři <code>{$dir}</code> žádné kameny nejsou.</p>
 
 <div n:foreach="$blocks as $name => $block">
 	<h2>{$name}</h2>
+
+	<p><a n:href="Block:edit, name: $name">upravit</a></p>
 
 	{if is_string($block)}
 		<p class=error>{$block}</p>

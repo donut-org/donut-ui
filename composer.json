@@ -12,7 +12,8 @@
 		"nette/application": "^3.2",
 		"nette/bootstrap": "^3.2",
 		"latte/latte": "^3.0",
-		"tracy/tracy": "^2.12"
+		"tracy/tracy": "^2.12",
+		"nette/forms": "^3.2"
 	},
 	"require-dev": {
 		"nette/tester": "^2.6",

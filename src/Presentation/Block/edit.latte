@@ -8,8 +8,12 @@
 <p n:if="$error" class=error>{$error}</p>
 
 {if !$error}
-	<ul n:if="$problems" class=warning>
-		<li n:foreach="$problems as $problem">{$problem}</li>
+	<ul n:if="$errors" class=error>
+		<li n:foreach="$errors as $err">{$err}</li>
+	</ul>
+
+	<ul n:if="$warnings" class=warning>
+		<li n:foreach="$warnings as $warning">{$warning}</li>
 	</ul>
 
 	{form blockForm}
@@ -111,7 +115,7 @@
 		const next = maxIndex(box.querySelectorAll('input'), /^args\[(\d+)]/) + 1;
 		box.appendChild(cloneRow(
 			rows[rows.length - 1],
-			n => n.replace(/^args\[\d+]\[\d+]/, 'args[' + next + '][0]')
+			n => n.replace(/^args\[\d+]/, 'args[' + next + ']')
 		));
 	});
 

@@ -10,11 +10,11 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/blockPresenter.php';
 
-$projekt = TEMP_DIR . '/edit';
-FileSystem::createDir($projekt . '/blocks');
-FileSystem::createDir($projekt . '/workflows');
+$project = TEMP_DIR . '/edit';
+FileSystem::createDir($project . '/blocks');
+FileSystem::createDir($project . '/workflows');
 
-FileSystem::write($projekt . '/blocks/echo.json', json_encode([
+FileSystem::write($project . '/blocks/echo.json', json_encode([
 	'name' => 'echo',
 	'description' => 'Vypíše text',
 	'command' => 'echo',
@@ -25,7 +25,7 @@ FileSystem::write($projekt . '/blocks/echo.json', json_encode([
 
 // --- editace existujícího: formulář je předvyplněný ---
 
-[, $html] = runBlockPresenterIn($projekt, ['action' => 'edit', 'name' => 'echo']);
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'echo']);
 
 Assert::contains('value="echo"', $html);
 Assert::contains('Vypíše text', $html);
@@ -34,15 +34,15 @@ Assert::contains('value="5"', $html);
 
 // --- zakládání nového: prázdný formulář, žádný pád ---
 
-[, $novy] = runBlockPresenterIn($projekt, ['action' => 'edit']);
+[, $new] = runBlockPresenterIn($project, ['action' => 'edit']);
 
-Assert::contains('<form', $novy);
-Assert::notContains('Vypíše text', $novy);
+Assert::contains('<form', $new);
+Assert::notContains('Vypíše text', $new);
 
 // --- neexistující kámen se ohlásí, nespadne ---
 
-[, $chybi] = runBlockPresenterIn($projekt, ['action' => 'edit', 'name' => 'neni']);
-Assert::contains('neexistuje', $chybi);
+[, $missing] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'neni']);
+Assert::contains('neexistuje', $missing);
 
 // --- uložení: platný kámen projde a vznikne soubor ---
 
@@ -65,7 +65,7 @@ $post = [
 ];
 
 [$response] = runBlockPresenterIn(
-	$projekt,
+	$project,
 	['action' => 'edit', 'do' => 'blockForm-submit'],
 	$post,
 );
@@ -73,28 +73,35 @@ $post = [
 // Úspěch končí přesměrováním na editaci uloženého kamene.
 Assert::type(RedirectResponse::class, $response);
 
-$ulozeny = (new BlockParser)->parseFile($projekt . '/blocks/novy.json');
-Assert::same('novy', $ulozeny->name);
-Assert::same('curl', $ulozeny->command);
+$saved = (new BlockParser)->parseFile($project . '/blocks/novy.json');
+Assert::same('novy', $saved->name);
+Assert::same('curl', $saved->command);
 
 // Díra v indexech se srovnala a pořadí zůstalo.
-Assert::same('-sS', $ulozeny->args[0][0]->getSource());
-Assert::same('{%url%}', $ulozeny->args[1][0]->getSource());
-Assert::same(['url'], array_keys($ulozeny->inputs));
+Assert::same('-sS', $saved->args[0][0]->getSource());
+Assert::same('{%url%}', $saved->args[1][0]->getSource());
+Assert::same(['url'], array_keys($saved->inputs));
 
 // --- uložení: nedeklarovaná proměnná v args se odmítne ---
 
-$vadny = ['name' => 'vadny', 'args' => [0 => [0 => '{%chybi%}']], 'inputs' => []] + $post;
+$invalid = ['name' => 'vadny', 'args' => [0 => [0 => '{%chybi%}']], 'inputs' => []] + $post;
 
 [$response, $html] = runBlockPresenterIn(
-	$projekt,
+	$project,
 	['action' => 'edit', 'do' => 'blockForm-submit'],
-	$vadny,
+	$invalid,
 );
 
 // Žádné přesměrování — formulář se vrátil s chybou.
 Assert::false($response instanceof RedirectResponse);
 Assert::contains('chybi', $html);
-Assert::false(is_file($projekt . '/blocks/vadny.json'));
+Assert::false(is_file($project . '/blocks/vadny.json'));
+
+// Hláška patří mezi chyby, ne mezi varování — jinak by uživatel viděl
+// konkrétní důvod odmítnutí jako pouhé varování a jako chybu jen tu obecnou
+// hlášku. Obojí by prošlo Assert::contains() výše, tohle je pojistka proti
+// přehození závažností v šabloně.
+Assert::match('~<ul class=error>.*?chybi.*?</ul>~s', $html);
+Assert::notMatch('~<ul class=warning>.*?chybi.*?</ul>~s', $html);
 
 FileSystem::delete(TEMP_DIR);

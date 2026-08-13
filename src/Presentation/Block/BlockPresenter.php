@@ -13,13 +13,14 @@ use Donut\Gui\BlockUsage;
 use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
 use Donut\Validator\BlockValidator;
+use Donut\Validator\Problem;
 use Nette\Application\UI\Form;
 use Nette\Application\UI\Presenter;
 
 
 final class BlockPresenter extends Presenter
 {
-	private ?Block $editovany = null;
+	private ?Block $edited = null;
 
 
 	public function renderDefault(): void
@@ -67,7 +68,7 @@ final class BlockPresenter extends Presenter
 		}
 
 		try {
-			$this->editovany = $this->store()->get($name);
+			$this->edited = $this->store()->get($name);
 
 		} catch (ParseException $e) {
 			/** @var BlockEditTemplate $template */
@@ -142,8 +143,8 @@ final class BlockPresenter extends Presenter
 		$form->addSubmit('save', 'Uložit');
 		$form->onSuccess[] = $this->blockFormSucceeded(...);
 
-		if ($this->editovany !== null && !$this->getRequest()->isMethod('POST')) {
-			$form->setDefaults((new BlockMapper)->toValues($this->editovany));
+		if ($this->edited !== null && !$this->getRequest()->isMethod('POST')) {
+			$form->setDefaults((new BlockMapper)->toValues($this->edited));
 		}
 
 		return $form;
@@ -160,10 +161,8 @@ final class BlockPresenter extends Presenter
 
 		/** @var BlockEditTemplate $template */
 		$template = $this->template;
-		$template->problems = \array_map(
-			fn($problem): string => $problem->message,
-			$result->getProblems(),
-		);
+		$template->errors = self::messages($result->getErrors());
+		$template->warnings = self::messages($result->getWarnings());
 
 		// Chyba blokuje, varování ne.
 		if ($result->hasErrors()) {
@@ -174,6 +173,16 @@ final class BlockPresenter extends Presenter
 
 		$this->store()->save($block);
 		$this->redirect('edit', ['name' => $block->name]);
+	}
+
+
+	/**
+	 * @param  array<int, Problem> $problems
+	 * @return array<int, string>
+	 */
+	private static function messages(array $problems): array
+	{
+		return \array_map(fn(Problem $problem): string => $problem->message, $problems);
 	}
 
 
@@ -250,12 +259,12 @@ final class BlockPresenter extends Presenter
 		$args = [];
 		$inputs = [];
 
-		if ($this->editovany !== null) {
-			foreach (\array_values($this->editovany->args) as $g => $group) {
+		if ($this->edited !== null) {
+			foreach (\array_values($this->edited->args) as $g => $group) {
 				$args[$g] = \array_keys(\array_values($group));
 			}
 
-			$inputs = \array_keys(\array_values($this->editovany->inputs));
+			$inputs = \array_keys(\array_values($this->edited->inputs));
 		}
 
 		// Jeden prázdný řádek navíc, aby měl uživatel kam psát i bez JS.

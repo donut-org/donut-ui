@@ -14,7 +14,10 @@ final class BlockEditTemplate extends Template
 	public ?string $error = null;
 
 	/** @var array<int, string> */
-	public array $problems = [];
+	public array $errors = [];
+
+	/** @var array<int, string> */
+	public array $warnings = [];
 
 	/** @var list<string> */
 	public array $usedBy = [];

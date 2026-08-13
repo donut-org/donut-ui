@@ -18,7 +18,7 @@
 
 	{form blockForm}
 		<ul n:if="$form->getErrors()" class=error>
-			<li n:foreach="$form->getErrors() as $chyba">{$chyba}</li>
+			<li n:foreach="$form->getErrors() as $err">{$err}</li>
 		</ul>
 
 		<p>{label name /} {input name}</p>
@@ -74,7 +74,7 @@
 
 			{form deleteForm}
 				<ul n:if="$form->getErrors()" class=error>
-					<li n:foreach="$form->getErrors() as $chyba">{$chyba}</li>
+					<li n:foreach="$form->getErrors() as $err">{$err}</li>
 				</ul>
 
 				<input type=hidden n:name=name value="{$name}">

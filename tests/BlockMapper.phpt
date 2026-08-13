@@ -69,6 +69,41 @@ Assert::same(
 );
 Assert::same(['url'], \array_keys($sDirou->inputs));
 
+// --- pořadí klíčů se srovná, i když v POSTu přijdou obráceně ---
+//
+// Pořadí klíčů z POSTu není zaručené; ksort() je jediné, co drží pořadí
+// argumentů a vstupů. Test na díry výše má klíče zadané už vzestupně,
+// takže bez tohohle případu by vynechání ksort() nic neshodilo.
+
+$prehozene = $mapper->toBlock([
+	'name' => 'prehozene',
+	'description' => '',
+	'command' => 'echo',
+	'args' => [
+		1 => [1 => 'druhy-b', 0 => 'druhy-a'],
+		0 => [1 => 'prvni-b', 0 => 'prvni-a'],
+	],
+	'inputs' => [
+		1 => ['name' => 'zet', 'required' => true, 'default' => '', 'description' => ''],
+		0 => ['name' => 'alfa', 'required' => true, 'default' => '', 'description' => ''],
+	],
+	'hasStdin' => false,
+	'stdinRequired' => false,
+	'stdinDescription' => '',
+	'timeout' => '',
+	'allowFailure' => 'none',
+	'allowFailureCodes' => '',
+]);
+
+Assert::same(
+	[['prvni-a', 'prvni-b'], ['druhy-a', 'druhy-b']],
+	\array_map(
+		fn(array $g): array => \array_map(fn(Template $t): string => $t->getSource(), $g),
+		$prehozene->args,
+	),
+);
+Assert::same(['alfa', 'zet'], \array_keys($prehozene->inputs));
+
 // --- prázdné řádky a prázdné skupiny vypadnou ---
 
 $sPrazdnymi = $mapper->toBlock([

@@ -6,8 +6,10 @@ namespace Donut\Gui\Presentation\Block;
 
 use Donut\BlockRepository;
 use Donut\Format\Block;
+use Donut\Format\Workflow;
 use Donut\Gui\BlockMapper;
 use Donut\Gui\BlockStore;
+use Donut\Gui\BlockUsage;
 use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
 use Donut\Validator\BlockValidator;
@@ -53,6 +55,7 @@ final class BlockPresenter extends Presenter
 
 		$template->blocks = $blocks;
 		$template->error = null;
+		$template->usage = BlockUsage::of($this->loadWorkflows());
 		$template->dir = $dir;
 	}
 
@@ -79,6 +82,9 @@ final class BlockPresenter extends Presenter
 		/** @var BlockEditTemplate $template */
 		$template = $this->template;
 		$template->name = $name === '' ? null : $name;
+		$template->usedBy = $template->name === null
+			? []
+			: (BlockUsage::of($this->loadWorkflows())[$template->name] ?? []);
 	}
 
 
@@ -168,6 +174,50 @@ final class BlockPresenter extends Presenter
 
 		$this->store()->save($block);
 		$this->redirect('edit', ['name' => $block->name]);
+	}
+
+
+	protected function createComponentDeleteForm(): Form
+	{
+		$form = new Form;
+		$form->addHidden('name');
+		$form->addSubmit('delete', 'Smazat');
+		$form->onSuccess[] = $this->deleteFormSucceeded(...);
+
+		return $form;
+	}
+
+
+	public function deleteFormSucceeded(Form $form): void
+	{
+		/** @var array{name: string} $values */
+		$values = $form->getValues('array');
+		$name = $values['name'];
+
+		$usage = BlockUsage::of($this->loadWorkflows());
+
+		// Chyba blokuje, stejně jako u ukládání. Smazat kámen, na který se
+		// odkazuje workflow, není varování — je to rozbití něčeho, co běželo.
+		// Šablona tlačítko v takovém případě nevykreslí; tohle je druhá
+		// pojistka pro ručně poslaný POST.
+		if (isset($usage[$name])) {
+			$form->addError(
+				"Kámen \"{$name}\" nejde smazat — používá ho: " . \implode(', ', $usage[$name]) . '.'
+			);
+
+			return;
+		}
+
+		try {
+			$this->store()->delete($name);
+
+		} catch (ParseException $e) {
+			$form->addError($e->getMessage());
+
+			return;
+		}
+
+		$this->redirect('default');
 	}
 
 
@@ -263,5 +313,29 @@ final class BlockPresenter extends Presenter
 	private function store(): BlockStore
 	{
 		return new BlockStore(WorkflowRepository::projectDir() . '/blocks');
+	}
+
+
+	/** @return array<string, Workflow> */
+	private function loadWorkflows(): array
+	{
+		$workflows = [];
+
+		try {
+			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
+
+			foreach ($repository->loadAll() as $name => $workflow) {
+				// Vadné workflow nesmí shodit stránku — o použití kamene
+				// neřekne nic, ale zbytek má fungovat.
+				if (!\is_string($workflow)) {
+					$workflows[$name] = $workflow;
+				}
+			}
+
+		} catch (ParseException) {
+			// Bez adresáře workflows se použití prostě nezobrazí.
+		}
+
+		return $workflows;
 	}
 }

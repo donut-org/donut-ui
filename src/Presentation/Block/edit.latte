@@ -60,6 +60,25 @@
 		<p>{input save}</p>
 	{/form}
 
+	{if $name !== null}
+		{if $usedBy}
+			<p class=keys>
+				Nejde smazat — používá ho: {implode(', ', $usedBy)}.
+			</p>
+		{else}
+			<h2>Smazat</h2>
+
+			{form deleteForm}
+				<ul n:if="$form->getErrors()" class=error>
+					<li n:foreach="$form->getErrors() as $chyba">{$chyba}</li>
+				</ul>
+
+				<input type=hidden n:name=name value="{$name}">
+				<button type=submit n:name=delete onclick="return confirm('Opravdu smazat {$name}?')">Smazat</button>
+			{/form}
+		{/if}
+	{/if}
+
 	<script n:syntax="off">
 	// Řádky se nikdy nepřečíslovávají: nový dostane index o jedna vyšší, než
 	// je současné maximum, a smazání nechá v číslování díru. Server pole

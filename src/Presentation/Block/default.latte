@@ -15,6 +15,10 @@
 
 	<p><a n:href="Block:edit, name: $name">upravit</a></p>
 
+	<p n:if="isset($usage[$name])" class=keys>
+		používá: {implode(', ', $usage[$name])}
+	</p>
+
 	{if is_string($block)}
 		<p class=error>{$block}</p>
 	{else}

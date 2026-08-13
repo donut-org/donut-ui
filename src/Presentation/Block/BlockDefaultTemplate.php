@@ -19,4 +19,7 @@ final class BlockDefaultTemplate extends Template
 	public ?string $error = null;
 
 	public string $dir = '';
+
+	/** @var array<string, list<string>> */
+	public array $usage = [];
 }

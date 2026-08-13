@@ -7,6 +7,7 @@ use Donut\Format\ForeachStep;
 use Donut\Format\IfStep;
 use Donut\Format\RunStep;
 use Donut\Format\SetStep;
+use Donut\Format\Step;
 use Donut\Format\Workflow;
 use Donut\Gui\BlockUsage;
 use Donut\Template;
@@ -59,5 +60,13 @@ Assert::same([], BlockUsage::of(['x' => new Workflow(name: 'x')]));
 // Jméno kamene i workflow smí být čistě číselné (žádný formát to
 // nezakazuje) — PHP by takový klíč pole tiše převedlo na int. Hodnoty
 // uvnitř vnitřního seznamu musí zůstat stringy i pro tenhle vstup.
-$cisla = BlockUsage::of(['123' => new Workflow(name: '123', steps: [new RunStep(block: '456')])]);
-Assert::same(['123'], $cisla['456']);
+$numbers = BlockUsage::of(['123' => new Workflow(name: '123', steps: [new RunStep(block: '456')])]);
+Assert::same(['123'], $numbers['456']);
+
+// Neznámý typ kroku musí háze — tahle mapa je kontrola před mazáním kamenů
+// a tichý propad by mazání pustil kámen, který nějaké workflow pořád
+// používá (viz komentář u walk()).
+Assert::exception(
+	fn() => BlockUsage::of(['x' => new Workflow(name: 'x', steps: [new class implements Step {}])]),
+	LogicException::class,
+);

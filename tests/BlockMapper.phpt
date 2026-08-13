@@ -26,12 +26,12 @@ $blocks = \glob(__DIR__ . '/../../docs/workflows/donut/blocks/*.json');
 Assert::count(15, $blocks === false ? [] : $blocks);
 
 foreach ($blocks === false ? [] : $blocks as $path) {
-	$puvodni = $parser->parseFile($path);
-	$znovu = $mapper->toBlock($mapper->toValues($puvodni));
+	$original = $parser->parseFile($path);
+	$again = $mapper->toBlock($mapper->toValues($original));
 
 	Assert::same(
-		\serialize($puvodni),
-		\serialize($znovu),
+		\serialize($original),
+		\serialize($again),
 		'round-trip kamene ' . \basename($path),
 	);
 }
@@ -41,7 +41,7 @@ foreach ($blocks === false ? [] : $blocks as $path) {
 // JS řádky nikdy nepřečísluje: přidá index o jedna vyšší než maximum
 // a smazání nechá díru. Srovnání je úkol mapperu.
 
-$sDirou = $mapper->toBlock([
+$withGap = $mapper->toBlock([
 	'name' => 'dira',
 	'description' => '',
 	'command' => 'curl',
@@ -64,10 +64,10 @@ Assert::same(
 	[['-sS', '--fail'], ['{%url%}']],
 	\array_map(
 		fn(array $g): array => \array_map(fn(Template $t): string => $t->getSource(), $g),
-		$sDirou->args,
+		$withGap->args,
 	),
 );
-Assert::same(['url'], \array_keys($sDirou->inputs));
+Assert::same(['url'], \array_keys($withGap->inputs));
 
 // --- pořadí klíčů se srovná, i když v POSTu přijdou obráceně ---
 //
@@ -75,7 +75,7 @@ Assert::same(['url'], \array_keys($sDirou->inputs));
 // argumentů a vstupů. Test na díry výše má klíče zadané už vzestupně,
 // takže bez tohohle případu by vynechání ksort() nic neshodilo.
 
-$prehozene = $mapper->toBlock([
+$swapped = $mapper->toBlock([
 	'name' => 'prehozene',
 	'description' => '',
 	'command' => 'echo',
@@ -99,14 +99,14 @@ Assert::same(
 	[['prvni-a', 'prvni-b'], ['druhy-a', 'druhy-b']],
 	\array_map(
 		fn(array $g): array => \array_map(fn(Template $t): string => $t->getSource(), $g),
-		$prehozene->args,
+		$swapped->args,
 	),
 );
-Assert::same(['alfa', 'zet'], \array_keys($prehozene->inputs));
+Assert::same(['alfa', 'zet'], \array_keys($swapped->inputs));
 
 // --- prázdné řádky a prázdné skupiny vypadnou ---
 
-$sPrazdnymi = $mapper->toBlock([
+$withEmpties = $mapper->toBlock([
 	'name' => 'prazdne',
 	'description' => '',
 	'command' => 'echo',
@@ -128,60 +128,60 @@ $sPrazdnymi = $mapper->toBlock([
 ]);
 
 // Skupina 1 byla celá prázdná — zmizela, nezůstala po ní prázdná skupina.
-Assert::count(2, $sPrazdnymi->args);
-Assert::same('ahoj', $sPrazdnymi->args[0][0]->getSource());
-Assert::count(1, $sPrazdnymi->args[0]);
-Assert::same('svete', $sPrazdnymi->args[1][0]->getSource());
+Assert::count(2, $withEmpties->args);
+Assert::same('ahoj', $withEmpties->args[0][0]->getSource());
+Assert::count(1, $withEmpties->args[0]);
+Assert::same('svete', $withEmpties->args[1][0]->getSource());
 
 // Řádek vstupu bez jména se zahodí i s vyplněným popisem.
-Assert::same(['kdo'], \array_keys($sPrazdnymi->inputs));
+Assert::same(['kdo'], \array_keys($withEmpties->inputs));
 
 // --- '' znamená nevyplněno, ne prázdný řetězec ---
 // Sekce 6 specifikace formátu: nevyplněno a "" je totéž.
 
-Assert::null($sPrazdnymi->description);
-Assert::null($sPrazdnymi->timeout);
-Assert::null($sPrazdnymi->inputs['kdo']->default);
-Assert::null($sPrazdnymi->inputs['kdo']->description);
+Assert::null($withEmpties->description);
+Assert::null($withEmpties->timeout);
+Assert::null($withEmpties->inputs['kdo']->default);
+Assert::null($withEmpties->inputs['kdo']->description);
 
 // --- stdin se objeví a zmizí podle zaškrtávátka ---
 
-$zaklad = [
+$base = [
 	'name' => 'x', 'description' => '', 'command' => 'cat',
 	'args' => [], 'inputs' => [],
 	'hasStdin' => true, 'stdinRequired' => false, 'stdinDescription' => 'Tělo',
 	'timeout' => '', 'allowFailure' => 'none', 'allowFailureCodes' => '',
 ];
 
-$sStdin = $mapper->toBlock($zaklad);
-Assert::type(StdinSpec::class, $sStdin->stdin);
-Assert::false($sStdin->stdin->required);
-Assert::same('Tělo', $sStdin->stdin->description);
+$withStdin = $mapper->toBlock($base);
+Assert::type(StdinSpec::class, $withStdin->stdin);
+Assert::false($withStdin->stdin->required);
+Assert::same('Tělo', $withStdin->stdin->description);
 
 // Nezaškrtnuté = objekt není, i když popis zůstal vyplněný ve formuláři.
-Assert::null($mapper->toBlock(['hasStdin' => false] + $zaklad)->stdin);
+Assert::null($mapper->toBlock(['hasStdin' => false] + $base)->stdin);
 
 // --- allow_failure má tři stavy ---
 
-Assert::false($mapper->toBlock($zaklad)->allowFailure);
-Assert::true($mapper->toBlock(['allowFailure' => 'any'] + $zaklad)->allowFailure);
+Assert::false($mapper->toBlock($base)->allowFailure);
+Assert::true($mapper->toBlock(['allowFailure' => 'any'] + $base)->allowFailure);
 Assert::same(
 	[0, 1],
-	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '0, 1'] + $zaklad)->allowFailure,
+	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '0, 1'] + $base)->allowFailure,
 );
 
 // Nečíselný kód se ignoruje — formulář ho odmítne dřív, mapper nesmí spadnout.
 Assert::same(
 	[2],
-	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '2, x, '] + $zaklad)->allowFailure,
+	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '2, x, '] + $base)->allowFailure,
 );
 
 // Prázdný seznam u 'list' spadne zpátky na false — pole [] by parser odmítl.
-Assert::false($mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => ''] + $zaklad)->allowFailure);
+Assert::false($mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => ''] + $base)->allowFailure);
 
 // --- timeout se převede na int ---
 
-Assert::same(30, $mapper->toBlock(['timeout' => '30'] + $zaklad)->timeout);
+Assert::same(30, $mapper->toBlock(['timeout' => '30'] + $base)->timeout);
 
 // --- toValues() dává tvar, který formulář očekává ---
 
@@ -211,8 +211,8 @@ Assert::same('list', $values['allowFailure']);
 Assert::same('0, 1', $values['allowFailureCodes']);
 
 // Nevyplněná pole vyjdou jako '', ne jako null — formulář chce řetězce.
-$holy = $mapper->toValues(new Block(name: 'holy', command: 'echo', args: []));
-Assert::same('', $holy['description']);
-Assert::same('', $holy['timeout']);
-Assert::false($holy['hasStdin']);
-Assert::same('none', $holy['allowFailure']);
+$bare = $mapper->toValues(new Block(name: 'holy', command: 'echo', args: []));
+Assert::same('', $bare['description']);
+Assert::same('', $bare['timeout']);
+Assert::false($bare['hasStdin']);
+Assert::same('none', $bare['allowFailure']);

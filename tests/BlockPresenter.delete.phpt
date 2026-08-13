@@ -56,6 +56,12 @@ Assert::contains('w', $html);
 Assert::false($response instanceof RedirectResponse);
 Assert::true(is_file($project . '/blocks/pouzity.json'));
 
+// Stránka pořád edituje "pouzity" a jeho obsah nesmí zmizet jen proto, že
+// POST patřil deleteFormu, ne blockFormu — formShape() dřív reagoval na
+// libovolný POST a vyrobil formulář s nula skupinami argumentů.
+Assert::contains('value="pouzity"', $html);
+Assert::true(\str_contains($html, 'class=arg-group'));
+
 // --- volný kámen se smaže a přesměruje se do přehledu ---
 
 [$response] = runBlockPresenterIn(
@@ -66,5 +72,18 @@ Assert::true(is_file($project . '/blocks/pouzity.json'));
 
 Assert::type(RedirectResponse::class, $response);
 Assert::false(is_file($project . '/blocks/volny.json'));
+
+// --- kámen, který se nedá naparsovat, jde smazat ---
+// Sekce Smazat dřív seděla uvnitř {if !$error}, takže rozbitý soubor — ten,
+// co nejvíc chceš odstranit — nenabídl žádnou cestu ven.
+
+FileSystem::write($project . '/blocks/rozbity.json', 'toto neni json');
+
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'rozbity']);
+
+// $error je nastavený (soubor se nenaparsoval)...
+Assert::contains('class=error', $html);
+// ...ale tlačítko Smazat se přesto ukáže.
+Assert::contains('Smazat', $html);
 
 FileSystem::delete(TEMP_DIR);

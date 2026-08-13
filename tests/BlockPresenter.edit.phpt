@@ -104,4 +104,45 @@ Assert::false(is_file($project . '/blocks/vadny.json'));
 Assert::match('~<ul class=error>.*?chybi.*?</ul>~s', $html);
 Assert::notMatch('~<ul class=warning>.*?chybi.*?</ul>~s', $html);
 
+// --- zakládání nesmí přepsat existující kámen ---
+// writeFile() přepisuje bez ptaní; bez pojistky by tenhle POST tiše
+// zahodil obsah echo.json a vrátil přesměrování k nerozeznání od úspěchu.
+
+$echoBefore = FileSystem::read($project . '/blocks/echo.json');
+
+[$response, $html] = runBlockPresenterIn(
+	$project,
+	['action' => 'edit', 'do' => 'blockForm-submit'],
+	['name' => 'echo'] + $post,
+);
+
+// Žádné přesměrování a soubor beze změny bajt po bajtu.
+Assert::false($response instanceof RedirectResponse);
+Assert::contains('existuje', $html);
+Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
+
+// --- posted jméno se při editaci ignoruje — "přejmenování" nesmí založit vidle ---
+// Jméno je needitovatelné (setDisabled()), takže i ručně poslaný jiný název
+// skončí uložený pod původním jménem kamene, ne jako nový soubor.
+
+[$response] = runBlockPresenterIn(
+	$project,
+	['action' => 'edit', 'name' => 'echo', 'do' => 'blockForm-submit'],
+	[
+		'name' => 'prejmenovany',
+		'description' => 'Vypíše text',
+		'command' => 'echo',
+		'args' => [0 => [0 => '{%text%}']],
+		'inputs' => [0 => ['name' => 'text', 'required' => '1', 'default' => '', 'description' => '']],
+		'timeout' => '5',
+		'allowFailure' => 'none',
+		'allowFailureCodes' => '',
+		'save' => 'Uložit',
+	],
+);
+
+Assert::type(RedirectResponse::class, $response);
+Assert::true(is_file($project . '/blocks/echo.json'));
+Assert::false(is_file($project . '/blocks/prejmenovany.json'));
+
 FileSystem::delete(TEMP_DIR);

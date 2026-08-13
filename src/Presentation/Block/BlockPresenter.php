@@ -14,8 +14,10 @@ use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
 use Donut\Validator\BlockValidator;
 use Donut\Validator\Problem;
+use Donut\Writer\WriteException;
 use Nette\Application\UI\Form;
 use Nette\Application\UI\Presenter;
+use Nette\IOException;
 
 
 final class BlockPresenter extends Presenter
@@ -94,7 +96,7 @@ final class BlockPresenter extends Presenter
 		$form = new Form;
 		$shape = $this->formShape();
 
-		$form->addText('name', 'Jméno')
+		$name = $form->addText('name', 'Jméno')
 			->setRequired('Jméno je povinné.')
 			->addRule(Form::Pattern, 'Jméno smí obsahovat jen písmena, číslice, pomlčku a podtržítko.', '[A-Za-z0-9_-]+');
 
@@ -143,8 +145,22 @@ final class BlockPresenter extends Presenter
 		$form->addSubmit('save', 'Uložit');
 		$form->onSuccess[] = $this->blockFormSucceeded(...);
 
-		if ($this->edited !== null && !$this->getRequest()->isMethod('POST')) {
-			$form->setDefaults((new BlockMapper)->toValues($this->edited));
+		if ($this->edited !== null) {
+			// Přejmenování je mimo návrh — spec: „Jméno je ve formuláři jen
+			// při zakládání." Pole zůstává vidět kvůli kontextu, ale je
+			// needitovatelné a jeho hodnota jde vždy z načteného kamene, ne
+			// z POSTu — setDisabled() ochrání i ručně poslaný požadavek
+			// s jiným jménem (jinak by šlo tímhle kanálem přepsat cizí kámen).
+			// Pořadí volání je důležité: setDisabled() volá interně
+			// setValue(null), takže setDefaultValue() musí přijít až po něm.
+			// setOmitted(false) je nutné taky — needitovatelné pole je bez
+			// něj z getValues() potichu vynechané (Nette default pro disabled
+			// kontrolky) a BlockMapper by dostal jméno '' místo skutečného.
+			$name->setDisabled()->setDefaultValue($this->edited->name)->setOmitted(false);
+
+			if (!$this->getRequest()->isMethod('POST')) {
+				$form->setDefaults((new BlockMapper)->toValues($this->edited));
+			}
 		}
 
 		return $form;
@@ -157,6 +173,17 @@ final class BlockPresenter extends Presenter
 		$values = $form->getValues('array');
 
 		$block = (new BlockMapper)->toBlock($values);
+
+		// Zakládání nesmí přepsat kámen, který už existuje — writeFile()
+		// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
+		// Editace na tohle narazit nemůže — jméno je při ní needitovatelné
+		// (viz createComponentBlockForm).
+		if ($this->edited === null && $this->store()->exists($block->name)) {
+			$form->addError("Kámen \"{$block->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+
+			return;
+		}
+
 		$result = (new BlockValidator)->validate($block);
 
 		/** @var BlockEditTemplate $template */
@@ -171,7 +198,15 @@ final class BlockPresenter extends Presenter
 			return;
 		}
 
-		$this->store()->save($block);
+		try {
+			$this->store()->save($block);
+
+		} catch (WriteException $e) {
+			$form->addError($e->getMessage());
+
+			return;
+		}
+
 		$this->redirect('edit', ['name' => $block->name]);
 	}
 
@@ -220,7 +255,7 @@ final class BlockPresenter extends Presenter
 		try {
 			$this->store()->delete($name);
 
-		} catch (ParseException $e) {
+		} catch (ParseException | IOException $e) {
 			$form->addError($e->getMessage());
 
 			return;
@@ -245,7 +280,13 @@ final class BlockPresenter extends Presenter
 	 */
 	private function formShape(): array
 	{
-		$post = $this->getHttpRequest()->getPost();
+		// Jiný signál (třeba deleteForm-submit) nenese args/inputs vůbec —
+		// bez týhle podmínky by se blockForm sestavil s nula skupinami
+		// a nula řádky a stránka by při odmítnutém mazání ukázala prázdný
+		// obsah kamene, který ve skutečnosti pořád existuje.
+		$post = $this->getParameter('do') === 'blockForm-submit'
+			? $this->getHttpRequest()->getPost()
+			: [];
 
 		// getPost() bez argumentu vrací pole, ale návratový typ má mixed —
 		// is_array() tu typ zúží pro PHPStan.

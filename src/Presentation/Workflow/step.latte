@@ -1,0 +1,64 @@
+{import '../rows.latte'}
+
+{block title}Krok — {$name} — Donut{/block}
+
+{block content}
+<p><a n:href="Workflow:detail, name: $name">← {$name}</a></p>
+
+<h1>Krok {$type}</h1>
+<p class=keys>{$at}</p>
+
+<p n:if="$error" class=error>{$error}</p>
+
+{if !$error}
+	{form stepForm}
+		<ul n:if="$form->getErrors()" class=error>
+			<li n:foreach="$form->getErrors() as $err">{$err}</li>
+		</ul>
+
+		{input type}
+		<p>{label name /} {input name}</p>
+
+		{if $type === 'run'}
+			<p>{label block /} {input block}</p>
+
+			<h2>Vstupy kamene</h2>
+			<div id=in>
+				<div class=row n:foreach="$form['in']->getComponents() as $row">
+					{input $row['key']} → {input $row['value']}
+					<button type=button class=del-row>×</button>
+				</div>
+			</div>
+			<button type=button data-add="in">+ vstup</button>
+
+			<h2>Výstupy do mapy</h2>
+			<div id=out>
+				<div class=row n:foreach="$form['out']->getComponents() as $row">
+					{input $row['channel']} → {input $row['value']}
+					<button type=button class=del-row>×</button>
+				</div>
+			</div>
+			<button type=button data-add="out">+ výstup</button>
+
+			<h2>Ostatní</h2>
+			<p>{label timeout /} {input timeout}</p>
+			<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
+
+		{elseif $type === 'set'}
+			<p>{label key /} {input key}</p>
+			<p>{label value /} {input value}</p>
+
+		{elseif $type === 'if'}
+			<p>{label left /} {input left} {input op} {input right}</p>
+			<p class=keys>Operátory <code>empty</code> a <code>not_empty</code> pravou stranu ignorují.</p>
+
+		{elseif $type === 'foreach'}
+			<p>{label over /} {input over}</p>
+			<p>{label as /} {input as}</p>
+		{/if}
+
+		<p>{input save}</p>
+	{/form}
+
+	{include rows}
+{/if}

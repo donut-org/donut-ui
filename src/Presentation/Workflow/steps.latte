@@ -91,5 +91,12 @@
 			{/if}
 		</li>
 	{/foreach}
+
+	<li class=add>
+		+ krok:
+		{foreach ['run', 'set', 'if', 'foreach'] as $type}
+			<a n:href="Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $type">{$type}</a>{sep} {/sep}
+		{/foreach}
+	</li>
 </ol>
 {/define}

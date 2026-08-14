@@ -1,3 +1,5 @@
+{import '../rows.latte'}
+
 {block title}{$name ?? 'Nový kámen'} — Donut{/block}
 
 {block content}
@@ -41,16 +43,16 @@
 		<h2>Vstupy</h2>
 
 		<div id=inputs>
-			<div class=input-row n:foreach="$form['inputs']->getComponents() as $row">
+			<div class=row n:foreach="$form['inputs']->getComponents() as $row">
 				{input $row['name']}
 				{input $row['required']} povinný
 				{input $row['default']}
 				{input $row['description']}
-				<button type=button class=del-input>×</button>
+				<button type=button class=del-row>×</button>
 			</div>
 		</div>
 
-		<button type=button id=add-input>+ vstup</button>
+		<button type=button data-add=inputs>+ vstup</button>
 
 		<h2>Stdin</h2>
 		<p>{input hasStdin} {label hasStdin /}</p>
@@ -64,32 +66,12 @@
 		<p>{input save}</p>
 	{/form}
 
+	{include rows}
+
+	{* Skupiny argumentů jsou dvouúrovňové (args[g][a]) — sdílený mechanismus
+	   z rows.latte zvládá jen jednu úroveň, takže args zůstává na vlastním
+	   kódu. Používá ale jeho maxIndex a cloneRow. *}
 	<script n:syntax="off">
-	// Řádky se nikdy nepřečíslovávají: nový dostane index o jedna vyšší, než
-	// je současné maximum, a smazání nechá v číslování díru. Server pole
-	// srovná přes array_values() v BlockMapperu. Přečíslovávání by mohlo
-	// tiše prohodit dva argumenty; takhle ta chyba nemá kde vzniknout.
-	const maxIndex = (nodes, re) => {
-		let max = -1;
-		nodes.forEach(n => {
-			const m = re.exec(n.getAttribute('name') || '');
-			if (m) max = Math.max(max, parseInt(m[1], 10));
-		});
-		return max;
-	};
-
-	const cloneRow = (row, rename) => {
-		const copy = row.cloneNode(true);
-		copy.querySelectorAll('input').forEach(i => {
-			i.setAttribute('name', rename(i.getAttribute('name')));
-			// cloneNode kopíruje i id — bez odebrání by měly dvě různé
-			// pole stejné id (Nette ho odvozuje z původního jména).
-			i.removeAttribute('id');
-			if (i.type === 'checkbox') i.checked = false; else i.value = '';
-		});
-		return copy;
-	};
-
 	document.getElementById('add-group').addEventListener('click', () => {
 		const box = document.getElementById('args');
 		const rows = box.querySelectorAll('.arg-group');
@@ -97,16 +79,6 @@
 		box.appendChild(cloneRow(
 			rows[rows.length - 1],
 			n => n.replace(/^args\[\d+]/, 'args[' + next + ']')
-		));
-	});
-
-	document.getElementById('add-input').addEventListener('click', () => {
-		const box = document.getElementById('inputs');
-		const rows = box.querySelectorAll('.input-row');
-		const next = maxIndex(box.querySelectorAll('input'), /^inputs\[(\d+)]/) + 1;
-		box.appendChild(cloneRow(
-			rows[rows.length - 1],
-			n => n.replace(/^inputs\[\d+]/, 'inputs[' + next + ']')
 		));
 	});
 
@@ -125,11 +97,6 @@
 		if (e.target.classList.contains('del-group')) {
 			const box = document.getElementById('args');
 			if (box.querySelectorAll('.arg-group').length > 1) e.target.closest('.arg-group').remove();
-		}
-
-		if (e.target.classList.contains('del-input')) {
-			const box = document.getElementById('inputs');
-			if (box.querySelectorAll('.input-row').length > 1) e.target.closest('.input-row').remove();
 		}
 	});
 	</script>

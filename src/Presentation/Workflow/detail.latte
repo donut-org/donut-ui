@@ -9,6 +9,7 @@
 	<p class=error>{$error}</p>
 {else}
 	<h1>{$workflow->name}</h1>
+	<p n:if="$stepError" class=error>{$stepError}</p>
 	<p n:if="$workflow->description">{$workflow->description}</p>
 
 	{foreach $workflowProblems as $problem}
@@ -32,5 +33,5 @@
 	</p>
 
 	<h2>Kroky</h2>
-	{include steps, steps: $workflow->steps, path: $rootPath, problems: $problems, keys: $keys, selected: $selectedKey}
+	{include steps, steps: $workflow->steps, path: $rootPath, problems: $problems, keys: $keys, selected: $selectedKey, name: $workflow->name}
 {/if}

@@ -38,4 +38,7 @@ final class WorkflowDetailTemplate extends Template
 
 	/** @var list<Problem> */
 	public array $workflowProblems = [];
+
+	/** Chyba z posledního přesunu nebo mazání kroku; null = žádná. */
+	public ?string $stepError = null;
 }

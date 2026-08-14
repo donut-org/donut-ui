@@ -6,15 +6,41 @@
 {/define}
 
 
-{define steps, array $steps, Donut\Gui\StepPath $path, Donut\Gui\ProblemMap $problems, Donut\Gui\KeyMap $keys, ?string $selected}
+{define steps, array $steps, Donut\Gui\StepPath $path, Donut\Gui\ProblemMap $problems, Donut\Gui\KeyMap $keys, ?string $selected, string $name}
 <ol>
 	{foreach $steps as $i => $step}
 		{var $at = $path->index($i)}
+		{* Kolik kroků zmizí spolu s tímhle — jen přímí potomci, orientační
+		   potvrzení mazání nepotřebuje rekurzi. *}
+		{var $subtree = $step instanceof Donut\Format\IfStep
+			? count($step->then) + count($step->else)
+			: ($step instanceof Donut\Format\ForeachStep ? count($step->steps) : 0)}
 		<li>
 			{* Třída patří jen řádku kroku, ne <li> — to obaluje i vnořené
 			   <ol> s tělem then/else/foreach a background by se přenesl
 			   na celý podstrom. *}
 			<div n:class="$keys->classAt($at, $selected)">
+				<span class=controls>
+					<a n:href="Workflow:step, name: $name, at: (string) $at">upravit</a>
+
+					<form n:if="$i > 0" method=post action="{link moveUp!}" style="display:inline">
+						<input type=hidden name=at value="{$at}">
+						<button type=submit>↑</button>
+					</form>
+
+					<form n:if="$i < count($steps) - 1" method=post action="{link moveDown!}" style="display:inline">
+						<input type=hidden name=at value="{$at}">
+						<button type=submit>↓</button>
+					</form>
+
+					<form method=post action="{link deleteStep!}" style="display:inline">
+						<input type=hidden name=at value="{$at}">
+						<button type=submit n:attr="onclick => $subtree
+							? 'return confirm(\'Smazat i ' . $subtree . ' vnořených kroků?\')'
+							: null">×</button>
+					</form>
+				</span>
+
 				{if $step instanceof Donut\Format\RunStep}
 					<strong>run</strong> {$step->block}
 					{if $step->name} — {$step->name}{/if}
@@ -56,16 +82,12 @@
 			</div>
 
 			{if $step instanceof Donut\Format\IfStep}
-				{if $step->then}
-					then:
-					{include steps, steps: $step->then, path: $at->child('then'), problems: $problems, keys: $keys, selected: $selected}
-				{/if}
-				{if $step->else}
-					else:
-					{include steps, steps: $step->else, path: $at->child('else'), problems: $problems, keys: $keys, selected: $selected}
-				{/if}
+				then:
+				{include steps, steps: $step->then, path: $at->child('then'), problems: $problems, keys: $keys, selected: $selected, name: $name}
+				else:
+				{include steps, steps: $step->else, path: $at->child('else'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 			{elseif $step instanceof Donut\Format\ForeachStep}
-				{include steps, steps: $step->steps, path: $at->child('steps'), problems: $problems, keys: $keys, selected: $selected}
+				{include steps, steps: $step->steps, path: $at->child('steps'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 			{/if}
 		</li>
 	{/foreach}

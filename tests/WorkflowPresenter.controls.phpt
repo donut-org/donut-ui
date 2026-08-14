@@ -1,0 +1,128 @@
+<?php
+
+declare(strict_types=1);
+
+use Donut\Parser\WorkflowParser;
+use Nette\Application\Responses\RedirectResponse;
+use Nette\Utils\FileSystem;
+use Tester\Assert;
+
+require __DIR__ . '/bootstrap.php';
+require __DIR__ . '/inc/workflowPresenter.php';
+
+$project = TEMP_DIR . '/controls';
+FileSystem::createDir($project . '/blocks');
+FileSystem::createDir($project . '/workflows');
+
+FileSystem::write($project . '/blocks/echo.json', json_encode([
+	'name' => 'echo', 'command' => 'echo', 'args' => [],
+]));
+
+$write = fn(array $steps) => FileSystem::write(
+	$project . '/workflows/w.json',
+	json_encode(['name' => 'w', 'steps' => $steps]),
+);
+
+$steps = fn(): array => (new WorkflowParser)->parseFile($project . '/workflows/w.json')->steps;
+
+// prázdný if — do jeho větví se dnes nedá nic přidat, protože se
+// nevykreslují vůbec
+$write([
+	['type' => 'set', 'key' => 'a', 'value' => '1'],
+	['type' => 'if', 'condition' => ['left' => '{%x%}', 'op' => 'not_empty'], 'then' => []],
+	['type' => 'set', 'key' => 'b', 'value' => '2'],
+]);
+
+// --- přehled nabízí ovládání ---
+
+[, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
+
+Assert::contains('w.json:steps[0]', $html);
+
+// Mazání jde přes POST, ne přes odkaz — GET, který mění soubor, si najde
+// přednačítač v prohlížeči. Tvrdíme to na tvaru značkování, ne na tom, že
+// v HTML nějaký řetězec chybí: prázdná stránka by takovou aserci splnila taky.
+Assert::match('~<form[^>]+method=post[^>]*>\s*<input[^>]+name=at[^>]+value="w\.json:steps\[0]"~', $html);
+Assert::notContains('<a href="?do=deleteStep', $html);
+
+// U prvního kroku není šipka nahoru, u posledního dolů. Tři kroky → dvakrát
+// každá.
+Assert::same(2, substr_count($html, 'do=moveUp'));
+Assert::same(2, substr_count($html, 'do=moveDown'));
+
+// Prázdná větev then se vykreslí i tak — jinak by do ní v Tasku 6 nešlo
+// přidat „+ krok". Cesta k ní se v HTML nikde neobjeví (prázdný seznam nemá
+// žádné ovládání), takže se tvrdí na popisku větve.
+Assert::contains('then:', $html);
+Assert::contains('else:', $html);
+
+// --- přesun dolů ---
+
+[$response] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'moveDown'],
+	['at' => 'w.json:steps[0]'],
+);
+
+Assert::type(RedirectResponse::class, $response);
+Assert::same('if', $steps()[0] instanceof Donut\Format\IfStep ? 'if' : 'jiný');
+Assert::same('a', $steps()[1]->key);
+
+// --- přesun nahoru zpátky ---
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'moveUp'],
+	['at' => 'w.json:steps[1]'],
+);
+
+Assert::same('a', $steps()[0]->key);
+
+// --- mazání ---
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['at' => 'w.json:steps[0]'],
+);
+
+Assert::count(2, $steps());
+Assert::type(Donut\Format\IfStep::class, $steps()[0]);
+
+// --- neplatná cesta nespadne na HTTP 500 ---
+
+[, $html] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['at' => 'w.json:steps[99]'],
+);
+
+Assert::count(2, $steps());
+
+[, $html] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['at' => 'nesmysl'],
+);
+
+Assert::count(2, $steps());
+
+// --- neplatné workflow se uloží i tak: validace neblokuje ---
+//
+// Krok run odkazuje na kámen, který neexistuje. Přesun ho nesmí odmítnout.
+
+$write([
+	['type' => 'run', 'block' => 'neni'],
+	['type' => 'set', 'key' => 'a', 'value' => '1'],
+]);
+
+[$response] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'moveDown'],
+	['at' => 'w.json:steps[0]'],
+);
+
+Assert::type(RedirectResponse::class, $response);
+Assert::same('a', $steps()[0]->key);
+
+FileSystem::delete(TEMP_DIR);

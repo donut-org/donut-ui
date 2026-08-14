@@ -115,6 +115,26 @@ $sPrazdnymi = StepMapper::toStep([
 Assert::same(['a'], \array_keys($sPrazdnymi->in));
 Assert::same([], $sPrazdnymi->out);
 
+// --- pořadí klíčů z POSTu není zaručené, na pořadí in i out záleží ---
+//
+// Bez ksort() v rows() by se sestupné pořadí klíčů projevilo obráceným
+// pořadím řádků — testovaná díra v indexech jinde v souboru je vzestupná,
+// takže by mutaci neodhalila.
+
+$reversed = StepMapper::toStep([
+	'in' => [
+		1 => ['key' => 'druhy', 'value' => 'b'],
+		0 => ['key' => 'prvni', 'value' => 'a'],
+	],
+	'out' => [
+		1 => ['channel' => 'stderr', 'value' => 'err'],
+		0 => ['channel' => 'result', 'value' => 'res'],
+	],
+] + $base);
+
+Assert::same(['prvni', 'druhy'], \array_keys($reversed->in));
+Assert::same(['result' => 'res', 'stderr' => 'err'], $reversed->out);
+
 // --- '' znamená nevyplněno ---
 
 Assert::null(StepMapper::toStep($base)->name);

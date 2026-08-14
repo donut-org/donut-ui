@@ -112,6 +112,50 @@ Assert::same('přejmenovaná', $if->name);
 Assert::same('empty', $if->condition->op);
 Assert::count(1, $if->then, 'větev then se úpravou podmínky nesmí ztratit');
 
+// --- dej foreach vlastní podstrom, aby bylo co chránit ---
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0].steps[0]', 'type' => 'set', 'do' => 'stepForm-submit'],
+	['type' => 'set', 'name' => '', 'key' => 'inner', 'value' => 'x', 'save' => 'Uložit'],
+);
+
+$foreach = $steps()[2]->then[0];
+Assert::type(ForeachStep::class, $foreach);
+Assert::count(1, $foreach->steps);
+
+// --- úprava foreach nesmí zahodit jeho podstrom ---
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0]', 'do' => 'stepForm-submit'],
+	['type' => 'foreach', 'name' => 'přejmenovaný', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Uložit'],
+);
+
+$foreach = $steps()[2]->then[0];
+Assert::same('přejmenovaný', $foreach->name);
+Assert::same('item', $foreach->as);
+Assert::count(1, $foreach->steps, 'podstrom foreach se úpravou over/as nesmí ztratit');
+
+// --- server rozhoduje o typu kroku, ne skrytý input z POSTu ---
+//
+// Skrytý <input name=type> je obyčejné pole formuláře — POST ho může
+// poslat jinak, než jak byl formulář sestavený. Kdyby se mu věřilo,
+// StepMapper::toStep() by z hodnot foreach formuláře (bez pole "key")
+// postavil SetStep s prázdným klíčem a celý podstrom foreach by zmizel.
+// Server proto typ z POSTu ignoruje a použije ten, podle kterého formulář
+// sestavil ($this->stepType, odvozený z editovaného kroku).
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0]', 'do' => 'stepForm-submit'],
+	['type' => 'set', 'name' => '', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Uložit'],
+);
+
+$foreach = $steps()[2]->then[0];
+Assert::type(ForeachStep::class, $foreach, 'zfalšovaný type v POSTu nesmí změnit typ kroku');
+Assert::count(1, $foreach->steps, 'zfalšovaný type nesmí smazat podstrom');
+
 // --- neplatná cesta se ohlásí, nespadne ---
 
 [, $html] = runWorkflowPresenterIn($project, [

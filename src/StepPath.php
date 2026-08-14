@@ -50,7 +50,10 @@ final class StepPath implements \Stringable
 		// Obklopující bílé znaky by se dostaly do jména workflow a cesta by
 		// pak ukazovala na soubor, který nikdo nezaložil. Mezera uvnitř jména
 		// je legitimní — jméno se musí rovnat názvu souboru a ten ji mít smí.
-		if (\trim($path) !== $path || !\preg_match('~^[^:]+\.json:steps\[\d+](\.(then|else|steps)\[\d+])*\z~', $path)) {
+		// [^:\r\n], ne jen [^:] — znaková třída sama o sobě \n nevylučuje,
+		// takže by prošel newline uprostřed jména (trim() chytí jen ten na
+		// kraji). Mezera uvnitř jména zůstává legitimní.
+		if (\trim($path) !== $path || !\preg_match('~^[^:\r\n]+\.json:steps\[\d+](\.(then|else|steps)\[\d+])*\z~', $path)) {
 			throw new \InvalidArgumentException("\"{$path}\" není cesta ke kroku.");
 		}
 

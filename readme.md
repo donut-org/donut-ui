@@ -1,8 +1,8 @@
 # Donut GUI
 
-Autorské prostředí pro workflow a kameny donutu. **Jen pro čtení** — nic
-nezapisuje. Ukazuje, co by řekl validátor, ještě než workflow doběhne na
-skutečnou kartu.
+Autorské prostředí pro workflow a kameny donutu. Ukazuje, co by řekl
+validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny
+i kroky workflow založit, upravit a smazat.
 
 Návrhový dokument: „2026-08-05-gui-design.md" ve specifikacích repozitáře
 `donut-org/donut` (`docs/superpowers/specs/`).
@@ -46,7 +46,12 @@ projektu — a tam žádný z těch adresářů není, takže obě stránky ohl�
 - **seznam workflow** — název a popis každého workflow z `workflows/`
 - **detail workflow** — kroky ve stromu (`if`/`foreach` vnořené) a problémy
   z validátoru u kroku, kterého se týkají
-- **přehled kamenů** — kameny z `blocks/` s jejich deklarovanými vstupy
+- **editace kroku** — u každého kroku odkaz „upravit" na formulář podle jeho
+  typu (`run`, `set`, `if`, `foreach`); pod stromem i v každé vnořené větvi
+  jde krok daného typu přidat, přesunout nahoru/dolů nebo smazat (mazání
+  krokem s podstromem se ptá na potvrzení)
+- **přehled kamenů** — kameny z `blocks/` s jejich deklarovanými vstupy,
+  založení, editace a mazání kamene formulářem
 - **tok klíčů** — u každého kroku je vidět, které klíče čte a které zapisuje;
   klíč je klikatelný odkaz, který zvýrazní všechny kroky, kde figuruje (zápis
   jinou barvou než čtení); výběr drží adresa (`&key=repo`), takže se dá poslat
@@ -79,10 +84,9 @@ a chystá se do vlastního repozitáře.
 
 ## Co zatím není
 
-Tohle je vrstva 1 a 2 ze tří (viz `docs/zadani.md`, bod 5). Zatím chybí:
+Poslední zbytek vrstvy 3 (viz `docs/zadani.md`, bod 5) — obálka workflow:
 
-- zápis (uložení workflow/kamene zpátky do JSONu)
-- builder — formulářové skládání kroků
+- založení a smazání workflow
+- editace hlavičky workflow — jméno, popis, vstupy
 
-Podrobnosti a proč jsou tyhle vrstvy odložené: viz „2026-08-05-gui-design.md"
-výše.
+Podrobnosti: viz „2026-08-05-gui-design.md" výše.

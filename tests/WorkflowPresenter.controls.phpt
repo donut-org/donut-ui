@@ -105,6 +105,16 @@ Assert::count(2, $steps());
 	['at' => 'nesmysl'],
 );
 
+// --- cesta z jiného workflow se odmítne, ne aplikuje jako pozice v tomhle ---
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['at' => 'jine.json:steps[0]'],
+);
+
+Assert::count(2, $steps());
+
 Assert::count(2, $steps());
 
 // --- neplatné workflow se uloží i tak: validace neblokuje ---

@@ -29,7 +29,11 @@ final class StepTree
 	public static function get(Workflow $workflow, StepPath $at): Step
 	{
 		$segments = $at->segments();
-		$steps = $workflow->steps;
+		// apply() (replace/insert/remove/…) vždycky srovnává přes
+		// array_values() — Workflow::$steps je array<int, Step>, ne
+		// list<Step>, takže bez tohohle by get() na díře v klíčích ukazovalo
+		// na jiný krok, než na jaký sahá zbytek třídy.
+		$steps = \array_values($workflow->steps);
 		$last = \count($segments) - 1;
 
 		foreach ($segments as $k => [, $index]) {

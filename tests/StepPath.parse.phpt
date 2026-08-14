@@ -50,6 +50,7 @@ foreach ([
 	'card-dev.json:steps[0];rm -rf /',
 	"card-dev.json:steps[0]\n", // $ v PCRE povolí koncový \n, chceme \z
 	' card-dev.json:steps[0]',  // obklopující mezera by se dostala do jména
+	"card\ndev.json:steps[0]",  // [^:] samo o sobě povolí i \n uprostřed jména
 ] as $bad) {
 	Assert::exception(
 		fn() => StepPath::parse($bad),

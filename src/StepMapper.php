@@ -205,7 +205,7 @@ final class StepMapper
 	 * a u in i out na pořadí záleží.
 	 *
 	 * @param  mixed $raw
-	 * @return list<array<mixed, mixed>>
+	 * @return list<array<array-key, mixed>>
 	 */
 	private static function rows(mixed $raw): array
 	{

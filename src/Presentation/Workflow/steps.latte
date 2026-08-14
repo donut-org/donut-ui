@@ -10,11 +10,9 @@
 <ol>
 	{foreach $steps as $i => $step}
 		{var $at = $path->index($i)}
-		{* Kolik kroků zmizí spolu s tímhle — jen přímí potomci, orientační
-		   potvrzení mazání nepotřebuje rekurzi. *}
-		{var $subtree = $step instanceof Donut\Format\IfStep
-			? count($step->then) + count($step->else)
-			: ($step instanceof Donut\Format\ForeachStep ? count($step->steps) : 0)}
+		{* Kolik kroků zmizí spolu s tímhle — rekurzivně, i s vnořenými
+		   then/else/steps, jinak by potvrzení mazání číslo podhodnotilo. *}
+		{var $subtree = Donut\Gui\StepCount::subtree($step)}
 		<li>
 			{* Třída patří jen řádku kroku, ne <li> — to obaluje i vnořené
 			   <ol> s tělem then/else/foreach a background by se přenesl
@@ -36,7 +34,7 @@
 					<form method=post action="{link deleteStep!}" style="display:inline">
 						<input type=hidden name=at value="{$at}">
 						<button type=submit n:attr="onclick => $subtree
-							? 'return confirm(\'Smazat i ' . $subtree . ' vnořených kroků?\')'
+							? 'return confirm(\'Smazat i ' . Donut\Gui\StepCount::label($subtree) . '?\')'
 							: null">×</button>
 					</form>
 				</span>

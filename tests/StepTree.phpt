@@ -170,6 +170,19 @@ Assert::exception(
 	OutOfRangeException::class,
 );
 
+// --- get() a apply() (replace/insert/remove/…) musí souhlasit i na díře v klíčích ---
+//
+// Workflow::$steps je typované jako array<int, Step>, ne list<Step> — díra
+// v klíčích je typově v pořádku. apply() si pole vždycky srovná přes
+// array_values(), get() to dřív nedělalo a indexoval by přímo do děravého
+// pole — stejný index by tak mířil na jiný krok podle toho, kterou operací
+// se na něj sáhlo.
+
+$sDirou = new Workflow(name: 'w', steps: [1 => $set('a'), 3 => $set('b')]);
+
+Assert::same('a', StepTree::get($sDirou, StepPath::parse('w.json:steps[0]'))->key);
+Assert::same('b', StepTree::get($sDirou, StepPath::parse('w.json:steps[1]'))->key);
+
 // --- hlavička workflow zůstane netknutá ---
 
 $sHlavickou = new Workflow(

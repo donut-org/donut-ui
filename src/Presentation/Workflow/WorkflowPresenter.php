@@ -21,6 +21,7 @@ use Donut\Gui\WorkflowStore;
 use Donut\Parser\ParseException;
 use Donut\Validator\Validator;
 use Donut\Writer\WriteException;
+use Nette\Application\Attributes\Requires;
 use Nette\Application\UI\Form;
 use Nette\Application\UI\Presenter;
 use Nette\IOException;
@@ -113,18 +114,25 @@ final class WorkflowPresenter extends Presenter
 	}
 
 
+	// Bez GET: mění soubor, a GET, který mění soubor, si najde přednačítač
+	// v prohlížeči nebo prefetch odkazů. Dnes to platí i implicitně —
+	// formuláře v steps.latte posílají jen POST — ale ať je to vynucené
+	// a čitelné, ne jen náhoda toho, jak je vyplněný markup.
+	#[Requires(methods: 'POST')]
 	public function handleMoveUp(): void
 	{
 		$this->applyToStep(fn($workflow, $at) => StepTree::moveUp($workflow, $at));
 	}
 
 
+	#[Requires(methods: 'POST')]
 	public function handleMoveDown(): void
 	{
 		$this->applyToStep(fn($workflow, $at) => StepTree::moveDown($workflow, $at));
 	}
 
 
+	#[Requires(methods: 'POST')]
 	public function handleDeleteStep(): void
 	{
 		$this->applyToStep(fn($workflow, $at) => StepTree::remove($workflow, $at));
@@ -148,7 +156,10 @@ final class WorkflowPresenter extends Presenter
 	private function applyToStep(callable $operation): void
 	{
 		$rawName = $this->getParameter('name');
-		$name = \is_string($rawName) ? $rawName : '';
+		// basename() stejně jako renderDetail() — jméno je z query stringu
+		// a WorkflowRepository ho hledá jako klíč, takže lomítka samy o sobě
+		// nikam neukradou, ale ať se s ním obě metody zachází stejně.
+		$name = \basename(\is_string($rawName) ? $rawName : '');
 		$raw = $this->getHttpRequest()->getPost('at');
 		$dir = WorkflowRepository::projectDir() . '/workflows';
 
@@ -383,7 +394,11 @@ final class WorkflowPresenter extends Presenter
 		$name = \is_string($rawName) ? $rawName : '';
 
 		try {
-			$step = StepMapper::toStep($values);
+			// Typ rozhoduje server, ne skrytý input z POSTu — formulář byl
+			// sestavený podle $this->stepType a POST se stejným typem musí
+			// souhlasit; jinak (foreach → set apod.) by keepChildren() níž
+			// neměl na čem rozhodnout a podstrom by tiše zmizel.
+			$step = StepMapper::toStep(['type' => $this->stepType] + $values);
 			$at = $this->stepAt;
 
 			if ($at === null) {

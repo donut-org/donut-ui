@@ -108,11 +108,15 @@ Assert::null(StepMapper::toStep(['allowFailure' => 'list'] + $base)->allowFailur
 // --- prázdné řádky vypadnou ---
 
 $sPrazdnymi = StepMapper::toStep([
-	'in' => [0 => ['key' => '', 'value' => 'nikam'], 1 => ['key' => 'a', 'value' => 'x']],
+	// Řádek 2: klíč vyplněný, hodnota ne — na rozdíl od out (viz níž) se
+	// nezahazuje, jen dostane prázdnou šablonu. Klíč bez hodnoty je platný
+	// vstup, sekce 6 specifikace: prázdný řetězec a nevyplněno je totéž.
+	'in' => [0 => ['key' => '', 'value' => 'nikam'], 1 => ['key' => 'a', 'value' => 'x'], 2 => ['key' => 'b', 'value' => '']],
 	'out' => [0 => ['channel' => 'result', 'value' => '']],
 ] + $base);
 
-Assert::same(['a'], \array_keys($sPrazdnymi->in));
+Assert::same(['a', 'b'], \array_keys($sPrazdnymi->in));
+Assert::same('', $sPrazdnymi->in['b']->getSource(), 'vyplněný klíč s prázdnou hodnotou se nezahazuje');
 Assert::same([], $sPrazdnymi->out);
 
 // --- pořadí klíčů z POSTu není zaručené, na pořadí in i out záleží ---

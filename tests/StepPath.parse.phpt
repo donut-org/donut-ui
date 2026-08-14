@@ -48,10 +48,13 @@ foreach ([
 	'steps[0]',
 	'',
 	'card-dev.json:steps[0];rm -rf /',
+	"card-dev.json:steps[0]\n", // $ v PCRE povolí koncový \n, chceme \z
+	' card-dev.json:steps[0]',  // obklopující mezera by se dostala do jména
 ] as $bad) {
 	Assert::exception(
 		fn() => StepPath::parse($bad),
 		InvalidArgumentException::class,
+		"\"{$bad}\" není cesta ke kroku.",
 	);
 }
 

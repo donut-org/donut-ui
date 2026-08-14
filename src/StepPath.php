@@ -47,7 +47,10 @@ final class StepPath implements \Stringable
 	 */
 	public static function parse(string $path): self
 	{
-		if (!\preg_match('~^[^:]+\.json:steps\[\d+](\.(then|else|steps)\[\d+])*$~', $path)) {
+		// Obklopující bílé znaky by se dostaly do jména workflow a cesta by
+		// pak ukazovala na soubor, který nikdo nezaložil. Mezera uvnitř jména
+		// je legitimní — jméno se musí rovnat názvu souboru a ten ji mít smí.
+		if (\trim($path) !== $path || !\preg_match('~^[^:]+\.json:steps\[\d+](\.(then|else|steps)\[\d+])*\z~', $path)) {
 			throw new \InvalidArgumentException("\"{$path}\" není cesta ke kroku.");
 		}
 

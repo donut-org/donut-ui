@@ -10,6 +10,7 @@ use Donut\Format\Workflow;
 use Donut\Gui\BlockMapper;
 use Donut\Gui\BlockStore;
 use Donut\Gui\BlockUsage;
+use Donut\Gui\MissingDir;
 use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
 use Donut\Validator\BlockValidator;
@@ -36,8 +37,13 @@ final class BlockPresenter extends Presenter
 			$repository = new BlockRepository($dir);
 
 		} catch (ParseException $e) {
+			// Jediná chyba, kterou sem BlockRepository pustí, je chybějící
+			// adresář — jinde v konstruktoru neselže, takže návod platí vždycky
+			// a na is_dir() se tu (na rozdíl od Workflow:detail) ptát nemusíme.
+			// Hláška je z donutu (sdílí ji s CLI), návod k ní patří sem — do
+			// prezenteru, stejně jako u Workflow:detail.
 			$template->blocks = [];
-			$template->error = $e->getMessage();
+			$template->error = $e->getMessage() . ' ' . MissingDir::hint($dir);
 			$template->dir = $dir;
 
 			return;
@@ -162,7 +168,7 @@ final class BlockPresenter extends Presenter
 			// „je to POST?", ale „patří ten POST tomuhle formuláři?". Po cizím
 			// signálu (třeba neúspěšném mazání) se hodnoty musí vzít z disku —
 			// jinak se formulář překreslí prázdný a „Uložit" ho tak zapíše.
-			if (!$this->isBlockFormPost()) {
+			if (!$this->isFormPost('blockForm-submit')) {
 				$form->setDefaults((new BlockMapper)->toValues($this->edited));
 			}
 		}
@@ -259,6 +265,14 @@ final class BlockPresenter extends Presenter
 		// polovinách GUI a nemá viset na vzdálené implementaci.
 		$name = \basename($values['name']);
 
+		// Stejný guard jako v deleteWorkflowFormSucceeded(): bez něj se prázdné
+		// jméno ohlásí jako „Kámen "" neexistuje", což o ničem nevypovídá.
+		if ($name === '') {
+			$form->addError('Není co mazat.');
+
+			return;
+		}
+
 		$usage = BlockUsage::of($this->loadWorkflows());
 
 		// Chyba blokuje, stejně jako u ukládání. Smazat kámen, na který se
@@ -305,7 +319,7 @@ final class BlockPresenter extends Presenter
 		// bez týhle podmínky by se blockForm sestavil s nula skupinami
 		// a nula řádky a stránka by při odmítnutém mazání ukázala prázdný
 		// obsah kamene, který ve skutečnosti pořád existuje.
-		$post = $this->isBlockFormPost()
+		$post = $this->isFormPost('blockForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: [];
 
@@ -338,19 +352,22 @@ final class BlockPresenter extends Presenter
 
 
 	/**
-	 * Patří došlý POST formuláři kamene? Na stránce editace jsou formuláře
-	 * dva a data toho druhého (deleteForm) o obsahu kamene neříkají nic —
-	 * jedna odpověď pro tvar formuláře i pro jeho výchozí hodnoty.
+	 * Patří došlý POST formuláři daného signálu? Na stránce editace jsou
+	 * formuláře dva a data toho druhého (deleteForm) o obsahu kamene neříkají
+	 * nic — jedna odpověď pro tvar formuláře i pro jeho výchozí hodnoty.
 	 *
 	 * Na HTTP metodu se ptát musíme: signál `do=blockForm-submit` se dá mít
 	 * v adrese i na GETu (ručně složená adresa, záložka, historie), a tam
 	 * getPost() vrátí prázdné pole. Bez téhle podmínky by se formulář
 	 * vykreslil prázdný a „Uložit" by tak kámen zapsalo.
+	 *
+	 * Tvar je schválně stejný jako u WorkflowPresenter::isFormPost() — jeden
+	 * idiom na jednu otázku v obou polovinách GUI.
 	 */
-	private function isBlockFormPost(): bool
+	private function isFormPost(string $signal): bool
 	{
 		return $this->getRequest()->isMethod('POST')
-			&& $this->getParameter('do') === 'blockForm-submit';
+			&& $this->getParameter('do') === $signal;
 	}
 
 

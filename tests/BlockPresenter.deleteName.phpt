@@ -60,4 +60,20 @@ FileSystem::write($project . '/tajne.json', '{}');
 Assert::false($response instanceof RedirectResponse);
 Assert::true(is_file($project . '/tajne.json'), 'mimo blocks/ se mazat nesmí');
 
+// --- prázdné jméno se ohlásí stejně jako u workflow ---
+// Bez guardu se prázdný řetězec propadne až k úložišti a stránka odpoví
+// „Kámen "" neexistuje. Hledal jsem v: …/blocks", což uživateli nic neřekne.
+// deleteWorkflowFormSucceeded() na to guard má; obě poloviny GUI mají
+// odpovídat stejně.
+
+[$response, $html] = runBlockPresenterIn(
+	$project,
+	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
+	['name' => '', 'delete' => 'Smazat'],
+);
+
+Assert::false($response instanceof RedirectResponse);
+Assert::contains('Není co mazat.', $html);
+Assert::true(is_file($project . '/blocks/volny.json'), 'nic se smazat nesmělo');
+
 FileSystem::delete(TEMP_DIR);

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Donut\Gui;
 
 use Donut\Format\Block;
-use Donut\Format\Input;
 use Donut\Format\StdinSpec;
 use Donut\Template;
 
@@ -30,7 +29,7 @@ final class BlockMapper
 			name: \trim(self::toStr($values['name'] ?? '')),
 			command: \trim(self::toStr($values['command'] ?? '')),
 			args: $this->toArgs($values['args'] ?? []),
-			inputs: $this->toInputs($values['inputs'] ?? []),
+			inputs: InputMapper::toInputs($values['inputs'] ?? []),
 			stdin: ($values['hasStdin'] ?? false)
 				? new StdinSpec(
 					required: (bool) ($values['stdinRequired'] ?? false),
@@ -58,16 +57,7 @@ final class BlockMapper
 			));
 		}
 
-		$inputs = [];
-
-		foreach ($block->inputs as $name => $input) {
-			$inputs[] = [
-				'name' => $name,
-				'required' => $input->required,
-				'default' => $input->default ?? '',
-				'description' => $input->description ?? '',
-			];
-		}
+		$inputs = InputMapper::toValues($block->inputs);
 
 		return [
 			'name' => $block->name,
@@ -130,43 +120,6 @@ final class BlockMapper
 		}
 
 		return $groups;
-	}
-
-
-	/**
-	 * @param  mixed $raw
-	 * @return array<string, Input>
-	 */
-	private function toInputs(mixed $raw): array
-	{
-		if (!\is_array($raw)) {
-			return [];
-		}
-
-		$inputs = [];
-		\ksort($raw);
-
-		foreach ($raw as $row) {
-			if (!\is_array($row)) {
-				continue;
-			}
-
-			$name = \trim(self::toStr($row['name'] ?? ''));
-
-			// Řádek bez jména je nedopsaný řádek, ne vstup.
-			if ($name === '') {
-				continue;
-			}
-
-			$inputs[$name] = new Input(
-				name: $name,
-				required: (bool) ($row['required'] ?? false),
-				default: self::orNull($row['default'] ?? ''),
-				description: self::orNull($row['description'] ?? ''),
-			);
-		}
-
-		return $inputs;
 	}
 
 

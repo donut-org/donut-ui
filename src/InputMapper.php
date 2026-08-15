@@ -36,7 +36,7 @@ final class InputMapper
 				continue;
 			}
 
-			$name = self::text($row['name'] ?? '');
+			$name = Text::of($row['name'] ?? '');
 
 			// Řádek bez jména je nedopsaný řádek, ne vstup.
 			if ($name === '') {
@@ -46,8 +46,8 @@ final class InputMapper
 			$inputs[$name] = new Input(
 				name: $name,
 				required: (bool) ($row['required'] ?? false),
-				default: self::orNull($row['default'] ?? ''),
-				description: self::orNull($row['description'] ?? ''),
+				default: Text::orNull($row['default'] ?? ''),
+				description: Text::orNull($row['description'] ?? ''),
 			);
 		}
 
@@ -73,19 +73,5 @@ final class InputMapper
 		}
 
 		return $rows;
-	}
-
-
-	private static function text(mixed $value): string
-	{
-		return \is_scalar($value) ? \trim((string) $value) : '';
-	}
-
-
-	private static function orNull(mixed $value): ?string
-	{
-		$value = self::text($value);
-
-		return $value === '' ? null : $value;
 	}
 }

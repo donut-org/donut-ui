@@ -54,6 +54,8 @@
 		</ul>
 
 		<input type=hidden n:name=name value="{$name}">
+		{* Jméno se do confirm() nedává schválně — v JS kontextu ho Latte
+		   json-enkóduje a v dialogu by bylo v uvozovkách navíc. *}
 		<button type=submit n:name=save onclick="return confirm('Opravdu smazat toto workflow?')">Smazat</button>
 	{/form}
 {/if}

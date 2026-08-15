@@ -31,7 +31,9 @@ final class WorkflowStore
 		private readonly string $directory,
 	) {
 		if (!\is_dir($directory)) {
-			throw new ParseException("Adresář s workflow '{$directory}' neexistuje.");
+			throw new ParseException(
+				"Adresář s workflow '{$directory}' neexistuje. " . MissingDir::hint($directory)
+			);
 		}
 
 		$this->writer = new WorkflowWriter;

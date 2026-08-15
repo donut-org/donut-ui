@@ -37,7 +37,9 @@ final class BlockStore
 		$this->writer = new BlockWriter;
 
 		if (!\is_dir($directory)) {
-			throw new ParseException("Adresář s kameny '{$directory}' neexistuje.");
+			throw new ParseException(
+				"Adresář s kameny '{$directory}' neexistuje. " . MissingDir::hint($directory)
+			);
 		}
 	}
 

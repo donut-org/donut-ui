@@ -28,10 +28,10 @@ final class WorkflowMapper
 		$steps = $original?->steps;
 
 		return new Workflow(
-			name: self::text($values['name'] ?? ''),
+			name: Text::of($values['name'] ?? ''),
 			inputs: InputMapper::toInputs($values['inputs'] ?? []),
 			steps: $steps ?? [],
-			description: self::orNull($values['description'] ?? ''),
+			description: Text::orNull($values['description'] ?? ''),
 		);
 	}
 
@@ -46,19 +46,5 @@ final class WorkflowMapper
 			'description' => $workflow->description ?? '',
 			'inputs' => InputMapper::toValues($workflow->inputs),
 		];
-	}
-
-
-	private static function text(mixed $value): string
-	{
-		return \is_scalar($value) ? \trim((string) $value) : '';
-	}
-
-
-	private static function orNull(mixed $value): ?string
-	{
-		$value = self::text($value);
-
-		return $value === '' ? null : $value;
 	}
 }

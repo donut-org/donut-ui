@@ -15,7 +15,6 @@ use Donut\Parser\ParseException;
 use Donut\Writer\WriteException;
 use Nette\Application\Attributes\Requires;
 use Nette\Application\UI\Control;
-use Nette\IOException;
 
 
 /**
@@ -113,7 +112,10 @@ final class StepTreeControl extends Control
 			$workflow = (new WorkflowRepository($this->directory))->get($this->name);
 			(new WorkflowStore($this->directory))->save($operation($workflow, $at));
 
-		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException | IOException $e) {
+		// IOException tu nemá kdo vyhodit: čtení jde přes JsonSource, které
+		// hlásí ParseException, a WorkflowWriter::writeFile() si svoji
+		// IOException zabaluje do WriteException.
+		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException $e) {
 			$this->error = $e->getMessage();
 
 			return;

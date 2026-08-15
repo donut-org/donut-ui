@@ -7,7 +7,10 @@
 
 <p><a n:href="Block:edit">+ nový kámen</a></p>
 
-<p n:if="$error" class=error>{$error}</p>
+{* Jediná chyba, kterou sem renderDefault() pustí, je chybějící adresář —
+   BlockRepository jinde v konstruktoru neselže. Hláška je z donutu (sdílí ji
+   s CLI), návod k ní patří sem. *}
+<p n:if="$error" class=error>{$error} {Donut\Gui\MissingDir::hint($dir)}</p>
 <p n:if="!$error && !$blocks">V adresáři <code>{$dir}</code> žádné kameny nejsou.</p>
 
 <div n:foreach="$blocks as $name => $block">

@@ -47,7 +47,7 @@ final class WorkflowPresenter extends Presenter
 		/** @var WorkflowDefaultTemplate $template */
 		$template = $this->template;
 
-		$dir = WorkflowRepository::projectDir() . '/workflows';
+		$dir = $this->workflowDir();
 
 		try {
 			$repository = new WorkflowRepository($dir);
@@ -79,7 +79,7 @@ final class WorkflowPresenter extends Presenter
 		$name = \basename($name);
 
 		try {
-			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
+			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
 
 		} catch (ParseException $e) {
@@ -88,7 +88,7 @@ final class WorkflowPresenter extends Presenter
 		}
 
 		try {
-			$blocks = new BlockRepository(WorkflowRepository::projectDir() . '/blocks');
+			$blocks = new BlockRepository($this->blockDir());
 			$result = (new Validator($blocks))->validate($workflow);
 
 		} catch (ParseException $e) {
@@ -121,7 +121,7 @@ final class WorkflowPresenter extends Presenter
 		$raw = $this->getParameter('name');
 
 		return new StepTreeControl(
-			WorkflowRepository::projectDir() . '/workflows',
+			$this->workflowDir(),
 			// basename() stejně jako v renderDetail(): jméno je z query
 			// stringu a tohle je jediné místo, kde ho komponenta dostane.
 			\basename(\is_string($raw) ? $raw : ''),
@@ -141,7 +141,7 @@ final class WorkflowPresenter extends Presenter
 				throw new \InvalidArgumentException("Cesta \"{$at}\" nepatří workflow \"{$name}\".");
 			}
 
-			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
+			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
 
 			if ($type === null || $type === '') {
@@ -183,7 +183,7 @@ final class WorkflowPresenter extends Presenter
 	private function blockNames(): array
 	{
 		try {
-			$names = (new BlockRepository(WorkflowRepository::projectDir() . '/blocks'))->getNames();
+			$names = (new BlockRepository($this->blockDir()))->getNames();
 
 		} catch (ParseException) {
 			return [];
@@ -307,7 +307,7 @@ final class WorkflowPresenter extends Presenter
 				throw new \InvalidArgumentException('Chybí cesta ke kroku.');
 			}
 
-			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
+			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
 
 			// Úprava if nebo foreach nesmí zahodit jejich větve — formulář
@@ -320,9 +320,12 @@ final class WorkflowPresenter extends Presenter
 				$workflow = StepTree::insert($workflow, $at, $step);
 			}
 
-			(new WorkflowStore(WorkflowRepository::projectDir() . '/workflows'))->save($workflow);
+			(new WorkflowStore($this->workflowDir()))->save($workflow);
 
-		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException | IOException $e) {
+		// IOException tu nemá kdo vyhodit: čtení jde přes JsonSource, které
+		// hlásí ParseException, a WorkflowWriter::writeFile() si svoji
+		// IOException zabaluje do WriteException.
+		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException $e) {
 			$form->addError($e->getMessage());
 
 			return;
@@ -437,8 +440,8 @@ final class WorkflowPresenter extends Presenter
 			// WorkflowStore::__construct() hází ParseException, když adresář
 			// workflows neexistuje. WorkflowStore::save() volá
 			// WorkflowWriter::writeFile(), který interní IOException vždycky
-			// zabalí do WriteException — širší catch by PHPStan (level max)
-			// odmítl jako dead catch.
+			// zabalí do WriteException — ven se žádná nedostane, takže tu
+			// není co chytat navíc.
 			$form->addError($e->getMessage());
 
 			return;
@@ -492,5 +495,11 @@ final class WorkflowPresenter extends Presenter
 	private function workflowDir(): string
 	{
 		return WorkflowRepository::projectDir() . '/workflows';
+	}
+
+
+	private function blockDir(): string
+	{
+		return WorkflowRepository::projectDir() . '/blocks';
 	}
 }

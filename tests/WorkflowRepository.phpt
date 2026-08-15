@@ -47,10 +47,12 @@ Assert::noError(fn() => new WorkflowRepository($empty));
 Assert::same([], (new WorkflowRepository($empty))->loadAll());
 
 // Chybějící adresář je jiná situace než prázdný — musí hodit, ne vrátit [].
+// Hláška je návodná: od prázdného projektu se jinak bez shellu nikam nedojde
+// a GUI adresáře vědomě nezakládá.
 Assert::exception(
 	fn() => new WorkflowRepository($dir . '/chybi'),
 	ParseException::class,
-	"Adresář s workflow '{$dir}/chybi' neexistuje.",
+	"Adresář s workflow '{$dir}/chybi' neexistuje. GUI ho sám nezaloží — vytvoř ho příkazem `mkdir chybi`, nebo spusť server z adresáře projektu.",
 );
 
 FileSystem::delete(TEMP_DIR);

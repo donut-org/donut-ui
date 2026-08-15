@@ -41,4 +41,16 @@ FileSystem::write($brokenWorkflow . '/workflows/rozbite.json', 'toto neni json')
 
 Assert::contains('echo', $html);
 
+// --- chybějící adresář kamenů říká, co s tím ---
+// M8: prázdný projekt byl slepá ulička — hláška oznámila, že adresář není,
+// ale ne že stačí jeden mkdir. Adresáře GUI vědomě nezakládá.
+
+$prazdny = TEMP_DIR . '/prazdny';
+FileSystem::createDir($prazdny);
+
+[, $html] = runBlockPresenterIn($prazdny, ['action' => 'default']);
+
+Assert::contains('neexistuje', $html);
+Assert::contains('mkdir blocks', $html);
+
 FileSystem::delete(TEMP_DIR);

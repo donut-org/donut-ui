@@ -1,8 +1,8 @@
 # Donut GUI
 
 Autorské prostředí pro workflow a kameny donutu. Ukazuje, co by řekl
-validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny
-i kroky workflow založit, upravit a smazat.
+validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny,
+celá workflow i jejich jednotlivé kroky založit, upravit a smazat.
 
 Návrhový dokument: „2026-08-05-gui-design.md" ve specifikacích repozitáře
 `donut-org/donut` (`docs/superpowers/specs/`).
@@ -64,6 +64,26 @@ projektu — a tam žádný z těch adresářů není, takže obě stránky ohl�
 Adresy jsou v query stringu, např.
 `?name=card-dev&action=detail&key=repo` — router je Nette
 `SimpleRouter`, žádné pěkné URL.
+
+
+## Co GUI vědomě neumí
+
+Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
+
+- **přejmenovat workflow ani kámen** — obojí se spouští jménem z cronu
+  a z CLI, což GUI nevidí; jméno je proto ve formuláři jen při zakládání
+  a při editaci je needitovatelné
+- **kontrolovat odkazy při mazání workflow** — uvnitř formátu není co
+  kontrolovat, vně formátu (cron, CLI) to GUI nevidí; u kamenů kontrola
+  je, protože na ně workflow odkazují uvnitř formátu
+- **detekovat souběh** — soubor upravený v editoru mezi vykreslením
+  stránky a uložením se přepíše bez varování
+- **CSRF ochranu a session** — Nette připojuje `Requires(sameOrigin: true)`
+  ke každé metodě `handle*`, takže signály kryje kontrola Fetch-Metadata
+  i bez session
+- **zakládat adresáře `workflows/` a `blocks/`** — server běží v tom
+  pracovním adresáři, ze kterého ho někdo spustil; chybějící adresář se
+  ohlásí i s příkazem, kterým ho vytvořit
 
 
 ## Testy a statická analýza

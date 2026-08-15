@@ -116,7 +116,10 @@
 			</ul>
 
 			<input type=hidden n:name=name value="{$name}">
-			<button type=submit n:name=delete onclick="return confirm('Opravdu smazat {$name}?')">Smazat</button>
+			{* Jméno se do confirm() nedává schválně: Latte hodnotu v JS
+			   kontextu json-enkóduje a v dialogu by byla v uvozovkách navíc.
+			   Escapování se nevypíná, text se přeformuloval. *}
+			<button type=submit n:name=delete onclick="return confirm('Opravdu smazat tenhle kámen?')">Smazat</button>
 		{/form}
 	{/if}
 {/if}

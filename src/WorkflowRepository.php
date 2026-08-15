@@ -38,7 +38,9 @@ final class WorkflowRepository
 		$this->parser = $parser ?? new WorkflowParser;
 
 		if (!\is_dir($directory)) {
-			throw new ParseException("Adresář s workflow '{$directory}' neexistuje.");
+			throw new ParseException(
+				"Adresář s workflow '{$directory}' neexistuje. " . MissingDir::hint($directory)
+			);
 		}
 
 		$paths = \glob($directory . '/*.json');

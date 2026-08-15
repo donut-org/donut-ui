@@ -1,0 +1,55 @@
+{import '../rows.latte'}
+
+{block title}{$name ?? 'Nové workflow'} — Donut{/block}
+
+{block content}
+<p><a n:href="Workflow:default">← workflow</a></p>
+
+<h1>{$name ?? 'Nové workflow'}</h1>
+
+<p n:if="$error" class=error>{$error}</p>
+
+{if !$error}
+	{form headerForm}
+		<ul n:if="$form->getErrors()" class=error>
+			<li n:foreach="$form->getErrors() as $err">{$err}</li>
+		</ul>
+
+		<p>{label name /} {input name}</p>
+		<p>{label description /} {input description}</p>
+
+		<h2>Vstupy</h2>
+		<p class=keys>Vstupy se na příkazové řádce zadávají jako <code>--jmeno=hodnota</code>.</p>
+
+		<div id=inputs>
+			<div class=row n:foreach="$form['inputs']->getComponents() as $row">
+				{input $row['name']}
+				{input $row['required']} povinný
+				{input $row['default']}
+				{input $row['description']}
+				<button type=button class=del-row>×</button>
+			</div>
+		</div>
+		<button type=button data-add="inputs">+ vstup</button>
+
+		<p>{input save}</p>
+	{/form}
+
+	{if $name !== null}
+		<h2>Smazat</h2>
+		<p class=keys>
+			Workflow se spouští jménem z cronu a z CLI, což tenhle nástroj
+			nevidí — zkontroluj si, že ho nikde nespouštíš.
+		</p>
+
+		{form deleteWorkflowForm}
+			<ul n:if="$form->getErrors()" class=error>
+				<li n:foreach="$form->getErrors() as $err">{$err}</li>
+			</ul>
+
+			<button type=submit n:name=save onclick="return confirm('Opravdu smazat {$name}?')">Smazat</button>
+		{/form}
+	{/if}
+
+	{include rows}
+{/if}

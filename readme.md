@@ -52,6 +52,9 @@ projektu — a tam žádný z těch adresářů není, takže obě stránky ohl�
   krokem s podstromem se ptá na potvrzení)
 - **přehled kamenů** — kameny z `blocks/` s jejich deklarovanými vstupy,
   založení, editace a mazání kamene formulářem
+- **hlavička workflow** — založení nového workflow, editace jména (jen při
+  založení), popisu a vstupů, a mazání; mazání jen upozorní, že se workflow
+  spouští jménem z cronu a z CLI, což GUI nevidí
 - **tok klíčů** — u každého kroku je vidět, které klíče čte a které zapisuje;
   klíč je klikatelný odkaz, který zvýrazní všechny kroky, kde figuruje (zápis
   jinou barvou než čtení); výběr drží adresa (`&key=repo`), takže se dá poslat
@@ -80,13 +83,3 @@ a `tests/` donutu.
 
 CI matice donutu `gui/` zatím nespouští — je to jiný composer projekt
 a chystá se do vlastního repozitáře.
-
-
-## Co zatím není
-
-Poslední zbytek vrstvy 3 (viz `docs/zadani.md`, bod 5) — obálka workflow:
-
-- založení a smazání workflow
-- editace hlavičky workflow — jméno, popis, vstupy
-
-Podrobnosti: viz „2026-08-05-gui-design.md" výše.

@@ -9,6 +9,7 @@
 	<p class=error>{$error}</p>
 {else}
 	<h1>{$workflow->name}</h1>
+	<p><a n:href="Workflow:edit, name: $workflow->name">upravit hlavičku</a></p>
 	<p n:if="$workflow->description">{$workflow->description}</p>
 
 	{foreach $workflowProblems as $problem}

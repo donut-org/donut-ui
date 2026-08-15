@@ -3,6 +3,8 @@
 {block content}
 <h1>Workflow</h1>
 
+<p><a n:href="Workflow:edit">+ nové workflow</a></p>
+
 <p n:if="$error" class=error>{$error}</p>
 <p n:if="!$error && !$workflows">V adresáři <code>{$dir}</code> žádná workflow nejsou.</p>
 

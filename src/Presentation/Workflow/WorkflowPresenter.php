@@ -8,12 +8,14 @@ use Donut\BlockRepository;
 use Donut\Format\Condition;
 use Donut\Format\RunStep;
 use Donut\Format\Step;
+use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
 use Donut\Gui\RowShape;
 use Donut\Gui\StepMapper;
 use Donut\Gui\StepPath;
 use Donut\Gui\StepTree;
+use Donut\Gui\WorkflowMapper;
 use Donut\Gui\WorkflowRepository;
 use Donut\Gui\WorkflowStore;
 use Donut\Parser\ParseException;
@@ -35,6 +37,8 @@ final class WorkflowPresenter extends Presenter
 	private ?StepPath $stepAt = null;
 
 	private string $stepType = '';
+
+	private ?Workflow $editedWorkflow = null;
 
 
 	public function renderDefault(): void
@@ -319,5 +323,150 @@ final class WorkflowPresenter extends Presenter
 		}
 
 		$this->redirect('detail', ['name' => $name]);
+	}
+
+
+	public function actionEdit(?string $name = null): void
+	{
+		if ($name === null || $name === '') {
+			return;
+		}
+
+		/** @var WorkflowEditTemplate $template */
+		$template = $this->template;
+
+		try {
+			$this->editedWorkflow = (new WorkflowRepository($this->workflowDir()))->get(\basename($name));
+
+		} catch (ParseException $e) {
+			$template->error = $e->getMessage();
+		}
+	}
+
+
+	public function renderEdit(?string $name = null): void
+	{
+		/** @var WorkflowEditTemplate $template */
+		$template = $this->template;
+		$template->name = ($name ?? '') === '' ? null : \basename((string) $name);
+	}
+
+
+	protected function createComponentHeaderForm(): Form
+	{
+		$form = new Form;
+
+		$nameInput = $form->addText('name', 'Jméno')
+			->setRequired('Jméno je povinné.')
+			->addRule(Form::Pattern, 'Jméno smí obsahovat jen písmena, číslice, pomlčku a podtržítko.', '[A-Za-z0-9_-]+');
+
+		if ($this->editedWorkflow !== null) {
+			// Přejmenování GUI neumí — workflow se spouští jménem z cronu
+			// a z CLI. Pořadí je závazné: setDisabled() maže hodnotu, takže
+			// musí předcházet setDefaultValue(), a bez setOmitted(false) by
+			// se zakázané pole z getValues() tiše vynechalo.
+			$nameInput->setDisabled()
+				->setDefaultValue($this->editedWorkflow->name)
+				->setOmitted(false);
+		}
+
+		$form->addText('description', 'Popis');
+
+		$post = $this->getParameter('do') === 'headerForm-submit'
+			? $this->getHttpRequest()->getPost()
+			: null;
+
+		$inputs = $form->addContainer('inputs');
+
+		// $this->editedWorkflow?->inputs ?? [] hlásí PHPStanu (level max)
+		// falešně nullsafe.neverNull — rozdělení do proměnné to obchází,
+		// stejně jako u WorkflowMapper::toWorkflow().
+		$existingInputs = $this->editedWorkflow?->inputs;
+
+		foreach (RowShape::of(\is_array($post) ? ($post['inputs'] ?? null) : null, \count($existingInputs ?? [])) as $i) {
+			$row = $inputs->addContainer((string) $i);
+			$row->addText('name');
+			$row->addCheckbox('required');
+			$row->addText('default');
+			$row->addText('description');
+		}
+
+		$form->addSubmit('save', 'Uložit');
+		$form->onSuccess[] = $this->headerFormSucceeded(...);
+
+		if ($this->editedWorkflow !== null && !$this->getRequest()->isMethod('POST')) {
+			$form->setDefaults(WorkflowMapper::toValues($this->editedWorkflow));
+		}
+
+		return $form;
+	}
+
+
+	public function headerFormSucceeded(Form $form): void
+	{
+		/** @var array<string, mixed> $values */
+		$values = $form->getValues('array');
+
+		$workflow = WorkflowMapper::toWorkflow($values, $this->editedWorkflow);
+		$store = new WorkflowStore($this->workflowDir());
+
+		// Zakládání nesmí přepsat workflow, které už existuje — writeFile()
+		// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
+		if ($this->editedWorkflow === null && $store->exists($workflow->name)) {
+			$form->addError("Workflow \"{$workflow->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+
+			return;
+		}
+
+		try {
+			$store->save($workflow);
+
+		} catch (WriteException $e) {
+			// WorkflowStore::save() volá WorkflowWriter::writeFile(), který
+			// interní IOException vždycky zabalí do WriteException — širší
+			// catch by PHPStan (level max) odmítl jako dead catch.
+			$form->addError($e->getMessage());
+
+			return;
+		}
+
+		$this->redirect('detail', ['name' => $workflow->name]);
+	}
+
+
+	protected function createComponentDeleteWorkflowForm(): Form
+	{
+		$form = new Form;
+		$form->addSubmit('save', 'Smazat');
+		$form->onSuccess[] = $this->deleteWorkflowFormSucceeded(...);
+
+		return $form;
+	}
+
+
+	public function deleteWorkflowFormSucceeded(Form $form): void
+	{
+		if ($this->editedWorkflow === null) {
+			$form->addError('Není co mazat.');
+
+			return;
+		}
+
+		try {
+			(new WorkflowStore($this->workflowDir()))->delete($this->editedWorkflow->name);
+
+		} catch (ParseException | IOException $e) {
+			$form->addError($e->getMessage());
+
+			return;
+		}
+
+		$this->redirect('default');
+	}
+
+
+	private function workflowDir(): string
+	{
+		return WorkflowRepository::projectDir() . '/workflows';
 	}
 }

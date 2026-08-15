@@ -19,7 +19,7 @@
 			   na celý podstrom. *}
 			<div n:class="$keys->classAt($at, $selected)">
 				<span class=controls>
-					<a n:href="Workflow:step, name: $name, at: (string) $at">upravit</a>
+					<a href="{plink Workflow:step, name: $name, at: (string) $at}">upravit</a>
 
 					<form n:if="$i > 0" method=post action="{link moveUp!}" style="display:inline">
 						<input type=hidden name=at value="{$at}">
@@ -74,8 +74,8 @@
 				{var $writes = $keys->writesAt($at)}
 				<div class=keys n:if="$reads || $writes">
 					<span n:if="$reads">čte
-						{foreach $reads as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}</span>{if $reads && $writes}, {/if}<span n:if="$writes">zapisuje
-						{foreach $writes as $k}<a n:href="this, key: $k">{$k}</a>{sep}, {/sep}{/foreach}</span>
+						{foreach $reads as $k}<a href="{plink this, key: $k}">{$k}</a>{sep}, {/sep}{/foreach}</span>{if $reads && $writes}, {/if}<span n:if="$writes">zapisuje
+						{foreach $writes as $k}<a href="{plink this, key: $k}">{$k}</a>{sep}, {/sep}{/foreach}</span>
 				</div>
 			</div>
 
@@ -93,7 +93,7 @@
 	<li class=add>
 		+ krok:
 		{foreach ['run', 'set', 'if', 'foreach'] as $type}
-			<a n:href="Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $type">{$type}</a>{sep} {/sep}
+			<a href="{plink Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $type}">{$type}</a>{sep} {/sep}
 		{/foreach}
 	</li>
 </ol>

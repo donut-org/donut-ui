@@ -8,7 +8,6 @@ use Donut\BlockRepository;
 use Donut\Format\Condition;
 use Donut\Format\RunStep;
 use Donut\Format\Step;
-use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
 use Donut\Gui\RowShape;
@@ -20,7 +19,6 @@ use Donut\Gui\WorkflowStore;
 use Donut\Parser\ParseException;
 use Donut\Validator\Validator;
 use Donut\Writer\WriteException;
-use Nette\Application\Attributes\Requires;
 use Nette\Application\UI\Form;
 use Nette\Application\UI\Presenter;
 use Nette\IOException;
@@ -32,8 +30,6 @@ use Nette\IOException;
  */
 final class WorkflowPresenter extends Presenter
 {
-	private ?string $stepError = null;
-
 	private ?Step $editedStep = null;
 
 	private ?StepPath $stepAt = null;
@@ -99,7 +95,6 @@ final class WorkflowPresenter extends Presenter
 
 		$template->workflow = $workflow;
 		$template->problems = $problems;
-		$template->rootPath = StepPath::root($workflow->name);
 		$template->workflowProblems = $problems->at(StepPath::workflow($workflow->name));
 
 		$template->keys = KeyMap::of($workflow);
@@ -108,79 +103,19 @@ final class WorkflowPresenter extends Presenter
 		$template->selectedKey = ($key ?? '') === '' ? null : $key;
 		$template->selectedKeyExists = $template->selectedKey === null
 			|| \in_array($template->selectedKey, $template->keys->keys(), true);
-
-		$template->stepError = $this->stepError;
 	}
 
 
-	// Bez GET: mění soubor, a GET, který mění soubor, si najde přednačítač
-	// v prohlížeči nebo prefetch odkazů. Dnes to platí i implicitně —
-	// formuláře v steps.latte posílají jen POST — ale ať je to vynucené
-	// a čitelné, ne jen náhoda toho, jak je vyplněný markup.
-	#[Requires(methods: 'POST')]
-	public function handleMoveUp(): void
+	protected function createComponentStepTree(): StepTreeControl
 	{
-		$this->applyToStep(fn($workflow, $at) => StepTree::moveUp($workflow, $at));
-	}
+		$raw = $this->getParameter('name');
 
-
-	#[Requires(methods: 'POST')]
-	public function handleMoveDown(): void
-	{
-		$this->applyToStep(fn($workflow, $at) => StepTree::moveDown($workflow, $at));
-	}
-
-
-	#[Requires(methods: 'POST')]
-	public function handleDeleteStep(): void
-	{
-		$this->applyToStep(fn($workflow, $at) => StepTree::remove($workflow, $at));
-	}
-
-
-	/**
-	 * Společný obal pro všechny tři signály: vzít cestu z POSTu, načíst
-	 * workflow, provést operaci, uložit, vrátit se na přehled.
-	 *
-	 * Validace se **nespouští** — u workflow neblokuje, protože mezistavy
-	 * přerovnávání jsou skoro vždycky neplatné. Problémy se ukážou
-	 * v přehledu, kam se vzápětí vracíme.
-	 *
-	 * Při chybě se **nepřesměrovává**: redirect() hodí AbortException a chyba
-	 * by se nikam nedostala. Flash zprávy k dispozici nejsou (žádná session),
-	 * takže se nechá doběhnout renderDetail(), který $stepError vykreslí.
-	 *
-	 * @param callable(Workflow, StepPath): Workflow $operation
-	 */
-	private function applyToStep(callable $operation): void
-	{
-		$rawName = $this->getParameter('name');
-		// basename() stejně jako renderDetail() — jméno je z query stringu
-		// a WorkflowRepository ho hledá jako klíč, takže lomítka samy o sobě
-		// nikam neukradou, ale ať se s ním obě metody zachází stejně.
-		$name = \basename(\is_string($rawName) ? $rawName : '');
-		$raw = $this->getHttpRequest()->getPost('at');
-		$dir = WorkflowRepository::projectDir() . '/workflows';
-
-		try {
-			$at = StepPath::parse(\is_string($raw) ? $raw : '');
-
-			// Cesta nese jméno workflow; kdyby nesouhlasilo s adresou,
-			// operace by sáhla do cizího souboru.
-			if ($at->workflowName() !== $name) {
-				throw new \InvalidArgumentException("Cesta \"{$at}\" nepatří workflow \"{$name}\".");
-			}
-
-			$workflow = (new WorkflowRepository($dir))->get($name);
-			(new WorkflowStore($dir))->save($operation($workflow, $at));
-
-		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException | IOException $e) {
-			$this->stepError = $e->getMessage();
-
-			return;
-		}
-
-		$this->redirect('detail', ['name' => $name]);
+		return new StepTreeControl(
+			WorkflowRepository::projectDir() . '/workflows',
+			// basename() stejně jako v renderDetail(): jméno je z query
+			// stringu a tohle je jediné místo, kde ho komponenta dostane.
+			\basename(\is_string($raw) ? $raw : ''),
+		);
 	}
 
 

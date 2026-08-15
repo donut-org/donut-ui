@@ -43,12 +43,12 @@ Assert::contains('w.json:steps[0]', $html);
 // přednačítač v prohlížeči. Tvrdíme to na tvaru značkování, ne na tom, že
 // v HTML nějaký řetězec chybí: prázdná stránka by takovou aserci splnila taky.
 Assert::match('~<form[^>]+method=post[^>]*>\s*<input[^>]+name=at[^>]+value="w\.json:steps\[0]"~', $html);
-Assert::notContains('<a href="?do=deleteStep', $html);
+Assert::notContains('<a href="?do=stepTree-deleteStep', $html);
 
 // U prvního kroku není šipka nahoru, u posledního dolů. Tři kroky → dvakrát
 // každá.
-Assert::same(2, substr_count($html, 'do=moveUp'));
-Assert::same(2, substr_count($html, 'do=moveDown'));
+Assert::same(2, substr_count($html, 'do=stepTree-moveUp'));
+Assert::same(2, substr_count($html, 'do=stepTree-moveDown'));
 
 // Prázdná větev then se vykreslí i tak — jinak by do ní v Tasku 6 nešlo
 // přidat „+ krok". Cesta k ní se v HTML nikde neobjeví (prázdný seznam nemá
@@ -60,7 +60,7 @@ Assert::contains('else:', $html);
 
 [$response] = runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'moveDown'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-moveDown'],
 	['at' => 'w.json:steps[0]'],
 );
 
@@ -72,7 +72,7 @@ Assert::same('a', $steps()[1]->key);
 
 runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'moveUp'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-moveUp'],
 	['at' => 'w.json:steps[1]'],
 );
 
@@ -82,7 +82,7 @@ Assert::same('a', $steps()[0]->key);
 
 runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'w.json:steps[0]'],
 );
 
@@ -93,7 +93,7 @@ Assert::type(Donut\Format\IfStep::class, $steps()[0]);
 
 [, $html] = runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'w.json:steps[99]'],
 );
 
@@ -101,7 +101,7 @@ Assert::count(2, $steps());
 
 [, $html] = runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'nesmysl'],
 );
 
@@ -109,7 +109,7 @@ Assert::count(2, $steps());
 
 runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'deleteStep'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'jine.json:steps[0]'],
 );
 
@@ -128,7 +128,7 @@ $write([
 
 [$response] = runWorkflowPresenterIn(
 	$project,
-	['action' => 'detail', 'name' => 'w', 'do' => 'moveDown'],
+	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-moveDown'],
 	['at' => 'w.json:steps[0]'],
 );
 

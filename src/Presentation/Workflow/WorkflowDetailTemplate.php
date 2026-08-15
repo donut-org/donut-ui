@@ -7,7 +7,6 @@ namespace Donut\Gui\Presentation\Workflow;
 use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
-use Donut\Gui\StepPath;
 use Donut\Validator\Problem;
 use Nette\Bridges\ApplicationLatte\Template;
 
@@ -26,8 +25,6 @@ final class WorkflowDetailTemplate extends Template
 
 	public ?ProblemMap $problems = null;
 
-	public ?StepPath $rootPath = null;
-
 	public ?KeyMap $keys = null;
 
 	/** Jméno klíče z adresy; null = nic není vybrané. */
@@ -38,7 +35,4 @@ final class WorkflowDetailTemplate extends Template
 
 	/** @var list<Problem> */
 	public array $workflowProblems = [];
-
-	/** Chyba z posledního přesunu nebo mazání kroku; null = žádná. */
-	public ?string $stepError = null;
 }

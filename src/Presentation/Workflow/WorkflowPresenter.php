@@ -19,6 +19,7 @@ use Donut\Gui\WorkflowMapper;
 use Donut\Gui\WorkflowRepository;
 use Donut\Gui\WorkflowStore;
 use Donut\Parser\ParseException;
+use Donut\Validator\Result;
 use Donut\Validator\Validator;
 use Donut\Writer\WriteException;
 use Nette\Application\UI\Form;
@@ -91,8 +92,13 @@ final class WorkflowPresenter extends Presenter
 			$result = (new Validator($blocks))->validate($workflow);
 
 		} catch (ParseException $e) {
+			// Chybějící nebo vadné kameny nejsou důvod schovat celý detail —
+			// totéž pravidlo jako v blockNames(). Bez validátoru se hlásí jen
+			// samotná chyba, ale hlavička, odkaz na obálku i strom kroků
+			// zůstanou; jinak by čerstvý projekt bez blocks/ měl workflow,
+			// se kterým už nejde nic dělat.
 			$template->error = $e->getMessage();
-			return;
+			$result = new Result;
 		}
 
 		$problems = ProblemMap::fromResult($result);
@@ -440,6 +446,7 @@ final class WorkflowPresenter extends Presenter
 	protected function createComponentDeleteWorkflowForm(): Form
 	{
 		$form = new Form;
+		$form->addHidden('name');
 		$form->addSubmit('save', 'Smazat');
 		$form->onSuccess[] = $this->deleteWorkflowFormSucceeded(...);
 
@@ -449,14 +456,23 @@ final class WorkflowPresenter extends Presenter
 
 	public function deleteWorkflowFormSucceeded(Form $form): void
 	{
-		if ($this->editedWorkflow === null) {
+		/** @var array{name: string} $values */
+		$values = $form->getValues('array');
+
+		// Jméno jde ze skrytého pole, ne z $this->editedWorkflow — mazání
+		// nesmí záviset na tom, že se soubor podařilo naparsovat. Rozbité
+		// workflow je zrovna to, které uživatel smazat potřebuje nejvíc.
+		// basename() stejně jako jinde: jméno pochází z požadavku.
+		$name = \basename($values['name']);
+
+		if ($name === '') {
 			$form->addError('Není co mazat.');
 
 			return;
 		}
 
 		try {
-			(new WorkflowStore($this->workflowDir()))->delete($this->editedWorkflow->name);
+			(new WorkflowStore($this->workflowDir()))->delete($name);
 
 		} catch (ParseException | IOException $e) {
 			$form->addError($e->getMessage());

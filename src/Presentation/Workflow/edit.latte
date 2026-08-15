@@ -35,21 +35,25 @@
 		<p>{input save}</p>
 	{/form}
 
-	{if $name !== null}
-		<h2>Smazat</h2>
-		<p class=keys>
-			Workflow se spouští jménem z cronu a z CLI, což tenhle nástroj
-			nevidí — zkontroluj si, že ho nikde nespouštíš.
-		</p>
-
-		{form deleteWorkflowForm}
-			<ul n:if="$form->getErrors()" class=error>
-				<li n:foreach="$form->getErrors() as $err">{$err}</li>
-			</ul>
-
-			<button type=submit n:name=save onclick="return confirm('Opravdu smazat {$name}?')">Smazat</button>
-		{/form}
-	{/if}
-
 	{include rows}
+{/if}
+
+{* Mazání je mimo {if !$error} schválně: workflow, jehož soubor se
+   nenaparsuje, je to jediné, které uživatel odstranit potřebuje nejvíc.
+   Doslovně podle Block/edit.latte. *}
+{if $name !== null}
+	<h2>Smazat</h2>
+	<p class=keys>
+		Workflow se spouští jménem z cronu a z CLI, což tenhle nástroj
+		nevidí — zkontroluj si, že ho nikde nespouštíš.
+	</p>
+
+	{form deleteWorkflowForm}
+		<ul n:if="$form->getErrors()" class=error>
+			<li n:foreach="$form->getErrors() as $err">{$err}</li>
+		</ul>
+
+		<input type=hidden n:name=name value="{$name}">
+		<button type=submit n:name=save onclick="return confirm('Opravdu smazat toto workflow?')">Smazat</button>
+	{/form}
 {/if}

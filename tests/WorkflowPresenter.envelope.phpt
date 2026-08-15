@@ -107,7 +107,7 @@ Assert::false(\is_file($project . '/workflows/prejmenovane.json'), 'nesmí vznik
 [$response] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'nove', 'do' => 'deleteWorkflowForm-submit'],
-	['save' => 'Smazat'],
+	['name' => 'nove', 'save' => 'Smazat'],
 );
 
 Assert::type(RedirectResponse::class, $response);

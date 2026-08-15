@@ -1,13 +1,15 @@
 {import 'steps.latte'}
 
-{block title}{if $error}Chyba{else}{$workflow->name}{/if} — Donut{/block}
+{block title}{if $workflow === null}Chyba{else}{$workflow->name}{/if} — Donut{/block}
 
 {block content}
 <p><a n:href="default">← workflow</a></p>
 
-{if $error}
-	<p class=error>{$error}</p>
-{else}
+{* Chyba se hlásí i tehdy, když workflow načíst šlo — chybějící kameny berou
+   validaci, ne celou stránku. Bez workflow zbývá jen hláška. *}
+<p n:if="$error" class=error>{$error}</p>
+
+{if $workflow !== null}
 	<h1>{$workflow->name}</h1>
 	<p><a n:href="Workflow:edit, name: $workflow->name">upravit hlavičku</a></p>
 	<p n:if="$workflow->description">{$workflow->description}</p>

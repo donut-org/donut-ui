@@ -10,12 +10,16 @@
 
 <ul n:if="$workflows">
 	<li n:foreach="$workflows as $name => $workflow">
+		{* Odkaz na úpravu je mimo podmínku schválně: workflow, které se
+		   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
+		   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte. *}
 		{if is_string($workflow)}
 			<strong>{$name}</strong> — <span class=error>{$workflow}</span>
 		{else}
 			<a n:href="detail $name">{$name}</a>
 			{$workflow->description}
 		{/if}
+		<a n:href="Workflow:edit, name: $name">upravit</a>
 	</li>
 </ul>
 

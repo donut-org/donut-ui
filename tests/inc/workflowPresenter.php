@@ -28,8 +28,11 @@ use Tester\Assert;
  * potřebovat stránka kroku z Tasku 6.
  *
  * @param array<string, mixed> $post
+ * @param bool                 $sameOrigin poslat hlavičku sec-fetch-site? Vypnout
+ *                                         se dá jen výslovně — je to model
+ *                                         cizího webu, ne vedlejší efekt $post.
  */
-function createWorkflowPresenter(array $post = []): WorkflowPresenter
+function createWorkflowPresenter(array $post = [], bool $sameOrigin = true): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -68,8 +71,9 @@ function createWorkflowPresenter(array $post = []): WorkflowPresenter
 			// Fetch Metadata) — skutečný prohlížeč hlavičku posílá sám u každé
 			// navigace v rámci webu, GETem počínaje, tady ji musíme simulovat.
 			// Bez ní by se GET se signálem v adrese (`do=…`) místo vykreslení
-			// odklonil do detectedCsrf() a testovat by nešel.
-			headers: ['sec-fetch-site' => 'same-origin'],
+			// odklonil do detectedCsrf() a testovat by nešel. Právě ten odklon
+			// je to, co $sameOrigin: false modeluje — požadavek z cizího webu.
+			headers: $sameOrigin ? ['sec-fetch-site' => 'same-origin'] : [],
 			method: $post === [] ? 'GET' : 'POST',
 		),
 		new HttpResponse,
@@ -92,15 +96,16 @@ function createWorkflowPresenter(array $post = []): WorkflowPresenter
  *
  * @param  array<string, mixed> $params
  * @param  array<string, mixed> $post
+ * @param  bool                 $sameOrigin viz createWorkflowPresenter()
  * @return array{0: mixed, 1: string} odpověď a vyrenderované HTML ('' u redirectu)
  */
-function runWorkflowPresenterIn(string $dir, array $params, array $post = []): array
+function runWorkflowPresenterIn(string $dir, array $params, array $post = [], bool $sameOrigin = true): array
 {
 	$cwd = \getcwd();
 	\chdir($dir);
 
 	try {
-		$presenter = createWorkflowPresenter($post);
+		$presenter = createWorkflowPresenter($post, $sameOrigin);
 		$request = new Request('Workflow', $post === [] ? 'GET' : 'POST', $params, $post);
 
 		$response = null;

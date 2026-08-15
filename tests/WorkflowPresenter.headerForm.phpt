@@ -110,4 +110,28 @@ Assert::contains('Duležitý popis', $get, 'popis se nesmí ztratit — GET nic 
 Assert::contains('value="repo"', $get, 'vstupy se nesmí ztratit');
 Assert::contains('value="novy"', $get);
 
+// --- POST z cizího webu se nesmí dostat k zápisu ---
+// GUI nemá CSRF token ani session (readme, „Co GUI vědomě neumí") — jedinou
+// ochranou je kontrola Fetch Metadata, kterou si Form dělá sám
+// v signalReceived(). Požadavek bez hlavičky sec-fetch-site je pro Nette cizí
+// původ: skončí v detectedCsrf() → redirect('this'), takže odpověď je
+// přesměrování jako u úspěchu — rozhoduje proto disk, ne typ odpovědi.
+
+$before = FileSystem::read($project . '/workflows/w.json');
+
+[$response] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
+	[
+		'name' => 'w',
+		'description' => 'Z cizího webu',
+		'inputs' => [],
+		'save' => 'Uložit',
+	],
+	sameOrigin: false,
+);
+
+Assert::type(RedirectResponse::class, $response);
+Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'cizí původ nesmí nic zapsat');
+
 FileSystem::delete(TEMP_DIR);

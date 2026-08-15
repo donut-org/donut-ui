@@ -208,4 +208,33 @@ Assert::contains('Vypíše text', $html, 'popis se nesmí ztratit — GET nic ne
 Assert::match('~name="command"[^>]*value="echo"~', $html, 'příkaz se nesmí ztratit');
 Assert::contains('{%text%}', $html, 'argumenty se nesmí ztratit');
 
+// --- POST z cizího webu se nesmí dostat k zápisu ---
+// Táž kontrola jako na druhé polovině GUI (WorkflowPresenter.headerForm.phpt):
+// GUI nemá CSRF token ani session, kryje to jen Fetch Metadata ve
+// Form::signalReceived(). Bez hlavičky sec-fetch-site skončí signál
+// v detectedCsrf() → redirect('this'), takže o výsledku rozhoduje disk,
+// ne typ odpovědi — přesměrování by přišlo i po úspěšném uložení.
+
+$before = FileSystem::read($project . '/blocks/echo.json');
+
+[$response] = runBlockPresenterIn(
+	$project,
+	['action' => 'edit', 'name' => 'echo', 'do' => 'blockForm-submit'],
+	[
+		'name' => 'echo',
+		'description' => 'Z cizího webu',
+		'command' => 'echo',
+		'args' => [],
+		'inputs' => [],
+		'timeout' => '',
+		'allowFailure' => 'none',
+		'allowFailureCodes' => '',
+		'save' => 'Uložit',
+	],
+	sameOrigin: false,
+);
+
+Assert::type(RedirectResponse::class, $response);
+Assert::same($before, FileSystem::read($project . '/blocks/echo.json'), 'cizí původ nesmí nic zapsat');
+
 FileSystem::delete(TEMP_DIR);

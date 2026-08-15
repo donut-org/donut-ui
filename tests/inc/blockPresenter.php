@@ -27,8 +27,11 @@ use Tester\Assert;
  * bez které by se edit.latte nezkompilovala.
  *
  * @param array<string, mixed> $post
+ * @param bool                 $sameOrigin poslat hlavičku sec-fetch-site? Vypnout
+ *                                         se dá jen výslovně — je to model
+ *                                         cizího webu, ne vedlejší efekt $post.
  */
-function createBlockPresenter(array $post = []): BlockPresenter
+function createBlockPresenter(array $post = [], bool $sameOrigin = true): BlockPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -69,7 +72,9 @@ function createBlockPresenter(array $post = []): BlockPresenter
 			// ji musíme simulovat, jinak formulář tiše spadne do
 			// detectedCsrf() a onSuccess se nikdy nezavolá — a GET se signálem
 			// v adrese (`do=…`) se místo vykreslení odkloní na redirect.
-			headers: ['sec-fetch-site' => 'same-origin'],
+			// Právě ten odklon je to, co $sameOrigin: false modeluje —
+			// požadavek z cizího webu.
+			headers: $sameOrigin ? ['sec-fetch-site' => 'same-origin'] : [],
 			method: $post === [] ? 'GET' : 'POST',
 		),
 		new HttpResponse,
@@ -92,15 +97,16 @@ function createBlockPresenter(array $post = []): BlockPresenter
  *
  * @param  array<string, mixed> $params
  * @param  array<string, mixed> $post
+ * @param  bool                 $sameOrigin viz createBlockPresenter()
  * @return array{0: mixed, 1: string} odpověď a vyrenderované HTML ('' u redirectu)
  */
-function runBlockPresenterIn(string $dir, array $params, array $post = []): array
+function runBlockPresenterIn(string $dir, array $params, array $post = [], bool $sameOrigin = true): array
 {
 	$cwd = \getcwd();
 	\chdir($dir);
 
 	try {
-		$presenter = createBlockPresenter($post);
+		$presenter = createBlockPresenter($post, $sameOrigin);
 		$request = new Request('Block', $post === [] ? 'GET' : 'POST', $params, $post);
 
 		$response = null;

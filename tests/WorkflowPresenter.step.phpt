@@ -44,6 +44,29 @@ Assert::contains('value="jq"', $html);
 Assert::contains('.id', $html);
 Assert::contains('<form', $html);
 
+// --- N5: cizí POST nesmí formulář kroku vyprázdnit ---
+//
+// Signály jsou v Nette nezávislé na akci, takže POST na `action=step`
+// s `do=stepTree-deleteStep` sem dorazí. Když je `at` v těle neplatná,
+// StepTreeControl::applyToStep() schválně nepřesměrovává (chyba by se přes
+// AbortException nikam nedostala) a nechá doběhnout render — a step.latte
+// vykreslí stepForm. S otázkou „je to POST?" místo „patří ten POST tomuhle
+// formuláři?" se setDefaults() přeskočí a formulář se vykreslí prázdný;
+// „Uložit" by pak u run kroku zapsalo prázdné in/out, timeout i allowFailure.
+
+[$response, $html] = runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepTree-deleteStep'],
+	['at' => 'nesmysl'],
+);
+
+Assert::false($response instanceof RedirectResponse, 'mazání selhalo, stránka se překreslila');
+Assert::count(2, $steps(), 'neplatná cesta nesmí nic smazat');
+Assert::contains('value="jq"', $html, 'vybraný kámen se nesmí ztratit');
+Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $html, 'vstupy kroku se nesmí ztratit');
+Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html);
+Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, 'výstupy kroku se nesmí ztratit');
+
 // --- uložení úpravy ---
 
 [$response] = runWorkflowPresenterIn(

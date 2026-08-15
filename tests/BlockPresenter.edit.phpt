@@ -174,4 +174,22 @@ FileSystem::createDir($bezAdresare);
 Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
 Assert::contains('neexistuje', $html);
 
+// --- cizí POST nesmí formulář kamene vyprázdnit ---
+//
+// I2: formShape() se ptá, jestli POST patří blockFormu, ale setDefaults()
+// se dřív ptal jen „je to POST?". Po neúspěšném mazání měl formulář správný
+// tvar a všechny hodnoty prázdné — a „Uložit" ho takhle zapsalo.
+
+[$response, $html] = runBlockPresenterIn(
+	$project,
+	['action' => 'edit', 'name' => 'echo', 'do' => 'deleteForm-submit'],
+	['name' => 'neni', 'delete' => 'Smazat'],
+);
+
+Assert::false($response instanceof RedirectResponse, 'mazání selhalo, stránka se překreslila');
+Assert::contains('value="echo"', $html, 'jméno drží setDefaultValue()');
+Assert::contains('Vypíše text', $html, 'popis se nesmí ztratit');
+Assert::contains('{%text%}', $html, 'argumenty se nesmí ztratit');
+Assert::contains('value="5"', $html, 'timeout se nesmí ztratit');
+
 FileSystem::delete(TEMP_DIR);

@@ -158,7 +158,11 @@ final class BlockPresenter extends Presenter
 			// kontrolky) a BlockMapper by dostal jméno '' místo skutečného.
 			$name->setDisabled()->setDefaultValue($this->edited->name)->setOmitted(false);
 
-			if (!$this->getRequest()->isMethod('POST')) {
+			// Táž otázka jako ve formShape(), a proto tentýž mechanismus: ne
+			// „je to POST?", ale „patří ten POST tomuhle formuláři?". Po cizím
+			// signálu (třeba neúspěšném mazání) se hodnoty musí vzít z disku —
+			// jinak se formulář překreslí prázdný a „Uložit" ho tak zapíše.
+			if (!$this->isBlockFormPost()) {
 				$form->setDefaults((new BlockMapper)->toValues($this->edited));
 			}
 		}
@@ -295,7 +299,7 @@ final class BlockPresenter extends Presenter
 		// bez týhle podmínky by se blockForm sestavil s nula skupinami
 		// a nula řádky a stránka by při odmítnutém mazání ukázala prázdný
 		// obsah kamene, který ve skutečnosti pořád existuje.
-		$post = $this->getParameter('do') === 'blockForm-submit'
+		$post = $this->isBlockFormPost()
 			? $this->getHttpRequest()->getPost()
 			: [];
 
@@ -324,6 +328,17 @@ final class BlockPresenter extends Presenter
 		$inputs[] = \count($inputs);
 
 		return ['args' => $args, 'inputs' => $inputs];
+	}
+
+
+	/**
+	 * Patří došlý POST formuláři kamene? Na stránce editace jsou formuláře
+	 * dva a data toho druhého (deleteForm) o obsahu kamene neříkají nic —
+	 * jedna odpověď pro tvar formuláře i pro jeho výchozí hodnoty.
+	 */
+	private function isBlockFormPost(): bool
+	{
+		return $this->getParameter('do') === 'blockForm-submit';
 	}
 
 

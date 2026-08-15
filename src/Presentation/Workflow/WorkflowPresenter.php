@@ -400,7 +400,12 @@ final class WorkflowPresenter extends Presenter
 		$form->addSubmit('save', 'Uložit');
 		$form->onSuccess[] = $this->headerFormSucceeded(...);
 
-		if ($this->editedWorkflow !== null && !$this->getRequest()->isMethod('POST')) {
+		// Táž otázka jako u $post výš, a proto tentýž mechanismus: ne „je to
+		// POST?", ale „patří ten POST tomuhle formuláři?". Po cizím signálu
+		// (třeba neúspěšném mazání) je $post null a hodnoty se musí vzít
+		// z disku — jinak se formulář překreslí prázdný a „Uložit" zapíše
+		// prázdný popis a žádné vstupy.
+		if ($this->editedWorkflow !== null && $post === null) {
 			$form->setDefaults(WorkflowMapper::toValues($this->editedWorkflow));
 		}
 

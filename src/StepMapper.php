@@ -139,6 +139,28 @@ final class StepMapper
 
 
 	/**
+	 * Nový krok z formuláře nese prázdné větve, protože je formulář needituje.
+	 * Při nahrazení existujícího kroku se proto musí převzít z původního —
+	 * jinak by úprava podmínky smazala celý podstrom.
+	 *
+	 * Když se typ neshoduje, vrací se nový krok beze změny: přenášet větve
+	 * mezi různými typy nedává smysl a přes formulář se typ změnit nedá.
+	 */
+	public static function keepChildren(Step $original, Step $updated): Step
+	{
+		if ($original instanceof IfStep && $updated instanceof IfStep) {
+			return new IfStep($updated->condition, $original->then, $original->else, $updated->name);
+		}
+
+		if ($original instanceof ForeachStep && $updated instanceof ForeachStep) {
+			return new ForeachStep($updated->over, $updated->as, $original->steps, $updated->name);
+		}
+
+		return $updated;
+	}
+
+
+	/**
 	 * @param  array<string, mixed> $values
 	 */
 	private static function toCondition(array $values): Condition

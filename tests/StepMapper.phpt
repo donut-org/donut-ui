@@ -203,3 +203,47 @@ $holy = StepMapper::toValues(new RunStep(block: 'echo'));
 Assert::same('', $holy['name']);
 Assert::same('', $holy['timeout']);
 Assert::same('inherit', $holy['allowFailure']);
+
+// --- keepChildren: úprava nesmí smazat podstrom ---
+
+$vetve = new IfStep(
+	condition: new Condition(left: Template::parse('{%a%}'), op: 'not_empty'),
+	then: [new SetStep(key: 't', value: Template::parse('1'))],
+	else: [new SetStep(key: 'e', value: Template::parse('2'))],
+	name: 'původní',
+);
+
+$upraveny = StepMapper::keepChildren(
+	$vetve,
+	new IfStep(
+		condition: new Condition(left: Template::parse('{%b%}'), op: 'empty'),
+		name: 'nový',
+	),
+);
+
+Assert::type(IfStep::class, $upraveny);
+Assert::same('{%b%}', $upraveny->condition->left->getSource(), 'podmínka se má převzít z nového');
+Assert::same('nový', $upraveny->name);
+Assert::count(1, $upraveny->then, 'větev then se nesmí ztratit');
+Assert::count(1, $upraveny->else, 'větev else se nesmí ztratit');
+Assert::same('t', $upraveny->then[0]->key);
+
+// Totéž pro foreach.
+$telo = new ForeachStep(
+	over: Template::parse('{%x%}'),
+	as: 'a',
+	steps: [new SetStep(key: 's', value: Template::parse('1'))],
+);
+
+$upravenyForeach = StepMapper::keepChildren(
+	$telo,
+	new ForeachStep(over: Template::parse('{%y%}'), as: 'b'),
+);
+
+Assert::same('{%y%}', $upravenyForeach->over->getSource());
+Assert::same('b', $upravenyForeach->as);
+Assert::count(1, $upravenyForeach->steps, 'tělo foreach se nesmí ztratit');
+
+// Neshodný typ: nový krok se vrátí beze změny, větve se nepřenášejí.
+$jiny = StepMapper::keepChildren($vetve, new SetStep(key: 'k', value: Template::parse('1')));
+Assert::type(SetStep::class, $jiny);

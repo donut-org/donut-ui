@@ -6,13 +6,12 @@ namespace Donut\Gui\Presentation\Workflow;
 
 use Donut\BlockRepository;
 use Donut\Format\Condition;
-use Donut\Format\ForeachStep;
-use Donut\Format\IfStep;
 use Donut\Format\RunStep;
 use Donut\Format\Step;
 use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
 use Donut\Gui\ProblemMap;
+use Donut\Gui\RowShape;
 use Donut\Gui\StepMapper;
 use Donut\Gui\StepPath;
 use Donut\Gui\StepTree;
@@ -321,68 +320,26 @@ final class WorkflowPresenter extends Presenter
 
 
 	/**
-	 * Kolik řádků mají kontejnery in a out.
-	 *
-	 * Při POSTu se odvodí z došlých dat — JS řádky nikdy nepřečísluje, takže
-	 * indexy můžou mít díry a kontejnery musí vzniknout přesně pro klíče,
-	 * které dorazily. Jiný signál než stepForm-submit se ignoruje, jinak by
-	 * se formulář sestavil s nula řádky.
-	 *
-	 * Klíče se filtrují na číslice: jméno komponenty v Nette musí odpovídat
-	 * [a-zA-Z0-9_]+ a nic jiného sem stejně nepatří.
-	 *
-	 * @return array{in: list<int>, out: list<int>}
+	 * @return array{in: array<int, int>, out: array<int, int>}
 	 */
 	private function rowShape(): array
 	{
+		// Jiný signál nenese in/out vůbec — bez téhle podmínky by se formulář
+		// sestavil s nula řádky a stránka by ukázala prázdný krok, který ve
+		// skutečnosti prázdný není.
 		$post = $this->getParameter('do') === 'stepForm-submit'
 			? $this->getHttpRequest()->getPost()
-			: [];
+			: null;
 
-		if (\is_array($post) && $post !== []) {
-			return [
-				'in' => self::rowIndexes($post['in'] ?? []),
-				'out' => self::rowIndexes($post['out'] ?? []),
-			];
-		}
+		$in = \is_array($post) ? ($post['in'] ?? null) : null;
+		$out = \is_array($post) ? ($post['out'] ?? null) : null;
 
-		$in = [];
-		$out = [];
+		$step = $this->editedStep;
 
-		if ($this->editedStep instanceof RunStep) {
-			$in = \array_keys(\array_values($this->editedStep->in));
-			$out = \array_keys(\array_values($this->editedStep->out));
-		}
-
-		// Jeden prázdný řádek navíc, aby měl uživatel kam psát i bez JS.
-		$in[] = \count($in);
-		$out[] = \count($out);
-
-		return ['in' => $in, 'out' => $out];
-	}
-
-
-	/**
-	 * @param  mixed $raw
-	 * @return list<int>
-	 */
-	private static function rowIndexes(mixed $raw): array
-	{
-		if (!\is_array($raw)) {
-			return [];
-		}
-
-		$keys = [];
-
-		foreach (\array_keys($raw) as $key) {
-			if (\ctype_digit((string) $key)) {
-				$keys[] = (int) $key;
-			}
-		}
-
-		\sort($keys);
-
-		return $keys;
+		return [
+			'in' => RowShape::of($in, $step instanceof RunStep ? \count($step->in) : 0),
+			'out' => RowShape::of($out, $step instanceof RunStep ? \count($step->out) : 0),
+		];
 	}
 
 
@@ -411,7 +368,7 @@ final class WorkflowPresenter extends Presenter
 			// Úprava if nebo foreach nesmí zahodit jejich větve — formulář
 			// je needituje, takže se přenesou z původního kroku.
 			if ($this->editedStep !== null) {
-				$step = self::keepChildren($this->editedStep, $step);
+				$step = StepMapper::keepChildren($this->editedStep, $step);
 				$workflow = StepTree::replace($workflow, $at, $step);
 
 			} else {
@@ -427,23 +384,5 @@ final class WorkflowPresenter extends Presenter
 		}
 
 		$this->redirect('detail', ['name' => $name]);
-	}
-
-
-	/**
-	 * Nový krok z formuláře nese prázdné větve; převezmi je z toho, který
-	 * nahrazuje, aby úprava podmínky nesmazala celý podstrom.
-	 */
-	private static function keepChildren(Step $original, Step $updated): Step
-	{
-		if ($original instanceof IfStep && $updated instanceof IfStep) {
-			return new IfStep($updated->condition, $original->then, $original->else, $updated->name);
-		}
-
-		if ($original instanceof ForeachStep && $updated instanceof ForeachStep) {
-			return new ForeachStep($updated->over, $updated->as, $original->steps, $updated->name);
-		}
-
-		return $updated;
 	}
 }

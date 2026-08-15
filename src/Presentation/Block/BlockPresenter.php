@@ -251,7 +251,13 @@ final class BlockPresenter extends Presenter
 	{
 		/** @var array{name: string} $values */
 		$values = $form->getValues('array');
-		$name = $values['name'];
+
+		// basename() stejně jako v deleteWorkflowFormSucceeded(): jméno pochází
+		// z požadavku. Samo o sobě nic neukradne — BlockStore::exists() se ptá
+		// do mapy klíčované basename($path, '.json'), takže jméno s lomítkem
+		// v ní nikdy nemůže být klíčem — ale ochrana má být vidět na obou
+		// polovinách GUI a nemá viset na vzdálené implementaci.
+		$name = \basename($values['name']);
 
 		$usage = BlockUsage::of($this->loadWorkflows());
 

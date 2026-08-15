@@ -78,9 +78,10 @@ Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
   je, protože na ně workflow odkazují uvnitř formátu
 - **detekovat souběh** — soubor upravený v editoru mezi vykreslením
   stránky a uložením se přepíše bez varování
-- **CSRF ochranu a session** — Nette připojuje `Requires(sameOrigin: true)`
-  ke každé metodě `handle*`, takže signály kryje kontrola Fetch-Metadata
-  i bez session
+- **CSRF ochranu a session** — kryje to kontrola Fetch-Metadata i bez session:
+  formuláře si o same-origin říkají samy ve `Form::signalReceived()` (a tudy
+  jde všechno, co GUI zapisuje), metodám `handle*` připojuje Nette
+  `Requires(sameOrigin: true)` automaticky
 - **zakládat adresáře `workflows/` a `blocks/`** — server běží v tom
   pracovním adresáři, ze kterého ho někdo spustil; chybějící adresář se
   ohlásí i s příkazem, kterým ho vytvořit

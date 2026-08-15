@@ -78,6 +78,15 @@ $presenter = renderDetailIn($dir);
 Assert::type('string', $presenter->template->error);
 Assert::contains('blocks', $presenter->template->error);
 
+// N2: stránka se vykreslí celá, ale bez jediného nálezu validátoru — musí
+// být poznat, že se nevalidovalo, ne že je všechno v pořádku.
+Assert::contains('Validace neproběhla', $presenter->template->error);
+
+// N3: detail workflow je po založení první místo, kam se čerstvý uživatel
+// dostane. Bez návodu je prázdný projekt slepá ulička — přehled kamenů ho má,
+// tady chyběl.
+Assert::contains('mkdir blocks', $presenter->template->error);
+
 
 // Vadný kámen — BlockRepository ho zná ze seznamu souborů, ale parsuje ho
 // líně a vyletí až uvnitř Validator::checkRun().
@@ -93,3 +102,16 @@ FileSystem::write($dir . '/blocks/broken.json', '{ toto neni platny json');
 $presenter = renderDetailIn($dir);
 
 Assert::type('string', $presenter->template->error);
+
+// N2: rozbitý soubor kamene shodí validátor uprostřed práce, takže prázdný
+// Result neznamená „nic k hlášení", ale „nevalidovalo se". Kdykoli je v
+// blocks/ rozbitý JSON, mizí i skutečné nálezy (třeba „kámen neexistuje") —
+// stránka to musí přiznat, jinak vypadá zvalidovaně.
+Assert::contains('Validace neproběhla', $presenter->template->error);
+
+// Adresář blocks/ tady existuje, takže rada `mkdir blocks` by byla nesmysl.
+Assert::notContains('mkdir', $presenter->template->error);
+
+// A pro pořádek: nálezy validátoru jsou opravdu pryč, hláška je jediné, co
+// o problému na stránce zbývá.
+Assert::same([], $presenter->template->workflowProblems);

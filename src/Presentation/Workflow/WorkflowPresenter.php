@@ -10,6 +10,7 @@ use Donut\Format\RunStep;
 use Donut\Format\Step;
 use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
+use Donut\Gui\MissingDir;
 use Donut\Gui\ProblemMap;
 use Donut\Gui\RowShape;
 use Donut\Gui\StepMapper;
@@ -97,7 +98,19 @@ final class WorkflowPresenter extends Presenter
 			// samotná chyba, ale hlavička, odkaz na obálku i strom kroků
 			// zůstanou; jinak by čerstvý projekt bez blocks/ měl workflow,
 			// se kterým už nejde nic dělat.
-			$template->error = $e->getMessage();
+			//
+			// Prázdný Result přitom neznamená „nic k hlášení", ale „nevalidovalo
+			// se" — výjimka může přijít i zevnitř validace, z rozbitého souboru
+			// kamene, a pak jsou pryč i skutečné nálezy (třeba „kámen
+			// neexistuje"). Bez téhle předsádky vypadá stránka zvalidovaně.
+			$dir = $this->blockDir();
+
+			// Rada `mkdir blocks` dává smysl jen u chybějícího adresáře, ne
+			// u rozbitého souboru kamene. Přehled kamenů ji má; detail je po
+			// založení workflow to místo, kam se čerstvý uživatel dostane dřív.
+			$hint = \is_dir($dir) ? '' : ' ' . MissingDir::hint($dir);
+
+			$template->error = 'Validace neproběhla: ' . $e->getMessage() . $hint;
 			$result = new Result;
 		}
 

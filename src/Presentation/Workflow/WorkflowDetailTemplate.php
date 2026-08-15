@@ -14,8 +14,11 @@ use Nette\Bridges\ApplicationLatte\Template;
 /**
  * Šablona pro Workflow:detail — kroky workflow s problémy od validátoru.
  *
- * Mimo $error jsou proměnné vyplněné jen v úspěšné větvi renderDetail() —
- * detail.latte se na $error ptá dřív, než na kteroukoliv z nich sáhne.
+ * $error a $workflow jsou na sobě nezávislé. Workflow načíst nešlo, jen když
+ * $workflow zůstane null — a jen tehdy jsou null i všechny ostatní proměnné.
+ * Chybějící nebo vadné kameny naopak nastaví $error a zároveň vyplní všechno
+ * ostatní: hlavička i strom kroků se vykreslí, chybí jen nálezy validátoru.
+ * Proto se detail.latte ptá na $workflow === null, ne na $error.
  */
 final class WorkflowDetailTemplate extends Template
 {

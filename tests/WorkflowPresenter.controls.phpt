@@ -99,15 +99,23 @@ Assert::type(Donut\Format\IfStep::class, $steps()[0]);
 
 Assert::count(2, $steps());
 
+// Neplatná cesta se musí uživateli ohlásit, ne jen tiše nic neudělat — než se
+// strom kroků stal komponentou, tuhle hlášku nekontroloval žádný test.
+Assert::contains('class=error', $html);
+Assert::contains('Krok "w.json:steps[99]" neexistuje.', $html);
+
 [, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'nesmysl'],
 );
 
+Assert::contains('class=error', $html);
+Assert::contains('"nesmysl" není cesta ke kroku.', $html);
+
 // --- cesta z jiného workflow se odmítne, ne aplikuje jako pozice v tomhle ---
 
-runWorkflowPresenterIn(
+[, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'detail', 'name' => 'w', 'do' => 'stepTree-deleteStep'],
 	['at' => 'jine.json:steps[0]'],
@@ -116,6 +124,9 @@ runWorkflowPresenterIn(
 Assert::count(2, $steps());
 
 Assert::count(2, $steps());
+
+Assert::contains('class=error', $html);
+Assert::contains('Cesta "jine.json:steps[0]" nepatří workflow "w".', $html);
 
 // --- neplatné workflow se uloží i tak: validace neblokuje ---
 //

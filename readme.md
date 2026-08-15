@@ -79,9 +79,10 @@ Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
 - **detekovat souběh** — soubor upravený v editoru mezi vykreslením
   stránky a uložením se přepíše bez varování
 - **CSRF ochranu a session** — kryje to kontrola Fetch-Metadata i bez session:
-  formuláře si o same-origin říkají samy ve `Form::signalReceived()` (a tudy
-  jde všechno, co GUI zapisuje), metodám `handle*` připojuje Nette
-  `Requires(sameOrigin: true)` automaticky
+  formuláře si o same-origin říkají samy ve `Form::signalReceived()`, metodám
+  `handle*` připojuje Nette `Requires(sameOrigin: true)` automaticky — a jinou
+  cestou než formulářem nebo signálem `handle*` GUI na disk nezapisuje
+  (přesun a mazání kroku jsou `handle*` ve `StepTreeControl`)
 - **zakládat adresáře `workflows/` a `blocks/`** — server běží v tom
   pracovním adresáři, ze kterého ho někdo spustil; chybějící adresář se
   ohlásí i s příkazem, kterým ho vytvořit

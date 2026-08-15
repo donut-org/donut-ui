@@ -42,4 +42,18 @@ Assert::same([], (new WorkflowParser)->parseFile($dir . '/w.json')->steps);
 // Chybějící adresář je jiná situace než prázdný.
 Assert::exception(fn() => new WorkflowStore($dir . '/neni'), ParseException::class);
 
+// --- exists a delete ---
+
+Assert::true($store->exists('w'));
+Assert::false($store->exists('neni'));
+
+$store->delete('w');
+
+Assert::false(\is_file($dir . '/w.json'));
+Assert::false($store->exists('w'));
+
+// Smazání neexistujícího je chyba, ne ticho — jinak by GUI hlásilo úspěch
+// nad něčím, co se nestalo.
+Assert::exception(fn() => $store->delete('neni'), ParseException::class);
+
 FileSystem::delete(TEMP_DIR);

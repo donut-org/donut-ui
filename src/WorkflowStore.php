@@ -7,6 +7,7 @@ namespace Donut\Gui;
 use Donut\Format\Workflow;
 use Donut\Parser\ParseException;
 use Donut\Writer\WorkflowWriter;
+use Nette\Utils\FileSystem;
 
 
 /**
@@ -17,7 +18,6 @@ use Donut\Writer\WorkflowWriter;
  * jména, jen ověřuje, že spolu sedí — složit ji musí někdo, a je to tohle.
  *
  * Čtení tady není: umí ho WorkflowRepository, který prezentér už používá.
- * Zakládání a mazání patří do druhého projektu editace workflow.
  */
 final class WorkflowStore
 {
@@ -50,5 +50,24 @@ final class WorkflowStore
 	public function save(Workflow $workflow): void
 	{
 		$this->writer->writeFile($workflow, $this->path($workflow->name));
+	}
+
+
+	public function exists(string $name): bool
+	{
+		return \is_file($this->path($name));
+	}
+
+
+	/**
+	 * @throws ParseException když workflow neexistuje
+	 */
+	public function delete(string $name): void
+	{
+		if (!$this->exists($name)) {
+			throw new ParseException("Workflow \"{$name}\" neexistuje. Hledal jsem v: {$this->directory}");
+		}
+
+		FileSystem::delete($this->path($name));
 	}
 }

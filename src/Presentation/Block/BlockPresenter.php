@@ -174,12 +174,23 @@ final class BlockPresenter extends Presenter
 
 		$block = (new BlockMapper)->toBlock($values);
 
-		// Zakládání nesmí přepsat kámen, který už existuje — writeFile()
-		// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
-		// Editace na tohle narazit nemůže — jméno je při ní needitovatelné
-		// (viz createComponentBlockForm).
-		if ($this->edited === null && $this->store()->exists($block->name)) {
-			$form->addError("Kámen \"{$block->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+		try {
+			$store = $this->store();
+
+			// Zakládání nesmí přepsat kámen, který už existuje — writeFile()
+			// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
+			// Editace na tohle narazit nemůže — jméno je při ní needitovatelné
+			// (viz createComponentBlockForm).
+			if ($this->edited === null && $store->exists($block->name)) {
+				$form->addError("Kámen \"{$block->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+
+				return;
+			}
+
+		} catch (ParseException $e) {
+			// BlockStore::__construct() hází ParseException, když adresář
+			// blocks neexistuje.
+			$form->addError($e->getMessage());
 
 			return;
 		}
@@ -199,7 +210,7 @@ final class BlockPresenter extends Presenter
 		}
 
 		try {
-			$this->store()->save($block);
+			$store->save($block);
 
 		} catch (WriteException $e) {
 			$form->addError($e->getMessage());

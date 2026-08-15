@@ -123,4 +123,23 @@ Assert::notContains('Smazat', $novy);
 [, $seznam] = runWorkflowPresenterIn($project, ['action' => 'default']);
 Assert::contains('nové workflow', $seznam);
 
+// --- zakládání bez adresáře workflows se ohlásí, nespadne ---
+//
+// WorkflowStore::__construct() hází ParseException, když adresář workflows
+// neexistuje — na čerstvém projektu je to normální stav. headerFormSucceeded()
+// to musí zachytit stejně vlídně jako WriteException, ne nechat výjimku
+// propadnout jako neodchycenou.
+
+$bezAdresare = TEMP_DIR . '/envelope-bez-workflows';
+FileSystem::createDir($bezAdresare);
+
+[$response, $html] = runWorkflowPresenterIn(
+	$bezAdresare,
+	['action' => 'edit', 'do' => 'headerForm-submit'],
+	['name' => 'nove', 'description' => '', 'inputs' => [], 'save' => 'Uložit'],
+);
+
+Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
+Assert::contains('neexistuje', $html);
+
 FileSystem::delete(TEMP_DIR);

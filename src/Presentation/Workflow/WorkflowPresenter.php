@@ -408,23 +408,26 @@ final class WorkflowPresenter extends Presenter
 		$values = $form->getValues('array');
 
 		$workflow = WorkflowMapper::toWorkflow($values, $this->editedWorkflow);
-		$store = new WorkflowStore($this->workflowDir());
-
-		// Zakládání nesmí přepsat workflow, které už existuje — writeFile()
-		// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
-		if ($this->editedWorkflow === null && $store->exists($workflow->name)) {
-			$form->addError("Workflow \"{$workflow->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
-
-			return;
-		}
 
 		try {
+			$store = new WorkflowStore($this->workflowDir());
+
+			// Zakládání nesmí přepsat workflow, které už existuje — writeFile()
+			// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
+			if ($this->editedWorkflow === null && $store->exists($workflow->name)) {
+				$form->addError("Workflow \"{$workflow->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+
+				return;
+			}
+
 			$store->save($workflow);
 
-		} catch (WriteException $e) {
-			// WorkflowStore::save() volá WorkflowWriter::writeFile(), který
-			// interní IOException vždycky zabalí do WriteException — širší
-			// catch by PHPStan (level max) odmítl jako dead catch.
+		} catch (ParseException | WriteException $e) {
+			// WorkflowStore::__construct() hází ParseException, když adresář
+			// workflows neexistuje. WorkflowStore::save() volá
+			// WorkflowWriter::writeFile(), který interní IOException vždycky
+			// zabalí do WriteException — širší catch by PHPStan (level max)
+			// odmítl jako dead catch.
 			$form->addError($e->getMessage());
 
 			return;

@@ -145,4 +145,33 @@ Assert::type(RedirectResponse::class, $response);
 Assert::true(is_file($project . '/blocks/echo.json'));
 Assert::false(is_file($project . '/blocks/prejmenovany.json'));
 
+// --- zakládání bez adresáře blocks se ohlásí, nespadne ---
+//
+// BlockStore::__construct() hází ParseException, když adresář blocks
+// neexistuje — na čerstvém projektu je to normální stav. blockFormSucceeded()
+// to musí zachytit stejně vlídně jako WriteException, ne nechat výjimku
+// propadnout jako neodchycenou.
+
+$bezAdresare = TEMP_DIR . '/edit-bez-blocks';
+FileSystem::createDir($bezAdresare);
+
+[$response, $html] = runBlockPresenterIn(
+	$bezAdresare,
+	['action' => 'edit', 'do' => 'blockForm-submit'],
+	[
+		'name' => 'novy',
+		'description' => '',
+		'command' => 'echo',
+		'args' => [],
+		'inputs' => [],
+		'timeout' => '',
+		'allowFailure' => 'none',
+		'allowFailureCodes' => '',
+		'save' => 'Uložit',
+	],
+);
+
+Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
+Assert::contains('neexistuje', $html);
+
 FileSystem::delete(TEMP_DIR);

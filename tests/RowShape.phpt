@@ -32,9 +32,19 @@ Assert::same([0, 1], RowShape::of([1 => [], 0 => []], 99));
 
 Assert::same([1], RowShape::of([1 => [], 'x' => [], '../y' => []], 99));
 
-// --- prázdný POST se chová jako žádný ---
+// --- prázdný kontejner v POSTu není totéž co žádný POST ---
+//
+// Prázdný seznam by byl slepá ulička — JS klonuje poslední řádek, takže
+// kontejner bez řádků už nejde rozšířit. Proto jeden prázdný řádek.
 
-Assert::same([0, 1], RowShape::of([], 1));
+Assert::same([0], RowShape::of([], 1));
+Assert::same([0], RowShape::of([], 0));
+
+// Klíče, které projdou filtrem na číslice, ale žádný nezbude, jsou totéž.
+Assert::same([0], RowShape::of(['x' => [], '../y' => []], 3));
+
+// Žádný POST se pořád odvozuje z objektu.
+Assert::same([0, 1], RowShape::of(null, 1));
 
 // --- co polem není, se chová jako žádný POST ---
 

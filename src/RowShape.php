@@ -8,10 +8,13 @@ namespace Donut\Gui;
 /**
  * Kolik řádků má opakující se kontejner formuláře a s jakými indexy.
  *
- * Při POSTu se odvodí z došlých dat — JS řádky nikdy nepřečísluje, takže
- * indexy můžou mít díry a kontejnery musí vzniknout přesně pro ty klíče,
- * které dorazily. Jinak se vezmou z načteného objektu, plus jeden prázdný
- * řádek navíc, aby měl uživatel kam psát i bez JS.
+ * `null` znamená, že tenhle POST kontejneru vůbec nepatří — řádky se pak
+ * vezmou z načteného objektu, plus jeden prázdný navíc, aby měl uživatel
+ * kam psát i bez JS. Pole, byť prázdné, znamená, že POST kontejneru patří —
+ * indexy se odvodí z došlých dat, protože JS řádky nikdy nepřečísluje a
+ * v číslování tak můžou být díry. Nezbyl-li po filtru na číslice ani jeden
+ * řádek, vrátí se jeden prázdný: prázdný seznam by byl slepá ulička, JS
+ * klonuje poslední řádek a kontejner bez řádků by se už nedal rozšířit.
  *
  * Jestli POST patří zrovna tomuhle formuláři, rozhoduje volající — jen on
  * zná jméno svého signálu. Formulář sestavený z cizího POSTu by se vykreslil
@@ -26,7 +29,7 @@ final class RowShape
 	 */
 	public static function of(mixed $post, int $existing): array
 	{
-		if (\is_array($post) && $post !== []) {
+		if (\is_array($post)) {
 			$keys = [];
 
 			foreach (\array_keys($post) as $key) {
@@ -38,7 +41,10 @@ final class RowShape
 
 			\sort($keys);
 
-			return $keys;
+			// Kontejner, ze kterého nepřišel ani jeden řádek, dostane jeden
+			// prázdný. Prázdný seznam by byl slepá ulička: JS klonuje poslední
+			// řádek, takže kontejner bez řádků už nejde rozšířit.
+			return $keys === [] ? [0] : $keys;
 		}
 
 		return \range(0, $existing);

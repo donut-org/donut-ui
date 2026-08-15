@@ -65,9 +65,11 @@ function createWorkflowPresenter(array $post = []): WorkflowPresenter
 			post: $post,
 			// Nette\Application\UI\Form odmítá signál, pokud request nevypadá
 			// jako same-origin (ochrana proti CSRF bez session, založená na
-			// Fetch Metadata) — skutečný prohlížeč hlavičku posílá sám, tady
-			// ji musíme simulovat, jinak by signál tiše selhal.
-			headers: $post === [] ? [] : ['sec-fetch-site' => 'same-origin'],
+			// Fetch Metadata) — skutečný prohlížeč hlavičku posílá sám u každé
+			// navigace v rámci webu, GETem počínaje, tady ji musíme simulovat.
+			// Bez ní by se GET se signálem v adrese (`do=…`) místo vykreslení
+			// odklonil do detectedCsrf() a testovat by nešel.
+			headers: ['sec-fetch-site' => 'same-origin'],
 			method: $post === [] ? 'GET' : 'POST',
 		),
 		new HttpResponse,

@@ -194,4 +194,18 @@ Assert::contains('Vypíše text', $html, 'popis se nesmí ztratit');
 Assert::contains('{%text%}', $html, 'argumenty se nesmí ztratit');
 Assert::contains('value="5"', $html, 'timeout se nesmí ztratit');
 
+// --- N1: GET s `do=blockForm-submit` v adrese je pořád GET ---
+// Ručně složená adresa nese signál, ale žádná data — getPost() vrátí [],
+// což není prázdný POST formuláře. Bez testu na HTTP metodu se setDefaults()
+// přeskočí, formulář se vykreslí prázdný a „Uložit" tak kámen zapíše.
+
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'echo', 'do' => 'blockForm-submit']);
+
+Assert::contains('value="echo"', $html, 'jméno drží setDefaultValue()');
+Assert::contains('Vypíše text', $html, 'popis se nesmí ztratit — GET nic neodeslal');
+// Jméno i příkaz jsou tady shodou okolností „echo" — na příkaz se proto musí
+// ptát adresně, jinak by asercí prošlo předvyplněné jméno.
+Assert::match('~name="command"[^>]*value="echo"~', $html, 'příkaz se nesmí ztratit');
+Assert::contains('{%text%}', $html, 'argumenty se nesmí ztratit');
+
 FileSystem::delete(TEMP_DIR);

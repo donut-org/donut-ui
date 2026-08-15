@@ -65,9 +65,11 @@ function createBlockPresenter(array $post = []): BlockPresenter
 			// Nette\Application\UI\Form odmítá signál "submit", pokud request
 			// nevypadá jako same-origin (ochrana proti CSRF bez session,
 			// založená na Fetch Metadata) — skutečný prohlížeč hlavičku
-			// posílá sám, tady ji musíme simulovat, jinak formulář tiše
-			// spadne do detectedCsrf() a onSuccess se nikdy nezavolá.
-			headers: $post === [] ? [] : ['sec-fetch-site' => 'same-origin'],
+			// posílá sám u každé navigace v rámci webu, GETem počínaje, tady
+			// ji musíme simulovat, jinak formulář tiše spadne do
+			// detectedCsrf() a onSuccess se nikdy nezavolá — a GET se signálem
+			// v adrese (`do=…`) se místo vykreslení odkloní na redirect.
+			headers: ['sec-fetch-site' => 'same-origin'],
 			method: $post === [] ? 'GET' : 'POST',
 		),
 		new HttpResponse,

@@ -256,7 +256,12 @@ final class WorkflowPresenter extends Presenter
 		$form->addSubmit('save', 'Uložit');
 		$form->onSuccess[] = $this->stepFormSucceeded(...);
 
-		if ($this->editedStep !== null && !$this->getRequest()->isMethod('POST')) {
+		// Táž otázka jako v rowShape(), a proto tentýž mechanismus: ne „je to
+		// POST?", ale „patří ten POST tomuhle formuláři?". Na step.latte je
+		// dnes formulář jediný, takže cizí signál sem nedorazí — ale jeden
+		// idiom na jednu otázku ve všech třech formulářích je to, co drží
+		// GET se signálem v adrese mimo hru.
+		if ($this->editedStep !== null && !$this->isFormPost('stepForm-submit')) {
 			$form->setDefaults(StepMapper::toValues($this->editedStep));
 		}
 
@@ -272,7 +277,7 @@ final class WorkflowPresenter extends Presenter
 		// Jiný signál nenese in/out vůbec — bez téhle podmínky by se formulář
 		// sestavil s nula řádky a stránka by ukázala prázdný krok, který ve
 		// skutečnosti prázdný není.
-		$post = $this->getParameter('do') === 'stepForm-submit'
+		$post = $this->isFormPost('stepForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: null;
 
@@ -285,6 +290,24 @@ final class WorkflowPresenter extends Presenter
 			'in' => RowShape::of($in, $step instanceof RunStep ? \count($step->in) : 0),
 			'out' => RowShape::of($out, $step instanceof RunStep ? \count($step->out) : 0),
 		];
+	}
+
+
+	/**
+	 * Patří došlý POST formuláři daného signálu? Na stránce úpravy jsou
+	 * formuláře dva a data toho druhého (deleteWorkflowForm) o hlavičce
+	 * neříkají nic — jedna odpověď pro tvar formuláře i pro jeho výchozí
+	 * hodnoty.
+	 *
+	 * Na HTTP metodu se ptát musíme: signál `do=headerForm-submit` se dá mít
+	 * v adrese i na GETu (ručně složená adresa, záložka, historie), a tam
+	 * getPost() vrátí prázdné pole. Bez téhle podmínky by se formulář
+	 * vykreslil prázdný a „Uložit" by zapsalo prázdný popis a žádné vstupy.
+	 */
+	private function isFormPost(string $signal): bool
+	{
+		return $this->getRequest()->isMethod('POST')
+			&& $this->getParameter('do') === $signal;
 	}
 
 
@@ -381,7 +404,7 @@ final class WorkflowPresenter extends Presenter
 
 		$form->addText('description', 'Popis');
 
-		$post = $this->getParameter('do') === 'headerForm-submit'
+		$post = $this->isFormPost('headerForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: null;
 

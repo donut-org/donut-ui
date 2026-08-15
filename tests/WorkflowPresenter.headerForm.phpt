@@ -97,4 +97,17 @@ Assert::same(['repo', 'novy'], array_keys($load('w')->inputs), 'přidaný vstup 
 Assert::contains('value="repo"', $html);
 Assert::contains('value="novy"', $html, 'oba vstupy musí mít svůj řádek');
 
+// --- N1: GET s `do=headerForm-submit` v adrese je pořád GET ---
+// Ručně složená adresa (nebo záložka z doby před přesměrováním) nese signál,
+// ale žádná data — getPost() vrátí [], což není null. Bez testu na HTTP metodu
+// se setDefaults() přeskočí, formulář se vykreslí prázdný a „Uložit" zapíše
+// description: null a inputs: [].
+
+[, $get] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit']);
+
+Assert::contains('value="w"', $get, 'jméno drží setDefaultValue()');
+Assert::contains('Duležitý popis', $get, 'popis se nesmí ztratit — GET nic neodeslal');
+Assert::contains('value="repo"', $get, 'vstupy se nesmí ztratit');
+Assert::contains('value="novy"', $get);
+
 FileSystem::delete(TEMP_DIR);

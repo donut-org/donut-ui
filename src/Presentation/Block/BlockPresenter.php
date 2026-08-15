@@ -335,10 +335,16 @@ final class BlockPresenter extends Presenter
 	 * Patří došlý POST formuláři kamene? Na stránce editace jsou formuláře
 	 * dva a data toho druhého (deleteForm) o obsahu kamene neříkají nic —
 	 * jedna odpověď pro tvar formuláře i pro jeho výchozí hodnoty.
+	 *
+	 * Na HTTP metodu se ptát musíme: signál `do=blockForm-submit` se dá mít
+	 * v adrese i na GETu (ručně složená adresa, záložka, historie), a tam
+	 * getPost() vrátí prázdné pole. Bez téhle podmínky by se formulář
+	 * vykreslil prázdný a „Uložit" by tak kámen zapsalo.
 	 */
 	private function isBlockFormPost(): bool
 	{
-		return $this->getParameter('do') === 'blockForm-submit';
+		return $this->getRequest()->isMethod('POST')
+			&& $this->getParameter('do') === 'blockForm-submit';
 	}
 
 

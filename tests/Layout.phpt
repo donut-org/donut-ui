@@ -7,10 +7,14 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/workflowPresenter.php';
+require __DIR__ . '/inc/blockPresenter.php';
 
 $dir = TEMP_DIR . '/projekt';
 FileSystem::createDir($dir . '/workflows');
-FileSystem::write($dir . '/workflows/w.json', '{"name":"w","steps":[]}');
+FileSystem::write($dir . '/workflows/w.json', '{"name":"w","steps":[{"type":"set","key":"x","value":"1"}]}');
+
+FileSystem::createDir($dir . '/blocks');
+FileSystem::write($dir . '/blocks/k.json', '{"name":"k","command":"echo","args":[]}');
 
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'default']);
 
@@ -53,3 +57,27 @@ Assert::match('~<li class="breadcrumb-item active">w</li>~', $detail);
 
 // zpáteční odkazy zmizely — drobečky je nahradily
 Assert::notContains('← workflow', $detail);
+
+// drobečky Workflow:edit bez jména: nové workflow, odkaz jen na přehled
+[, $newWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $newWorkflow);
+Assert::match('~<li class="breadcrumb-item active">nové workflow</li>~', $newWorkflow);
+
+// drobečky Workflow:edit se jménem: mezičlánek je odkaz na detail toho workflow
+[, $editWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">w</a></li>~', $editWorkflow);
+Assert::match('~<li class="breadcrumb-item active">hlavička</li>~', $editWorkflow);
+
+// drobečky Workflow:step: krok je aktivní, před ním odkaz na detail workflow
+[, $step] = runWorkflowPresenterIn($dir, ['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">w</a></li>~', $step);
+Assert::match('~<li class="breadcrumb-item active">krok</li>~', $step);
+
+// drobečky Block:default: poslední (jediná) položka je aktivní
+[, $blockDefault] = runBlockPresenterIn($dir, ['action' => 'default']);
+Assert::match('~<li class="breadcrumb-item active">Kameny</li>~', $blockDefault);
+
+// drobečky Block:edit: sekce je odkaz, jméno kamene poslední
+[, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);
+Assert::match('~<li class="breadcrumb-item active">k</li>~', $blockEdit);

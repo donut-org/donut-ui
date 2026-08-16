@@ -7,6 +7,7 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/workflowPresenter.php';
+require __DIR__ . '/inc/blockPresenter.php';
 
 $dir = TEMP_DIR . '/projekt';
 FileSystem::createDir($dir . '/workflows');
@@ -85,3 +86,67 @@ Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 // hodnoty kroku v tabulkách zůstávají
 Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $stepHtml);
 Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $stepHtml);
+
+
+// --- stránka kamene: tabulka vstupů ------------------------------------
+// Task 6 měnil tři šablony, ne dvě. Bez tohohle bloku projde sadou i úplné
+// rozbití značkování v Block/edit.latte.
+
+$kamen = TEMP_DIR . '/kamen';
+FileSystem::createDir($kamen . '/blocks');
+FileSystem::write($kamen . '/blocks/k.json', \json_encode([
+	'name' => 'k',
+	'command' => 'echo',
+	'args' => [['-n']],
+	'inputs' => ['text' => ['required' => true, 'description' => 'Co vypsat']],
+]));
+
+[, $blockHtml] = runBlockPresenterIn($kamen, ['action' => 'edit', 'name' => 'k']);
+
+// hlavička je to, co uživateli říká, co do kterého políčka patří
+Assert::contains('<th scope=col>Jméno</th>', $blockHtml);
+Assert::contains('<th scope=col>Povinný</th>', $blockHtml);
+Assert::contains('<th scope=col>Výchozí</th>', $blockHtml);
+Assert::contains('<th scope=col>Popis</th>', $blockHtml);
+
+// značkování, na které sahá rows.js
+Assert::contains('<tbody id=inputs>', $blockHtml);
+Assert::match('~<tr class=js-row>~', $blockHtml);
+Assert::contains('js-del-row', $blockHtml);
+Assert::contains('data-add=inputs', $blockHtml);
+
+// stará třída .row je pryč — kolidovala by s Bootstrap gridem
+Assert::notMatch('~<div class=row[ >]~', $blockHtml);
+
+// hodnoty ze souboru v tabulce zůstávají
+Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="text"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Co vypsat"~', $blockHtml);
+
+// nápověda pod tabulkou
+Assert::contains('--jmeno=hodnota', $blockHtml);
+Assert::contains('když ji volající nepředá', $blockHtml);
+
+
+// --- formuláře jdou z FormFactory --------------------------------------
+// FormFactory.phpt testuje továrnu izolovaně a o skutečných stránkách netvrdí
+// nic. Bez těchhle aserci projde sadou návrat všech pěti formulářů na new Form.
+
+// WorkflowPresenter: hlavička (text, checkbox, submit)
+Assert::contains('class="form-control"', $html);
+Assert::contains('class="form-check-input"', $html);
+Assert::contains('class="btn btn-primary"', $html);
+
+// WorkflowPresenter: krok (navíc rozbalovací seznam)
+Assert::contains('class="form-control"', $stepHtml);
+Assert::contains('class="form-select"', $stepHtml);
+Assert::contains('class="btn btn-primary"', $stepHtml);
+
+// BlockPresenter: kámen
+Assert::contains('class="form-control"', $blockHtml);
+Assert::contains('class="form-check-input"', $blockHtml);
+Assert::contains('class="btn btn-primary"', $blockHtml);
+
+// vlastní třída se z prototypu nepřepíše — mazací tlačítko si o btn-danger
+// řeklo při vzniku a továrna mu ji nechává
+Assert::contains('btn btn-danger', $html);
+Assert::contains('btn btn-danger', $blockHtml);

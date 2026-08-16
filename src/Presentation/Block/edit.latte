@@ -33,9 +33,11 @@
 
 		{* Vodorovný tvar skupiny: form-control z FormFactory je display:block
 		   na celou šířku, takže bez tohohle by z argumentů byl svislý sloupec
-		   stejně vypadajících políček a hranice skupiny by zmizela. Vlastní
-		   třída w-auto se z prototypu nepřepíše — FormFactory doplňuje jen
-		   tam, kde žádná není. *}
+		   stejně vypadajících políček a hranice skupiny by zmizela. Třída
+		   se sem píše celá i s form-control — ochrana ve FormFactory (doplní
+		   třídu jen tam, kde žádná není) se tu neuplatní, protože {input}
+		   s class => … atribut class přepíše celý; kdyby form-control
+		   v tomhle řetězci chybělo, v HTML by chybělo taky. *}
 		<div id=args>
 			<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
 				<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>

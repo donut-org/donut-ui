@@ -31,6 +31,10 @@ Assert::match('~<tr class=js-row>~', $html);
 Assert::contains('js-del-row', $html);
 Assert::contains('data-add=inputs', $html);
 
+// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
+// jen "tlačítko ×"
+Assert::contains('js-del-row" aria-label="Smazat řádek"', $html);
+
 // stará třída .row je pryč — kolidovala by s Bootstrap gridem
 Assert::notMatch('~<div class=row[ >]~', $html);
 
@@ -93,6 +97,11 @@ Assert::contains('data-add=in', $stepHtml);
 Assert::contains('data-add=out', $stepHtml);
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 
+// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
+// jen "tlačítko ×"; obě tabulky mají po dvou řádcích (vyplněný + prázdný
+// navíc), tedy dohromady čtyři mazací tlačítka
+Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Smazat řádek"'));
+
 // políčka obou tabulek mají přístupné jméno a obě tabulky se v úzkém okně
 // posouvají
 Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Vstup kamene"~', $stepHtml);
@@ -132,6 +141,10 @@ Assert::contains('<tbody id=inputs>', $blockHtml);
 Assert::match('~<tr class=js-row>~', $blockHtml);
 Assert::contains('js-del-row', $blockHtml);
 Assert::contains('data-add=inputs', $blockHtml);
+
+// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
+// jen "tlačítko ×"
+Assert::contains('js-del-row" aria-label="Smazat řádek"', $blockHtml);
 
 // stará třída .row je pryč — kolidovala by s Bootstrap gridem
 Assert::notMatch('~<div class=row[ >]~', $blockHtml);

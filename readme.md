@@ -38,7 +38,7 @@ aby vestavěný server **neudělal** `chdir()` do docrootu — díky tomu může
 
 Router zároveň každý požadavek nejdřív pošle do `index.php`; statický soubor
 se vydá jen tehdy, když ho `Donut\Gui\StaticFile::shouldServe()` uzná za
-existující soubor uvnitř `gui/www`.
+existující soubor uvnitř `gui/www`, kromě routeru samotného.
 
 Assety leží v `gui/www/assets/`. Bootstrap je verze **5.3.8**, vendorovaný
 ručně z `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/`; aktualizace

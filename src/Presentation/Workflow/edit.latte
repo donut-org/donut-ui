@@ -1,8 +1,12 @@
 {block title}{$name ?? 'Nové workflow'} — Donut{/block}
 
-{block content}
-<p><a n:href="Workflow:default">← workflow</a></p>
+{block breadcrumbs}
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
+	<li n:if="$name !== null" class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
+	<li class="breadcrumb-item active">{$name === null ? 'nové workflow' : 'hlavička'}</li>
+{/block}
 
+{block content}
 <h1>{$name ?? 'Nové workflow'}</h1>
 
 <p n:if="$error" class=error>{$error}</p>

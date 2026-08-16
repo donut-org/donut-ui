@@ -1,8 +1,11 @@
 {block title}{$name ?? 'Nový kámen'} — Donut{/block}
 
-{block content}
-<p><a n:href="Block:default">← kameny</a></p>
+{block breadcrumbs}
+	<li class=breadcrumb-item><a n:href="Block:default">Kameny</a></li>
+	<li class="breadcrumb-item active">{$name ?? 'nový kámen'}</li>
+{/block}
 
+{block content}
 <h1>{$name ?? 'Nový kámen'}</h1>
 
 <p n:if="$error" class=error>{$error}</p>

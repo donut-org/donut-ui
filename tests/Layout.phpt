@@ -42,3 +42,14 @@ Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Kameny</a>~', $html, 'Kam
 
 // výchozí drobečky, dokud je stránka nepřepíše (Task 4)
 Assert::contains('breadcrumb', $html);
+
+// drobečky přehledu: poslední položka je aktivní a není odkaz
+Assert::match('~<li class="breadcrumb-item active">Workflow</li>~', $html);
+
+// drobečky detailu: sekce je odkaz, jméno workflow poslední
+[, $detail] = runWorkflowPresenterIn($dir, ['action' => 'detail', 'name' => 'w']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $detail);
+Assert::match('~<li class="breadcrumb-item active">w</li>~', $detail);
+
+// zpáteční odkazy zmizely — drobečky je nahradily
+Assert::notContains('← workflow', $detail);

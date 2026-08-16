@@ -1,8 +1,12 @@
 {block title}Krok — {$name} — Donut{/block}
 
-{block content}
-<p><a n:href="Workflow:detail, name: $name">← {$name}</a></p>
+{block breadcrumbs}
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
+	<li class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
+	<li class="breadcrumb-item active">krok</li>
+{/block}
 
+{block content}
 <h1>Krok {$type}</h1>
 <p class=keys>{$at}</p>
 

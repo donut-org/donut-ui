@@ -40,6 +40,11 @@ Router zároveň každý požadavek nejdřív pošle do `index.php`; statický s
 se vydá jen tehdy, když ho `Donut\Gui\StaticFile::shouldServe()` uzná za
 existující soubor uvnitř `gui/www`.
 
+Assety leží v `gui/www/assets/`. Bootstrap je verze **5.3.8**, vendorovaný
+ručně z `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/`; aktualizace
+znamená nahradit `bootstrap.min.css` a `bootstrap.bundle.min.js` novými
+soubory odtamtud. Žádný build krok, žádný `npm`.
+
 
 ## Co je vidět
 

@@ -1,5 +1,3 @@
-{import '../rows.latte'}
-
 {block title}{$name ?? 'Nový kámen'} — Donut{/block}
 
 {block content}
@@ -66,10 +64,8 @@
 		<p>{input save}</p>
 	{/form}
 
-	{include rows}
-
 	{* Skupiny argumentů jsou dvouúrovňové (args[g][a]) — sdílený mechanismus
-	   z rows.latte zvládá jen jednu úroveň, takže args zůstává na vlastním
+	   z rows.js zvládá jen jednu úroveň, takže args zůstává na vlastním
 	   kódu. Používá ale jeho maxIndex a cloneRow. *}
 	<script n:syntax="off">
 	document.getElementById('add-group').addEventListener('click', () => {

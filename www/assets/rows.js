@@ -1,17 +1,14 @@
-{*
-	Sdílený JS pro opakující se řádky formuláře. Používá ho editace kamene
-	(args, inputs) i stránka kroku (in, out).
+// Sdílený JS pro opakující se řádky formuláře. Používá ho editace kamene
+// (args, inputs) i stránka kroku (in, out).
+//
+// Značkování, které očekává:
+//   <tbody id="inputs"> … <tr class="js-row"> … <input name="inputs[0][name]"> … </tr> </tbody>
+//   <button type=button data-add="inputs">+ řádek</button>
+//   <button type=button class="js-del-row">×</button>   (uvnitř .js-row)
+//
+// Klasický skript, ne modul: maxIndex a cloneRow musí zůstat globální,
+// protože je volá i skript skupin argumentů v Block/edit.latte.
 
-	Značkování, které očekává:
-	  <div id="args"> … <div class="row"> … <input name="args[0][0]"> … </div> </div>
-	  <button type=button data-add="args">+ řádek</button>
-	  <button type=button class="del-row">×</button>   (uvnitř .row)
-
-	n:syntax="off" je povinné — bez něj Latte spadne na objektovém literálu
-	(Unexpected tag {name}). Hlídá to tests/Latte.TemplatesCompile.phpt.
-*}
-{define rows}
-<script n:syntax="off">
 // Řádky se nikdy nepřečíslovávají: nový dostane index o jedna vyšší, než je
 // současné maximum, a smazání nechá v číslování díru. Server pole srovná
 // přes ksort()/array_values(). Přečíslovávání by mohlo tiše prohodit dvě
@@ -44,7 +41,7 @@ document.addEventListener('click', e => {
 
 	if (add) {
 		const box = document.getElementById(add);
-		const rows = box.querySelectorAll('.row');
+		const rows = box.querySelectorAll('.js-row');
 		const prefix = new RegExp('^' + add + '\\[(\\d+)]');
 		const next = maxIndex(box.querySelectorAll('input, select'), prefix) + 1;
 		// Přejmenuje se jen indexová část; zbytek jména zůstane, aby řádek
@@ -55,12 +52,10 @@ document.addEventListener('click', e => {
 		));
 	}
 
-	if (e.target.classList && e.target.classList.contains('del-row')) {
-		const row = e.target.closest('.row');
+	if (e.target.classList && e.target.classList.contains('js-del-row')) {
+		const row = e.target.closest('.js-row');
 		const box = row.parentElement;
 		// Poslední řádek zůstane, jinak by nebylo co klonovat.
-		if (box.querySelectorAll('.row').length > 1) row.remove();
+		if (box.querySelectorAll('.js-row').length > 1) row.remove();
 	}
 });
-</script>
-{/define}

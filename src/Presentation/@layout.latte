@@ -1,18 +1,12 @@
 <!DOCTYPE html>
 <html lang=cs>
 <meta charset=utf-8>
+<meta name=viewport content="width=device-width, initial-scale=1">
 <title>{block title}Donut{/block}</title>
-<style>
-	body { font: 15px/1.5 system-ui, sans-serif; margin: 2rem; max-width: 60rem }
-	.error { color: #a00 }
-	.warning { color: #a60 }
-	code { background: #f4f4f4; padding: .1em .3em }
-	/* Na řádku kroku, ne na <li> — to obaluje i vnořené then/else/foreach
-	   a background by obarvil celý podstrom místo jednoho kroku. */
-	li > div.write { background: #eafbea }
-	li > div.read { background: #eef3fb }
-	li > div.write.read { background: #f4f0e6 }
-	.keys { font-size: .85em; color: #666 }
-	.keys a { color: #06c }
-</style>
+<link rel=stylesheet href="/assets/bootstrap.min.css">
+<link rel=stylesheet href="/assets/donut.css">
+
 {include content}
+
+<script src="/assets/bootstrap.bundle.min.js"></script>
+<script src="/assets/rows.js"></script>

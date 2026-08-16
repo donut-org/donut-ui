@@ -1,5 +1,3 @@
-{import '../rows.latte'}
-
 {block title}{$name ?? 'Nové workflow'} — Donut{/block}
 
 {block content}
@@ -34,8 +32,6 @@
 
 		<p>{input save}</p>
 	{/form}
-
-	{include rows}
 {/if}
 
 {* Mazání je mimo {if !$error} schválně: workflow, jehož soubor se

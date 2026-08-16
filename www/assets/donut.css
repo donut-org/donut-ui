@@ -1,0 +1,10 @@
+.error { color: #a00 }
+.warning { color: #a60 }
+code { background: #f4f4f4; padding: .1em .3em }
+/* Na řádku kroku, ne na <li> — to obaluje i vnořené then/else/foreach
+   a background by obarvil celý podstrom místo jednoho kroku. */
+li > div.write { background: #eafbea }
+li > div.read { background: #eef3fb }
+li > div.write.read { background: #f4f0e6 }
+.keys { font-size: .85em; color: #666 }
+.keys a { color: #06c }

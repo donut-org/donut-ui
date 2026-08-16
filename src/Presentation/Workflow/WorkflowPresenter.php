@@ -9,6 +9,7 @@ use Donut\Format\Condition;
 use Donut\Format\RunStep;
 use Donut\Format\Step;
 use Donut\Format\Workflow;
+use Donut\Gui\FormFactory;
 use Donut\Gui\KeyMap;
 use Donut\Gui\MissingDir;
 use Donut\Gui\ProblemMap;
@@ -208,7 +209,7 @@ final class WorkflowPresenter extends Presenter
 
 	protected function createComponentStepForm(): Form
 	{
-		$form = new Form;
+		$form = FormFactory::create();
 		$form->addHidden('type')->setDefaultValue($this->stepType);
 		$form->addText('name', 'Název kroku');
 
@@ -399,7 +400,7 @@ final class WorkflowPresenter extends Presenter
 
 	protected function createComponentHeaderForm(): Form
 	{
-		$form = new Form;
+		$form = FormFactory::create();
 
 		$nameInput = $form->addText('name', 'Jméno')
 			->setRequired('Jméno je povinné.')
@@ -489,9 +490,10 @@ final class WorkflowPresenter extends Presenter
 
 	protected function createComponentDeleteWorkflowForm(): Form
 	{
-		$form = new Form;
+		$form = FormFactory::create();
 		$form->addHidden('name');
-		$form->addSubmit('save', 'Smazat');
+		$form->addSubmit('save', 'Smazat')
+			->getControlPrototype()->setAttribute('class', 'btn btn-danger');
 		$form->onSuccess[] = $this->deleteWorkflowFormSucceeded(...);
 
 		return $form;

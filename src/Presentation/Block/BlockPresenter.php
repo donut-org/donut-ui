@@ -10,6 +10,7 @@ use Donut\Format\Workflow;
 use Donut\Gui\BlockMapper;
 use Donut\Gui\BlockStore;
 use Donut\Gui\BlockUsage;
+use Donut\Gui\FormFactory;
 use Donut\Gui\MissingDir;
 use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
@@ -99,7 +100,7 @@ final class BlockPresenter extends Presenter
 
 	protected function createComponentBlockForm(): Form
 	{
-		$form = new Form;
+		$form = FormFactory::create();
 		$shape = $this->formShape();
 
 		$name = $form->addText('name', 'Jméno')
@@ -244,9 +245,10 @@ final class BlockPresenter extends Presenter
 
 	protected function createComponentDeleteForm(): Form
 	{
-		$form = new Form;
+		$form = FormFactory::create();
 		$form->addHidden('name');
-		$form->addSubmit('delete', 'Smazat');
+		$form->addSubmit('delete', 'Smazat')
+			->getControlPrototype()->setAttribute('class', 'btn btn-danger');
 		$form->onSuccess[] = $this->deleteFormSucceeded(...);
 
 		return $form;

@@ -25,20 +25,20 @@ GUI hledá `blocks/` a `workflows/` v **pracovním adresáři serveru**, stejně
 jako CLI. Spouští se tedy z adresáře projektu, ne z `gui/`:
 
 ```bash
-cd docs/workflows/donut
-php -S 127.0.0.1:8000 -t . /cesta/k/donut/gui/www/index.php
+cd /muj/projekt
+php -S 127.0.0.1:8000 -t /cesta/k/donut/gui/www /cesta/k/donut/gui/www/index.php
 ```
-
-(cesta k `index.php` je absolutní nebo relativní k adresáři, ze kterého
-příkaz spouštíte)
 
 a otevřít <http://127.0.0.1:8000/>.
 
-Router script (`gui/www/index.php` jako poslední argument) je nutný,
-protože bez něj vestavěný PHP server udělá `chdir()` do docrootu (`-t`) a
-GUI by pak hledalo `blocks/` a `workflows/` v `gui/www` místo v adresáři
-projektu — a tam žádný z těch adresářů není, takže obě stránky ohlásí
-„Adresář … neexistuje.".
+Router script (`gui/www/index.php` jako poslední argument) je nutný proto,
+aby vestavěný server **neudělal** `chdir()` do docrootu — díky tomu může
+`-t` ukazovat na `gui/www` (odkud se servírují assety) a GUI přesto hledá
+`blocks/` a `workflows/` v adresáři, ze kterého jsi server spustil.
+
+Router zároveň každý požadavek nejdřív pošle do `index.php`; statický soubor
+se vydá jen tehdy, když ho `Donut\Gui\StaticFile::shouldServe()` uzná za
+existující soubor uvnitř `gui/www`.
 
 
 ## Co je vidět

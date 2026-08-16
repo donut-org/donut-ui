@@ -6,7 +6,44 @@
 <link rel=stylesheet href="/assets/bootstrap.min.css">
 <link rel=stylesheet href="/assets/donut.css">
 
-{include content}
+<div class="container-fluid">
+	<div class="row">
+		{*
+			Levý sloupec je jeden prvek, ne dva: offcanvas-md znamená pod md
+			vysouvací panel, od md výš obyčejný sloupec. Navigace se proto
+			nepíše dvakrát a nic se nepřepíná v JS.
+		*}
+		<nav id=nav class="col-md-3 col-lg-2 offcanvas-md offcanvas-start bg-body-tertiary p-3" tabindex="-1" aria-label="Hlavní navigace">
+			<div class="d-flex justify-content-between align-items-center mb-3">
+				<a class="fs-4 fw-semibold text-decoration-none" n:href="Workflow:default">Donut</a>
+				<button type=button class="btn-close d-md-none" data-bs-dismiss=offcanvas data-bs-target="#nav" aria-label="Zavřít"></button>
+			</div>
+
+			<ul class="nav nav-pills flex-column">
+				<li class=nav-item>
+					<a n:class="nav-link, isLinkCurrent('Workflow:*') ? active" n:href="Workflow:default">Workflow</a>
+				</li>
+				<li class=nav-item>
+					<a n:class="nav-link, isLinkCurrent('Block:*') ? active" n:href="Block:default">Kameny</a>
+				</li>
+			</ul>
+		</nav>
+
+		<main class="col py-3 px-md-4">
+			<div class="d-flex align-items-center gap-2 mb-3">
+				<button type=button class="btn btn-outline-secondary d-md-none" data-bs-toggle=offcanvas data-bs-target="#nav" aria-label="Otevřít navigaci">☰</button>
+
+				<nav aria-label="Drobečky">
+					<ol class="breadcrumb mb-0">
+						{block breadcrumbs}<li class="breadcrumb-item active">Donut</li>{/block}
+					</ol>
+				</nav>
+			</div>
+
+			{include content}
+		</main>
+	</div>
+</div>
 
 <script src="/assets/bootstrap.bundle.min.js"></script>
 <script src="/assets/rows.js"></script>

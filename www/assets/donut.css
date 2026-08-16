@@ -8,3 +8,8 @@ li > div.read { background: #eef3fb }
 li > div.write.read { background: #f4f0e6 }
 .keys { font-size: .85em; color: #666 }
 .keys a { color: #06c }
+/* Samotné .table-responsive v úzkém okně nestačí: políčka mají width:100%
+   a min-width:0, takže se tabulka smrskne s ním a sloupce spadnou na pár
+   znaků místo toho, aby se dala posouvat. Spodní hranice šířky je to, co
+   posuv zapne. */
+.table-responsive > table { min-width: 34rem }

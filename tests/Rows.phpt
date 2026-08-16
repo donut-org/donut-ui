@@ -34,6 +34,16 @@ Assert::contains('data-add=inputs', $html);
 // stará třída .row je pryč — kolidovala by s Bootstrap gridem
 Assert::notMatch('~<div class=row[ >]~', $html);
 
+// hlavička pojmenovává buňku, ne políčko v ní — odečítač obrazovky potřebuje
+// aria-label. Hlavičky přitom zůstávají (aserce na ně jsou výš).
+Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Jméno"~', $html);
+Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Povinný"~', $html);
+Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Výchozí"~', $html);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Popis"~', $html);
+
+// v úzkém okně se tabulka posouvá, sloupce se nemačkají
+Assert::contains('<div class=table-responsive>', $html);
+
 // hodnoty ze souboru v tabulce zůstávají
 Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="repo"~', $html);
 Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Repozitář"~', $html);
@@ -83,6 +93,14 @@ Assert::contains('data-add=in', $stepHtml);
 Assert::contains('data-add=out', $stepHtml);
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 
+// políčka obou tabulek mají přístupné jméno a obě tabulky se v úzkém okně
+// posouvají
+Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Vstup kamene"~', $stepHtml);
+Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="Hodnota"~', $stepHtml);
+Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="Co z kamene"~', $stepHtml);
+Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Pod jakým klíčem do mapy"~', $stepHtml);
+Assert::same(2, \substr_count($stepHtml, '<div class=table-responsive>'));
+
 // hodnoty kroku v tabulkách zůstávají
 Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $stepHtml);
 Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $stepHtml);
@@ -117,6 +135,13 @@ Assert::contains('data-add=inputs', $blockHtml);
 
 // stará třída .row je pryč — kolidovala by s Bootstrap gridem
 Assert::notMatch('~<div class=row[ >]~', $blockHtml);
+
+// políčka mají přístupné jméno a tabulka se v úzkém okně posouvá
+Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Jméno"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Povinný"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Výchozí"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Popis"~', $blockHtml);
+Assert::contains('<div class=table-responsive>', $blockHtml);
 
 // hodnoty ze souboru v tabulce zůstávají
 Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="text"~', $blockHtml);

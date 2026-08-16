@@ -124,10 +124,16 @@ final class BlockPresenter extends Presenter
 
 		foreach ($shape['inputs'] as $i) {
 			$row = $inputs->addContainer((string) $i);
-			$row->addText('name');
-			$row->addCheckbox('required');
-			$row->addText('default');
-			$row->addText('description');
+			// aria-label místo popisku: co do sloupce patří, říká hlavička
+			// tabulky, jenže <th> pojmenovává buňku, ne <input> uvnitř ní —
+			// odečítač obrazovky by jinak četl jen „textbox". Doslova jako
+			// ve WorkflowPresenter::createComponentHeaderForm(); checkbox si
+			// o atribut musí říct takhle, ze šablony by skončil na obalujícím
+			// <label>, kde se ztratí.
+			$row->addText('name')->setHtmlAttribute('aria-label', 'Jméno');
+			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Povinný');
+			$row->addText('default')->setHtmlAttribute('aria-label', 'Výchozí');
+			$row->addText('description')->setHtmlAttribute('aria-label', 'Popis');
 		}
 
 		$form->addCheckbox('hasStdin', 'Kámen čte stdin');

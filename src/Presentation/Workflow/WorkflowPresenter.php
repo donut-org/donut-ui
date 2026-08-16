@@ -223,8 +223,14 @@ final class WorkflowPresenter extends Presenter
 
 			foreach ($shape['in'] as $i) {
 				$row = $in->addContainer((string) $i);
-				$row->addText('key');
-				$row->addText('value');
+				// aria-label místo popisku: co do sloupce patří, říká hlavička
+				// tabulky, jenže <th> pojmenovává buňku, ne <input> uvnitř ní —
+				// odečítač obrazovky by jinak četl jen „textbox". Sedí to
+				// i k tomu, kde v tomhle GUI popisky bydlí (u addText()).
+				// Checkbox si musí říct takhle: {input, 'aria-label' => …}
+				// vloží atribut na obalující <label>, kde se ztratí.
+				$row->addText('key')->setHtmlAttribute('aria-label', 'Vstup kamene');
+				$row->addText('value')->setHtmlAttribute('aria-label', 'Hodnota');
 			}
 
 			$out = $form->addContainer('out');
@@ -232,8 +238,9 @@ final class WorkflowPresenter extends Presenter
 			foreach ($shape['out'] as $i) {
 				$row = $out->addContainer((string) $i);
 				$row->addSelect('channel', null, \array_combine(RunStep::Channels, RunStep::Channels))
-					->setPrompt('—');
-				$row->addText('value');
+					->setPrompt('—')
+					->setHtmlAttribute('aria-label', 'Co z kamene');
+				$row->addText('value')->setHtmlAttribute('aria-label', 'Pod jakým klíčem do mapy');
 			}
 
 			$form->addText('timeout', 'Timeout (s)')
@@ -431,10 +438,11 @@ final class WorkflowPresenter extends Presenter
 
 		foreach (RowShape::of(\is_array($post) ? ($post['inputs'] ?? null) : null, \count($existingInputs ?? [])) as $i) {
 			$row = $inputs->addContainer((string) $i);
-			$row->addText('name');
-			$row->addCheckbox('required');
-			$row->addText('default');
-			$row->addText('description');
+			// aria-label viz createComponentStepForm().
+			$row->addText('name')->setHtmlAttribute('aria-label', 'Jméno');
+			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Povinný');
+			$row->addText('default')->setHtmlAttribute('aria-label', 'Výchozí');
+			$row->addText('description')->setHtmlAttribute('aria-label', 'Popis');
 		}
 
 		$form->addSubmit('save', 'Uložit');

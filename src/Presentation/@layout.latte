@@ -19,12 +19,14 @@
 				<button type=button class="btn-close d-md-none" data-bs-dismiss=offcanvas data-bs-target="#nav" aria-label="Zavřít"></button>
 			</div>
 
+			{* aria-current říká odečítači obrazovky totéž, co vidícímu uživateli
+			   zvýrazněná položka. Třída active sama o sobě je jen barva. *}
 			<ul class="nav nav-pills flex-column">
 				<li class=nav-item>
-					<a n:class="nav-link, isLinkCurrent('Workflow:*') ? active" n:href="Workflow:default">Workflow</a>
+					<a n:class="nav-link, isLinkCurrent('Workflow:*') ? active" n:attr="aria-current => isLinkCurrent('Workflow:*') ? 'page'" n:href="Workflow:default">Workflow</a>
 				</li>
 				<li class=nav-item>
-					<a n:class="nav-link, isLinkCurrent('Block:*') ? active" n:href="Block:default">Kameny</a>
+					<a n:class="nav-link, isLinkCurrent('Block:*') ? active" n:attr="aria-current => isLinkCurrent('Block:*') ? 'page'" n:href="Block:default">Kameny</a>
 				</li>
 			</ul>
 		</nav>
@@ -35,7 +37,7 @@
 
 				<nav aria-label="Drobečky">
 					<ol class="breadcrumb mb-0">
-						{block breadcrumbs}<li class="breadcrumb-item active">Donut</li>{/block}
+						{block breadcrumbs}<li class="breadcrumb-item active" aria-current=page>Donut</li>{/block}
 					</ol>
 				</nav>
 			</div>

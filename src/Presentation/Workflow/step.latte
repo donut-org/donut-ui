@@ -3,7 +3,7 @@
 {block breadcrumbs}
 	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
 	<li class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
-	<li class="breadcrumb-item active">krok</li>
+	<li class="breadcrumb-item active" aria-current=page>krok</li>
 {/block}
 
 {block content}
@@ -26,43 +26,48 @@
 
 			<h2>Vstupy kamene</h2>
 
-			<table class="table table-sm align-middle">
-				<thead>
-					<tr>
-						<th scope=col>Vstup kamene</th>
-						<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
-						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-					</tr>
-				</thead>
-				<tbody id=in>
-					<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
-						<td>{input $row['key']}</td>
-						<td>{input $row['value']}</td>
-						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
-					</tr>
-				</tbody>
-			</table>
+			{* table-responsive a aria-label doslova jako ve Workflow/edit.latte. *}
+			<div class=table-responsive>
+				<table class="table table-sm align-middle">
+					<thead>
+						<tr>
+							<th scope=col>Vstup kamene</th>
+							<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
+							<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+						</tr>
+					</thead>
+					<tbody id=in>
+						<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
+							<td>{input $row['key']}</td>
+							<td>{input $row['value']}</td>
+							<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
 			<button type=button class="btn btn-sm btn-secondary" data-add=in>+ vstup</button>
 
 			<h2>Výstupy do mapy</h2>
 
-			<table class="table table-sm align-middle">
-				<thead>
-					<tr>
-						<th scope=col>Co z kamene</th>
-						<th scope=col>Pod jakým klíčem do mapy</th>
-						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-					</tr>
-				</thead>
-				<tbody id=out>
-					<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
-						<td>{input $row['channel']}</td>
-						<td>{input $row['value']}</td>
-						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
-					</tr>
-				</tbody>
-			</table>
+			<div class=table-responsive>
+				<table class="table table-sm align-middle">
+					<thead>
+						<tr>
+							<th scope=col>Co z kamene</th>
+							<th scope=col>Pod jakým klíčem do mapy</th>
+							<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+						</tr>
+					</thead>
+					<tbody id=out>
+						<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
+							<td>{input $row['channel']}</td>
+							<td>{input $row['value']}</td>
+							<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
 
 			<button type=button class="btn btn-sm btn-secondary" data-add=out>+ výstup</button>
 

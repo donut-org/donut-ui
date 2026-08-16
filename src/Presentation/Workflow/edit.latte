@@ -3,7 +3,7 @@
 {block breadcrumbs}
 	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
 	<li n:if="$name !== null" class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
-	<li class="breadcrumb-item active">{$name === null ? 'nové workflow' : 'hlavička'}</li>
+	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'nové workflow' : 'hlavička'}</li>
 {/block}
 
 {block content}
@@ -22,26 +22,32 @@
 
 		<h2>Vstupy</h2>
 
-		<table class="table table-sm align-middle">
-			<thead>
-				<tr>
-					<th scope=col>Jméno</th>
-					<th scope=col>Povinný</th>
-					<th scope=col>Výchozí</th>
-					<th scope=col>Popis</th>
-					<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-				</tr>
-			</thead>
-			<tbody id=inputs>
-				<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
-					<td>{input $row['name']}</td>
-					<td>{input $row['required']}</td>
-					<td>{input $row['default']}</td>
-					<td>{input $row['description']}</td>
-					<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
-				</tr>
-			</tbody>
-		</table>
+		{* table-responsive: v úzkém okně se tabulka posouvá vodorovně místo
+		   toho, aby se sloupce stlačily na pár znaků.
+		   Přístupné jméno políček (aria-label) přidává prezenter — je to
+		   popisek jako každý jiný a v tomhle GUI bydlí u addText(). *}
+		<div class=table-responsive>
+			<table class="table table-sm align-middle">
+				<thead>
+					<tr>
+						<th scope=col>Jméno</th>
+						<th scope=col>Povinný</th>
+						<th scope=col>Výchozí</th>
+						<th scope=col>Popis</th>
+						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+					</tr>
+				</thead>
+				<tbody id=inputs>
+					<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
+						<td>{input $row['name']}</td>
+						<td>{input $row['required']}</td>
+						<td>{input $row['default']}</td>
+						<td>{input $row['description']}</td>
+						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 
 		<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
 

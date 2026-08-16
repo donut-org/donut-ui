@@ -17,7 +17,18 @@ FileSystem::write(TEMP_DIR . '/tajne.txt', 'TAJEMSTVI');
 // existující soubor pod docrootem se má nechat serveru
 Assert::true(StaticFile::shouldServe($root, '/assets/bootstrap.min.css'));
 Assert::true(StaticFile::shouldServe($root, '/assets/bootstrap.min.css?v=1'));
-Assert::true(StaticFile::shouldServe($root, '/index.php'));
+
+// router sám sobě se nevydává. Soubor existuje a leží pod docrootem, ale
+// přenechat ho serveru znamená prázdnou dvoustovku: server ho spustí jako
+// požadovaný skript a `return false` na nejvyšší úrovni ho ukončí bez výstupu.
+// Rozhoduje se podle rozhodnuté cesty, ne podle řetězce z URI.
+Assert::false(StaticFile::shouldServe($root, '/index.php'));
+Assert::false(StaticFile::shouldServe($root, '/./index.php'));
+Assert::false(StaticFile::shouldServe($root, '/assets/../index.php'));
+
+// jiný .php pod docrootem router neřeší — vydává se jako každý soubor
+FileSystem::write($root . '/jiny.php', '<?php');
+Assert::true(StaticFile::shouldServe($root, '/jiny.php'));
 
 // neexistující soubor patří aplikaci
 Assert::false(StaticFile::shouldServe($root, '/'));
@@ -34,6 +45,12 @@ Assert::false(StaticFile::shouldServe($root, '/../tajne.txt'));
 Assert::false(StaticFile::shouldServe($root, '/assets/../../tajne.txt'));
 Assert::false(StaticFile::shouldServe($root, '/..%2ftajne.txt'));
 Assert::false(StaticFile::shouldServe($root, '/etc/passwd'));
+
+// nulový byte v cestě. realpath() na něm hází ValueError, a stráž běží před
+// Bootstrap::boot(), takže by z něj byla holá pětistovka místo chybové stránky.
+Assert::false(StaticFile::shouldServe($root, '/assets/x%00.css'));
+Assert::false(StaticFile::shouldServe($root, '/assets/bootstrap.min.css%00.txt'));
+Assert::false(StaticFile::shouldServe($root, "/assets/x\0.css"));
 
 // prefix docrootu se musí porovnávat i s oddělovačem — sousední adresář se
 // stejným začátkem jména nesmí projít

@@ -22,10 +22,28 @@ final class StaticFile
 			return false;
 		}
 
+		$decoded = \urldecode($path);
+
+		// realpath() na cestě s nulovým bytem hází ValueError. Stráž běží před
+		// Bootstrap::boot(), takže by ho nezachytila ani Tracy a /assets/x%00.css
+		// by skončilo holou pětistovkou s absolutními cestami v logu.
+		if (\str_contains($decoded, "\0")) {
+			return false;
+		}
+
 		$rootReal = \realpath($root);
-		$fileReal = \realpath($root . \urldecode($path));
+		$fileReal = \realpath($root . $decoded);
 
 		if ($rootReal === false || $fileReal === false) {
+			return false;
+		}
+
+		// Router sám sobě: index.php je pod docrootem a je to soubor, takže by
+		// ho stráž jinak přenechala serveru — ten ho spustí jako požadovaný
+		// skript, `return false` na nejvyšší úrovni ho ukončí a z požadavku je
+		// prázdná dvoustovka. Porovnává se rozhodnutá cesta, ne řetězec z URI,
+		// aby na tom /./index.php nebo /assets/../index.php nic nezměnily.
+		if ($fileReal === $rootReal . \DIRECTORY_SEPARATOR . 'index.php') {
 			return false;
 		}
 

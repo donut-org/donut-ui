@@ -79,6 +79,7 @@ final class WorkflowPresenter extends Presenter
 		// o sobě nikam neukradou — basename() je navíc, aby to platilo, i
 		// kdyby se cesta k souboru někdy zase skládala ručně.
 		$name = \basename($name);
+		$template->name = $name;
 
 		try {
 			$repository = new WorkflowRepository($this->workflowDir());

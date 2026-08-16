@@ -4,7 +4,9 @@
 
 {block breadcrumbs}
 	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
-	<li class="breadcrumb-item active" aria-current=page>{$workflow?->name ?? 'chyba'}</li>
+	{* U rozbitého souboru je jméno z adresy to jediné, co uživateli řekne,
+	   které workflow se nenaparsovalo — „chyba" mu neřekne nic. *}
+	<li class="breadcrumb-item active" aria-current=page>{$workflow !== null ? $workflow->name : $name}</li>
 {/block}
 
 {block content}

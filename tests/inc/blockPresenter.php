@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Donut\Gui\Presentation\Block\BlockPresenter;
+use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
 use Latte\Engine;
 use Nette\Application\IPresenter;
 use Nette\Application\IPresenterFactory;
@@ -50,7 +51,12 @@ function createBlockPresenter(array $post = [], bool $sameOrigin = true): BlockP
 	$presenterFactory = new class implements IPresenterFactory {
 		public function getPresenterClass(string &$name): string
 		{
-			return BlockPresenter::class;
+			// Poctivé mapování jména na třídu: bez něj vrací isLinkCurrent()
+			// v šabloně true pro každou sekci a aserce na aktivní položku
+			// navigace by byla vakuová. Doslova jako ve workflowPresenter.php.
+			return $name === 'Workflow'
+				? WorkflowPresenter::class
+				: BlockPresenter::class;
 		}
 
 

@@ -24,6 +24,13 @@ final class WorkflowDetailTemplate extends Template
 {
 	public ?string $error = null;
 
+	/**
+	 * Jméno z adresy. Drobečky ho potřebují i tehdy, když se soubor
+	 * nenaparsoval a $workflow zůstane null — zrovna tam je jméno souboru
+	 * to jediné, podle čeho uživatel pozná, co se nepovedlo otevřít.
+	 */
+	public string $name = '';
+
 	public ?Workflow $workflow = null;
 
 	public ?ProblemMap $problems = null;

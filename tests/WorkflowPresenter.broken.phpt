@@ -34,6 +34,16 @@ Assert::contains('name=rozbity&amp;action=edit', $seznam, 'seznam musí u vadné
 Assert::contains('class=error', $html, 'chyba parsování se ohlásí');
 Assert::contains('Smazat', $html, 'mazání dřív sedělo uvnitř {if !$error}');
 
+// --- drobečky rozbitého workflow nesou jméno souboru, ne slovo „chyba" ---
+// Zrovna na stránce, kde se soubor nenaparsoval, je jméno z adresy to jediné,
+// podle čeho uživatel pozná, co se nepovedlo otevřít.
+
+[, $detailRozbity] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'rozbity']);
+
+Assert::contains('class=error', $detailRozbity, 'chyba parsování se ohlásí');
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>rozbity</li>~', $detailRozbity);
+Assert::notContains('>chyba</li>', $detailRozbity);
+
 // --- POST soubor skutečně smaže ---
 // Mazání nesmí záviset na tom, že se soubor podařilo naparsovat: jméno jde
 // ze skrytého pole, ne z načteného workflow.

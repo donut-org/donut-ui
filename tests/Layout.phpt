@@ -82,6 +82,14 @@ Assert::match('~<li class="breadcrumb-item active" aria-current=page>krok</li>~'
 [, $blockDefault] = runBlockPresenterIn($dir, ['action' => 'default']);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>Kameny</li>~', $blockDefault);
 
+// na stránce kamene svítí v navigaci „Kameny", a Workflow ne. Dokud testovací
+// továrna vracela BlockPresenter pro každé jméno, byla tahle aserce vakuová —
+// isLinkCurrent() vracelo true pro obě sekce naráz.
+Assert::match('~<a[^>]*class="nav-link active"[^>]*>Kameny</a>~', $blockDefault);
+Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Workflow</a>~', $blockDefault);
+Assert::match('~<a[^>]*aria-current="page"[^>]*>Kameny</a>~', $blockDefault);
+Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflow</a>~', $blockDefault);
+
 // drobečky Block:edit: sekce je odkaz, jméno kamene poslední
 [, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);

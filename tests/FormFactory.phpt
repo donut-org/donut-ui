@@ -13,6 +13,7 @@ $form->addText('jmeno', 'Jméno');
 $form->addTextArea('popis', 'Popis');
 $form->addSelect('op', 'Operátor', ['eq' => '=']);
 $form->addCheckbox('povinny', 'Povinný');
+$form->addRadioList('selhani', 'Povolené selhání', ['none' => 'jen exit 0']);
 $form->addSubmit('save', 'Uložit');
 $form->addHidden('typ');
 
@@ -25,6 +26,7 @@ Assert::contains('class="form-control"', (string) $form['jmeno']->getControl());
 Assert::contains('class="form-control"', (string) $form['popis']->getControl());
 Assert::contains('class="form-select"', (string) $form['op']->getControl());
 Assert::contains('class="form-check-input"', (string) $form['povinny']->getControl());
+Assert::contains('class="form-check-input"', (string) $form['selhani']->getControl());
 Assert::contains('class="btn btn-primary"', (string) $form['save']->getControl());
 
 // skryté pole žádnou třídu nedostane

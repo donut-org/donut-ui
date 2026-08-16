@@ -126,6 +126,12 @@ Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Co vypsat"~', $bloc
 Assert::contains('--jmeno=hodnota', $blockHtml);
 Assert::contains('když ji volající nepředá', $blockHtml);
 
+// argumenty jedné skupiny stojí vedle sebe a skupina je vidět jako celek;
+// bez w-auto by z nich form-control udělal svislý sloupec přes celou šířku
+Assert::match('~<div class="arg-group[^"]*\bd-flex\b[^"]*"~', $blockHtml);
+Assert::match('~<div class="arg-group[^"]*\bborder\b[^"]*"~', $blockHtml);
+Assert::match('~name="args\[0\]\[0\]"[^>]*class="form-control w-auto"~', $blockHtml);
+
 
 // --- formuláře jdou z FormFactory --------------------------------------
 // FormFactory.phpt testuje továrnu izolovaně a o skutečných stránkách netvrdí
@@ -145,6 +151,13 @@ Assert::contains('class="btn btn-primary"', $stepHtml);
 Assert::contains('class="form-control"', $blockHtml);
 Assert::contains('class="form-check-input"', $blockHtml);
 Assert::contains('class="btn btn-primary"', $blockHtml);
+
+// přepínače („Povolené selhání") jsou na obou stránkách a třídu mít musí —
+// bez ní vypadají uprostřed bootstrapí stránky jako nedodělek
+Assert::notMatch('~<input type="radio"(?![^>]*form-check-input)~', $blockHtml);
+Assert::notMatch('~<input type="radio"(?![^>]*form-check-input)~', $stepHtml);
+Assert::contains('<input type="radio"', $blockHtml);
+Assert::contains('<input type="radio"', $stepHtml);
 
 // vlastní třída se z prototypu nepřepíše — mazací tlačítko si o btn-danger
 // řeklo při vzniku a továrna mu ji nechává

@@ -24,6 +24,9 @@ final class FormFactory
 		'textarea' => 'form-control',
 		'select' => 'form-select',
 		'checkbox' => 'form-check-input',
+		// Přepínače („Povolené selhání") jsou v obou prezentérech; bez tohohle
+		// řádku zůstávaly uprostřed bootstrapí stránky bez jediné třídy.
+		'radio' => 'form-check-input',
 		'button' => 'btn btn-primary',
 	];
 

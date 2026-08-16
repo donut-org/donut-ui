@@ -62,7 +62,9 @@ Assert::true(is_file($project . '/blocks/pouzity.json'));
 // POST patřil deleteFormu, ne blockFormu — formShape() dřív reagoval na
 // libovolný POST a vyrobil formulář s nula skupinami argumentů.
 Assert::contains('value="pouzity"', $html);
-Assert::true(\str_contains($html, 'class=arg-group'));
+// (skupina argumentů má od opravy I4 vedle arg-group i bootstrapí třídy,
+// proto se hledá začátek seznamu tříd, ne celý atribut)
+Assert::match('~<div class="arg-group\b~', $html);
 
 // --- volný kámen se smaže a přesměruje se do přehledu ---
 

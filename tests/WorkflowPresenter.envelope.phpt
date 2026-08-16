@@ -116,7 +116,9 @@ Assert::false(\is_file($project . '/workflows/nove.json'));
 // --- mazání se nenabízí u zakládání ---
 
 [, $novy] = runWorkflowPresenterIn($project, ['action' => 'edit']);
-Assert::notContains('Smazat', $novy);
+// obyčejné 'Smazat' by teď chytilo i accessibilní popisek tlačítka pro
+// smazání řádku tabulky (Task 6) — cílíme přímo na nadpis sekce mazání workflow.
+Assert::notContains('<h2>Smazat</h2>', $novy);
 
 // --- seznam nabízí zakládání ---
 

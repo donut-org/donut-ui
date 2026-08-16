@@ -40,7 +40,9 @@ Assert::contains('Smazat', $html);
 // --- editace použitého kamene mazání nenabídne a řekne proč ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'pouzity']);
-Assert::notContains('Smazat', $html);
+// obyčejné 'Smazat' by teď chytilo i accessibilní popisek tlačítka pro
+// smazání řádku tabulky (Task 6) — cílíme přímo na nadpis sekce mazání kamene.
+Assert::notContains('<h2>Smazat</h2>', $html);
 Assert::contains('používá', $html);
 Assert::contains('w', $html);
 

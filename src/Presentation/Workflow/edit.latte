@@ -21,18 +21,34 @@
 		<p>{label description /} {input description}</p>
 
 		<h2>Vstupy</h2>
-		<p class=keys>Vstupy se na příkazové řádce zadávají jako <code>--jmeno=hodnota</code>.</p>
 
-		<div id=inputs>
-			<div class=row n:foreach="$form['inputs']->getComponents() as $row">
-				{input $row['name']}
-				{input $row['required']} povinný
-				{input $row['default']}
-				{input $row['description']}
-				<button type=button class=del-row>×</button>
-			</div>
-		</div>
-		<button type=button data-add="inputs">+ vstup</button>
+		<table class="table table-sm align-middle">
+			<thead>
+				<tr>
+					<th scope=col>Jméno</th>
+					<th scope=col>Povinný</th>
+					<th scope=col>Výchozí</th>
+					<th scope=col>Popis</th>
+					<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+				</tr>
+			</thead>
+			<tbody id=inputs>
+				<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
+					<td>{input $row['name']}</td>
+					<td>{input $row['required']}</td>
+					<td>{input $row['default']}</td>
+					<td>{input $row['description']}</td>
+					<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
+				</tr>
+			</tbody>
+		</table>
+
+		<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
+
+		<p class=form-text>
+			Výchozí hodnota se použije, když ji volající nepředá.
+			Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
+		</p>
 
 		<p>{input save}</p>
 	{/form}

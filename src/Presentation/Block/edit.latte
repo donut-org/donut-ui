@@ -34,26 +34,42 @@
 		<div id=args>
 			<div class=arg-group n:foreach="$form['args']->getComponents() as $group">
 				<span n:foreach="$group->getComponents() as $arg">{input $arg}</span>
-				<button type=button class=add-arg>+ argument</button>
-				<button type=button class=del-group>× skupina</button>
+				<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
+				<button type=button class="btn btn-sm btn-outline-danger del-group">× skupina</button>
 			</div>
 		</div>
 
-		<button type=button id=add-group>+ skupina</button>
+		<button type=button class="btn btn-sm btn-secondary" id=add-group>+ skupina</button>
 
 		<h2>Vstupy</h2>
 
-		<div id=inputs>
-			<div class=row n:foreach="$form['inputs']->getComponents() as $row">
-				{input $row['name']}
-				{input $row['required']} povinný
-				{input $row['default']}
-				{input $row['description']}
-				<button type=button class=del-row>×</button>
-			</div>
-		</div>
+		<table class="table table-sm align-middle">
+			<thead>
+				<tr>
+					<th scope=col>Jméno</th>
+					<th scope=col>Povinný</th>
+					<th scope=col>Výchozí</th>
+					<th scope=col>Popis</th>
+					<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+				</tr>
+			</thead>
+			<tbody id=inputs>
+				<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
+					<td>{input $row['name']}</td>
+					<td>{input $row['required']}</td>
+					<td>{input $row['default']}</td>
+					<td>{input $row['description']}</td>
+					<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
+				</tr>
+			</tbody>
+		</table>
 
-		<button type=button data-add=inputs>+ vstup</button>
+		<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
+
+		<p class=form-text>
+			Výchozí hodnota se použije, když ji volající nepředá.
+			Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
+		</p>
 
 		<h2>Stdin</h2>
 		<p>{input hasStdin} {label hasStdin /}</p>

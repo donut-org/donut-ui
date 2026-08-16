@@ -25,22 +25,46 @@
 			<p>{label block /} {input block}</p>
 
 			<h2>Vstupy kamene</h2>
-			<div id=in>
-				<div class=row n:foreach="$form['in']->getComponents() as $row">
-					{input $row['key']} → {input $row['value']}
-					<button type=button class=del-row>×</button>
-				</div>
-			</div>
-			<button type=button data-add="in">+ vstup</button>
+
+			<table class="table table-sm align-middle">
+				<thead>
+					<tr>
+						<th scope=col>Vstup kamene</th>
+						<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
+						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+					</tr>
+				</thead>
+				<tbody id=in>
+					<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
+						<td>{input $row['key']}</td>
+						<td>{input $row['value']}</td>
+						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<button type=button class="btn btn-sm btn-secondary" data-add=in>+ vstup</button>
 
 			<h2>Výstupy do mapy</h2>
-			<div id=out>
-				<div class=row n:foreach="$form['out']->getComponents() as $row">
-					{input $row['channel']} → {input $row['value']}
-					<button type=button class=del-row>×</button>
-				</div>
-			</div>
-			<button type=button data-add="out">+ výstup</button>
+
+			<table class="table table-sm align-middle">
+				<thead>
+					<tr>
+						<th scope=col>Co z kamene</th>
+						<th scope=col>Pod jakým klíčem do mapy</th>
+						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+					</tr>
+				</thead>
+				<tbody id=out>
+					<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
+						<td>{input $row['channel']}</td>
+						<td>{input $row['value']}</td>
+						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row">×</button></td>
+					</tr>
+				</tbody>
+			</table>
+
+			<button type=button class="btn btn-sm btn-secondary" data-add=out>+ výstup</button>
 
 			<h2>Ostatní</h2>
 			<p>{label timeout /} {input timeout}</p>

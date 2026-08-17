@@ -85,6 +85,16 @@ Assert::match('~<a href="[^"]*action=detail[^"]*">dobry</a>~', $html);
 Assert::contains('<th scope=col>Popis</th>', $html);
 Assert::match('~">dobry</a>\s*</td>\s*<td>\s*Vypíše text\s*</td>~', $html);
 
+// zbylé hlavičky a příkaz v buňce — bez nich mutace „přejmenuj hlavičku"
+// i „vypiš místo příkazu něco jiného" přežily
+Assert::contains('<th scope=col>Jméno</th>', $html);
+Assert::contains('<th scope=col>Příkaz</th>', $html);
+Assert::match('~<td>\s*<code>echo</code>\s*</td>~', $html);
+
+// tabulka se na úzkém okně posouvá, nemačká — stejně to hlídá
+// WorkflowPresenter.list.phpt u sesterské tabulky
+Assert::contains('table-responsive', $html);
+
 // a hláška rozbitého kamene sedí ve druhém sloupci, jako u rozbitého workflow
 Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=error>~', $html);
 

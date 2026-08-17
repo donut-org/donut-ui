@@ -34,7 +34,10 @@ FileSystem::write($dir . '/workflows/sync.json', \json_encode([
 [, $html] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'curl-get']);
 
 // příkaz a popis
-Assert::contains('curl', $html);
+// Samotné „curl" by tuhle aserci neuhlídalo — kámen se jmenuje curl-get,
+// takže to slovo je v HTML z <h1>, z drobečků i z odkazů, a příkaz mohl
+// z detailu úplně zmizet, aniž by to sada poznala.
+Assert::contains('příkaz: <code>curl</code>', $html);
 Assert::contains('Stáhne adresu', $html);
 
 // argumenty — dnešní přehled je nevypisuje vůbec, detail je vypsat musí

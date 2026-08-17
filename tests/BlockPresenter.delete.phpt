@@ -29,8 +29,11 @@ FileSystem::write($project . '/workflows/w.json', json_encode([
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'default']);
 
-Assert::contains('používá', $html);
-Assert::contains('w', $html);
+// Tabulka ukazuje, které workflow kámen volá. Dřív se tu hlídalo slovo
+// „používá" z věty pod nadpisem — v tabulce je z něj hlavička sloupce.
+// Ptáme se proto na obsah buňky; `contains('w')` samotné nic netvrdilo,
+// protože písmeno w je v HTML všude (workflow, www).
+Assert::match('~<td>\s*w\s*</td>~', $html);
 
 // --- editace volného kamene nabídne mazání ---
 

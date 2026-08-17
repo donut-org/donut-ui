@@ -22,7 +22,10 @@ FileSystem::write($noWorkflows . '/blocks/echo.json', json_encode([
 [, $html] = runBlockPresenterIn($noWorkflows, ['action' => 'default']);
 
 Assert::contains('echo', $html);
-Assert::notContains('používá', $html);
+// Kámen, který nikdo nepoužívá, má buňku „Používá" prázdnou. Ptát se na
+// nepřítomnost slova „používá" už nejde — je z něj hlavička sloupce.
+Assert::contains('<th scope=col>Používá</th>', $html);
+Assert::match('~<td>\s*</td>~', $html);
 
 // --- přehled kamenů se vykreslí i s rozbitým workflow souborem ---
 // Vadné workflow nesmí shodit stránku — loadWorkflows() ho jen přeskočí,
@@ -52,5 +55,26 @@ FileSystem::createDir($prazdny);
 
 Assert::contains('neexistuje', $html);
 Assert::contains('mkdir blocks', $html);
+
+// --- rozbitý kámen v přehledu: chyba je vidět a cesta k opravě zůstává ---
+// Nenaparsovatelný soubor je ten, u kterého uživatel cestu k opravě a mazání
+// potřebuje nejvíc. U workflow to musel doplňovat až předchozí projekt jako
+// Important nález; u kamenů to do teď nehlídala žádná aserce.
+
+$sRozbitym = TEMP_DIR . '/s-rozbitym';
+FileSystem::createDir($sRozbitym . '/blocks');
+FileSystem::write($sRozbitym . '/blocks/dobry.json', json_encode([
+	'name' => 'dobry', 'command' => 'echo', 'args' => [],
+]));
+FileSystem::write($sRozbitym . '/blocks/rozbity.json', 'toto neni json');
+
+[, $html] = runBlockPresenterIn($sRozbitym, ['action' => 'default']);
+
+Assert::contains('<strong>rozbity</strong>', $html);
+Assert::contains('class=error', $html);
+Assert::match('~<a href="[^"]*name=rozbity[^"]*">upravit</a>~', $html);
+
+// dobrý kámen vedle něj zůstane odkazem na detail
+Assert::match('~<a href="[^"]*action=detail[^"]*">dobry</a>~', $html);
 
 FileSystem::delete(TEMP_DIR);

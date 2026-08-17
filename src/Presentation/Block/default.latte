@@ -19,6 +19,9 @@
 		<thead>
 			<tr>
 				<th scope=col>Jméno</th>
+				{* Popis je druhý sloupec stejně jako u workflow: příkaz sám kameny
+				   nerozliší (v reálném projektu ho sdílí 9 z 15), popis ano. *}
+				<th scope=col>Popis</th>
 				<th scope=col>Příkaz</th>
 				<th scope=col>Používá</th>
 				<th scope=col><span class=visually-hidden>Akce</span></th>
@@ -33,10 +36,18 @@
 						<a n:href="Block:detail, name: $name">{$name}</a>
 					{/if}
 				</td>
+				{* Hláška rozbitého kamene sedí ve druhém sloupci, stejně jako
+				   u rozbitého workflow; ostatní sloupce zůstanou u takového
+				   řádku prázdné, protože se nemají odkud vzít. *}
 				<td>
 					{if is_string($block)}
 						<span class=error>{$block}</span>
 					{else}
+						{$block->description}
+					{/if}
+				</td>
+				<td>
+					{if !is_string($block)}
 						<code>{$block->command}</code>
 					{/if}
 				</td>

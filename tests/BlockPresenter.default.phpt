@@ -25,7 +25,9 @@ Assert::contains('echo', $html);
 // Kámen, který nikdo nepoužívá, má buňku „Používá" prázdnou. Ptát se na
 // nepřítomnost slova „používá" už nejde — je z něj hlavička sloupce.
 Assert::contains('<th scope=col>Používá</th>', $html);
-Assert::match('~<td>\s*</td>~', $html);
+// Prázdná buňka musí být ta za sloupcem Příkaz, ne kterákoliv — od té doby,
+// co má tabulka i sloupec Popis, je prázdných buněk v řádku víc.
+Assert::match('~<code>echo</code>\s*</td>\s*<td></td>~', $html);
 
 // --- přehled kamenů se vykreslí i s rozbitým workflow souborem ---
 // Vadné workflow nesmí shodit stránku — loadWorkflows() ho jen přeskočí,
@@ -64,7 +66,7 @@ Assert::contains('mkdir blocks', $html);
 $sRozbitym = TEMP_DIR . '/s-rozbitym';
 FileSystem::createDir($sRozbitym . '/blocks');
 FileSystem::write($sRozbitym . '/blocks/dobry.json', json_encode([
-	'name' => 'dobry', 'command' => 'echo', 'args' => [],
+	'name' => 'dobry', 'command' => 'echo', 'args' => [], 'description' => 'Vypíše text',
 ]));
 FileSystem::write($sRozbitym . '/blocks/rozbity.json', 'toto neni json');
 
@@ -76,5 +78,14 @@ Assert::match('~<a href="[^"]*name=rozbity[^"]*">upravit</a>~', $html);
 
 // dobrý kámen vedle něj zůstane odkazem na detail
 Assert::match('~<a href="[^"]*action=detail[^"]*">dobry</a>~', $html);
+
+// popis je hned za jménem, stejně jako v tabulce workflow: příkaz sám kameny
+// nerozliší (v reálném projektu ho sdílí 9 z 15), popis je to, podle čeho se
+// v přehledu hledá
+Assert::contains('<th scope=col>Popis</th>', $html);
+Assert::match('~">dobry</a>\s*</td>\s*<td>\s*Vypíše text\s*</td>~', $html);
+
+// a hláška rozbitého kamene sedí ve druhém sloupci, jako u rozbitého workflow
+Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=error>~', $html);
 
 FileSystem::delete(TEMP_DIR);

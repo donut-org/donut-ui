@@ -33,7 +33,7 @@ Assert::contains('Synchronizuje kartu', $html);
 // rozbité workflow: jméno není odkaz na detail, chyba je vidět
 Assert::notMatch('~<a href="[^"]*">rozbite</a>~', $html);
 Assert::contains('<strong>rozbite</strong>', $html);
-Assert::contains('class=error', $html);
+Assert::contains('class=text-danger', $html);
 
 // a hlavně: i rozbitý řádek má cestu k opravě a mazání
 Assert::match('~<a href="[^"]*name=rozbite[^"]*"[^>]*>upravit</a>~', $html);

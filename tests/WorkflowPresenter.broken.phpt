@@ -24,14 +24,14 @@ FileSystem::write($project . '/workflows/w.json', json_encode(['name' => 'w', 's
 
 [, $seznam] = runWorkflowPresenterIn($project, ['action' => 'default']);
 
-Assert::contains('class=error', $seznam, 'vadné workflow se ohlásí');
+Assert::contains('class=text-danger', $seznam, 'vadné workflow se ohlásí');
 Assert::contains('name=rozbity&amp;action=edit', $seznam, 'seznam musí u vadného workflow nabídnout odkaz na úpravu');
 
 // --- edit vykreslí mazací formulář, i když se soubor nenaparsoval ---
 
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'rozbity']);
 
-Assert::contains('class=error', $html, 'chyba parsování se ohlásí');
+Assert::contains('alert-danger', $html, 'chyba parsování se ohlásí');
 Assert::contains('Smazat', $html, 'mazání dřív sedělo uvnitř {if !$error}');
 
 // --- drobečky rozbitého workflow nesou jméno souboru, ne slovo „chyba" ---
@@ -40,7 +40,7 @@ Assert::contains('Smazat', $html, 'mazání dřív sedělo uvnitř {if !$error}'
 
 [, $detailRozbity] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'rozbity']);
 
-Assert::contains('class=error', $detailRozbity, 'chyba parsování se ohlásí');
+Assert::contains('alert-danger', $detailRozbity, 'chyba parsování se ohlásí');
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>rozbity</li>~', $detailRozbity);
 Assert::notContains('>chyba</li>', $detailRozbity);
 

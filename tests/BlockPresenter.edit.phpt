@@ -101,8 +101,14 @@ Assert::false(is_file($project . '/blocks/vadny.json'));
 // konkrétní důvod odmítnutí jako pouhé varování a jako chybu jen tu obecnou
 // hlášku. Obojí by prošlo Assert::contains() výše, tohle je pojistka proti
 // přehození závažností v šabloně.
-Assert::match('~<ul class=error>.*?chybi.*?</ul>~s', $html);
-Assert::notMatch('~<ul class=warning>.*?chybi.*?</ul>~s', $html);
+//
+// .*? mezi <div> a </div> by přeskočil přes celý zbytek stránky až k první
+// další </div> za slovem „chybi" — a to je i div formuláře s obecnou
+// hláškou „Kámen se neuložil"; „chybi" se totiž znovu objeví o kus níž
+// v hodnotě políčka args. Vzor je proto svázaný na strukturu ze Step 2
+// (div > ul.mb-0 > li) bez skoku přes jiný tag.
+Assert::match('~<div class="alert alert-danger">\s*<ul class="mb-0">\s*<li>[^<]*chybi[^<]*</li>~s', $html);
+Assert::notMatch('~<div class="alert alert-warning">\s*<ul class="mb-0">\s*<li>[^<]*chybi[^<]*</li>~s', $html);
 
 // --- zakládání nesmí přepsat existující kámen ---
 // writeFile() přepisuje bez ptaní; bez pojistky by tenhle POST tiše

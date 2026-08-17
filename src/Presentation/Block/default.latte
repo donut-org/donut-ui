@@ -11,7 +11,7 @@
 
 {* Hláška i s návodem `mkdir blocks` přichází hotová z renderDefault(),
    stejně jako na Workflow:detail. *}
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 <p n:if="!$error && !$blocks">V adresáři <code>{$dir}</code> žádné kameny nejsou.</p>
 
 <div class=table-responsive n:if="$blocks">
@@ -41,7 +41,7 @@
 				   řádku prázdné, protože se nemají odkud vzít. *}
 				<td>
 					{if is_string($block)}
-						<span class=error>{$block}</span>
+						<span class=text-danger>{$block}</span>
 					{else}
 						{$block->description}
 					{/if}

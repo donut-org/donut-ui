@@ -9,7 +9,7 @@
 
 <p><a n:href="Workflow:edit" class="btn btn-primary">+ nové workflow</a></p>
 
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 <p n:if="!$error && !$workflows">V adresáři <code>{$dir}</code> žádná workflow nejsou.</p>
 
 <div class=table-responsive n:if="$workflows">
@@ -32,7 +32,7 @@
 				</td>
 				<td>
 					{if is_string($workflow)}
-						<span class=error>{$workflow}</span>
+						<span class=text-danger>{$workflow}</span>
 					{else}
 						{$workflow->description}
 					{/if}

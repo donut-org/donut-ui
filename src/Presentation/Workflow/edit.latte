@@ -9,13 +9,15 @@
 {block content}
 <h1>{$name ?? 'Nové workflow'}</h1>
 
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 
 {if !$error}
 	{form headerForm}
-		<ul n:if="$form->getErrors()" class=error>
-			<li n:foreach="$form->getErrors() as $err">{$err}</li>
-		</ul>
+		<div n:if="$form->getErrors()" class="alert alert-danger">
+			<ul class="mb-0">
+				<li n:foreach="$form->getErrors() as $err">{$err}</li>
+			</ul>
+		</div>
 
 		<p>{label name /} {input name}</p>
 		<p>{label description /} {input description}</p>
@@ -71,9 +73,11 @@
 	</p>
 
 	{form deleteWorkflowForm}
-		<ul n:if="$form->getErrors()" class=error>
-			<li n:foreach="$form->getErrors() as $err">{$err}</li>
-		</ul>
+		<div n:if="$form->getErrors()" class="alert alert-danger">
+			<ul class="mb-0">
+				<li n:foreach="$form->getErrors() as $err">{$err}</li>
+			</ul>
+		</div>
 
 		<input type=hidden n:name=name value="{$name}">
 		{* Jméno se do confirm() nedává schválně — v JS kontextu ho Latte

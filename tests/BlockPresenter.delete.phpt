@@ -89,7 +89,7 @@ FileSystem::write($project . '/blocks/rozbity.json', 'toto neni json');
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'rozbity']);
 
 // $error je nastavený (soubor se nenaparsoval)...
-Assert::contains('class=error', $html);
+Assert::contains('alert-danger', $html);
 // ...ale tlačítko Smazat se přesto ukáže.
 Assert::contains('Smazat', $html);
 

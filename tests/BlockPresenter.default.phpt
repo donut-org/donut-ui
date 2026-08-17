@@ -73,7 +73,7 @@ FileSystem::write($sRozbitym . '/blocks/rozbity.json', 'toto neni json');
 [, $html] = runBlockPresenterIn($sRozbitym, ['action' => 'default']);
 
 Assert::contains('<strong>rozbity</strong>', $html);
-Assert::contains('class=error', $html);
+Assert::contains('class=text-danger', $html);
 Assert::match('~<a href="[^"]*name=rozbity[^"]*"[^>]*>upravit</a>~', $html);
 
 // odkazy „upravit" se v seznamu odkazů odečítače obrazovky musí rozlišit
@@ -100,7 +100,7 @@ Assert::match('~<td>\s*<code>echo</code>\s*</td>~', $html);
 Assert::contains('table-responsive', $html);
 
 // a hláška rozbitého kamene sedí ve druhém sloupci, jako u rozbitého workflow
-Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=error>~', $html);
+Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=text-danger>~', $html);
 
 // tlačítka mají bootstrapí třídy — bez nich vypadají jako holé odkazy
 // uprostřed jinak nastylované stránky

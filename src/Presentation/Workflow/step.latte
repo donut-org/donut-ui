@@ -10,13 +10,15 @@
 <h1>Krok {$type}</h1>
 <p class=keys>{$at}</p>
 
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 
 {if !$error}
 	{form stepForm}
-		<ul n:if="$form->getErrors()" class=error>
-			<li n:foreach="$form->getErrors() as $err">{$err}</li>
-		</ul>
+		<div n:if="$form->getErrors()" class="alert alert-danger">
+			<ul class="mb-0">
+				<li n:foreach="$form->getErrors() as $err">{$err}</li>
+			</ul>
+		</div>
 
 		{input type}
 		<p>{label name /} {input name}</p>

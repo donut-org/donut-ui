@@ -12,7 +12,7 @@
 {block content}
 {* Chyba se hlásí i tehdy, když workflow načíst šlo — chybějící kameny berou
    validaci, ne celou stránku. Bez workflow zbývá jen hláška. *}
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 
 <h1 n:if="$workflow !== null">{$workflow->name}</h1>
 
@@ -43,7 +43,7 @@
 	<p n:if="$selectedKey !== null">
 		Vybraný klíč: <code>{$selectedKey}</code>
 		<a n:href="this, key: null">zrušit výběr</a>
-		<span n:if="!$selectedKeyExists" class=warning>— tento klíč se ve workflow nevyskytuje</span>
+		<span n:if="!$selectedKeyExists" class=text-warning>— tento klíč se ve workflow nevyskytuje</span>
 	</p>
 
 	<h2>Kroky</h2>

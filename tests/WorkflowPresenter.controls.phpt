@@ -101,7 +101,7 @@ Assert::count(2, $steps());
 
 // Neplatná cesta se musí uživateli ohlásit, ne jen tiše nic neudělat — než se
 // strom kroků stal komponentou, tuhle hlášku nekontroloval žádný test.
-Assert::contains('class=error', $html);
+Assert::contains('alert-danger', $html);
 Assert::contains('Krok "w.json:steps[99]" neexistuje.', $html);
 
 [, $html] = runWorkflowPresenterIn(
@@ -110,7 +110,7 @@ Assert::contains('Krok "w.json:steps[99]" neexistuje.', $html);
 	['at' => 'nesmysl'],
 );
 
-Assert::contains('class=error', $html);
+Assert::contains('alert-danger', $html);
 Assert::contains('"nesmysl" není cesta ke kroku.', $html);
 
 // --- cesta z jiného workflow se odmítne, ne aplikuje jako pozice v tomhle ---
@@ -125,7 +125,7 @@ Assert::count(2, $steps());
 
 Assert::count(2, $steps());
 
-Assert::contains('class=error', $html);
+Assert::contains('alert-danger', $html);
 Assert::contains('Cesta "jine.json:steps[0]" nepatří workflow "w".', $html);
 
 // --- neplatné workflow se uloží i tak: validace neblokuje ---

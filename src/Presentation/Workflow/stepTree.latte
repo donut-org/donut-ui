@@ -1,5 +1,5 @@
 {import 'steps.latte'}
 
-<p n:if="$error" class=error>{$error}</p>
+<p n:if="$error" class="alert alert-danger">{$error}</p>
 
 {include steps, steps: $steps, path: $path, problems: $problems, keys: $keys, selected: $selected, name: $name}

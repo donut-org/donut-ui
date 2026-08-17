@@ -71,7 +71,7 @@ FileSystem::write($dir . '/workflows/oprav.json', \json_encode([
 
 [, $rozbity] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'rozbity']);
 
-Assert::contains('class=error', $rozbity);
+Assert::contains('alert-danger', $rozbity);
 Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $rozbity);
 
 // a hlavně: i u rozbitého kamene je vidět, kdo ho používá — $usedBy se počítá

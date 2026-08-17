@@ -31,6 +31,10 @@ Assert::contains('value="w"', $html);
 Assert::contains('Popis', $html);
 Assert::contains('repo', $html);
 
+// sekce mazání je karta s červeným rámečkem — hranice nevratné operace
+// má být vidět dřív, než do ní uživatel klikne
+Assert::match('~<div class="card border-danger[^"]*">~', $html);
+
 // --- zakládání: prázdný formulář, žádný pád ---
 
 [, $novy] = runWorkflowPresenterIn($project, ['action' => 'edit']);
@@ -116,9 +120,11 @@ Assert::false(\is_file($project . '/workflows/nove.json'));
 // --- mazání se nenabízí u zakládání ---
 
 [, $novy] = runWorkflowPresenterIn($project, ['action' => 'edit']);
-// obyčejné 'Smazat' by teď chytilo i accessibilní popisek tlačítka pro
-// smazání řádku tabulky (Task 6) — cílíme přímo na nadpis sekce mazání workflow.
-Assert::notContains('<h2>Smazat</h2>', $novy);
+// dřív se cílilo na '<h2>Smazat</h2>' — ten nadpis zmizel (Task 3, karty),
+// nahradila ho hlavička karty. Sekce mazání se u zakládání nevykresluje
+// vůbec (šablona ji obaluje {if $name !== null}), takže se karta se
+// třídou border-danger neobjeví — na tu teď cílíme.
+Assert::notContains('card border-danger', $novy);
 
 // --- seznam nabízí zakládání ---
 

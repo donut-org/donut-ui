@@ -43,9 +43,13 @@ Assert::contains('Smazat', $html);
 // --- editace použitého kamene mazání nenabídne a řekne proč ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'pouzity']);
-// obyčejné 'Smazat' by teď chytilo i accessibilní popisek tlačítka pro
-// smazání řádku tabulky (Task 6) — cílíme přímo na nadpis sekce mazání kamene.
-Assert::notContains('<h2>Smazat</h2>', $html);
+// dřív se cílilo na '<h2>Smazat</h2>' — ten nadpis zmizel (Task 3, karty).
+// U kamene (na rozdíl od workflow) se karta „Smazat" vykresluje vždy, když
+// má jméno — u použitého kamene má v těle jen větu „Nejde smazat…", ne
+// mazací formulář. notContains('card border-danger', ...) by tu selhalo
+// vždy, protože karta se ukazuje i pro použitý kámen — cílíme proto přímo
+// na mazací formulář, který se nesmí vykreslit.
+Assert::notContains('id="frm-deleteForm"', $html);
 Assert::contains('používá', $html);
 Assert::contains('w', $html);
 

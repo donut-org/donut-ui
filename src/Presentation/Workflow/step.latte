@@ -20,74 +20,90 @@
 			</ul>
 		</div>
 
-		{input type}
-		<p>{label name /} {input name}</p>
+		<div class="card mb-3">
+			<div class="card-body">
+				{input type}
+				<p>{label name /} {input name}</p>
+
+				{if $type === 'run'}
+					<p>{label block /} {input block}</p>
+
+				{elseif $type === 'set'}
+					<p>{label key /} {input key}</p>
+					<p>{label value /} {input value}</p>
+
+				{elseif $type === 'if'}
+					<p>{label left /} {input left} {input op} {input right}</p>
+					<p class=keys>Operátory <code>empty</code> a <code>not_empty</code> pravou stranu ignorují.</p>
+
+				{elseif $type === 'foreach'}
+					<p>{label over /} {input over}</p>
+					<p>{label as /} {input as}</p>
+				{/if}
+			</div>
+		</div>
 
 		{if $type === 'run'}
-			<p>{label block /} {input block}</p>
+			<div class="card mb-3">
+				<div class="card-header">Vstupy kamene</div>
+				<div class="card-body">
+					{* table-responsive a aria-label doslova jako ve Workflow/edit.latte. *}
+					<div class=table-responsive>
+						<table class="table table-sm align-middle">
+							<thead>
+								<tr>
+									<th scope=col>Vstup kamene</th>
+									<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
+									<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+								</tr>
+							</thead>
+							<tbody id=in>
+								<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
+									<td>{input $row['key']}</td>
+									<td>{input $row['value']}</td>
+									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 
-			<h2>Vstupy kamene</h2>
-
-			{* table-responsive a aria-label doslova jako ve Workflow/edit.latte. *}
-			<div class=table-responsive>
-				<table class="table table-sm align-middle">
-					<thead>
-						<tr>
-							<th scope=col>Vstup kamene</th>
-							<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
-							<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-						</tr>
-					</thead>
-					<tbody id=in>
-						<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
-							<td>{input $row['key']}</td>
-							<td>{input $row['value']}</td>
-							<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
-						</tr>
-					</tbody>
-				</table>
+					<button type=button class="btn btn-sm btn-secondary" data-add=in>+ vstup</button>
+				</div>
 			</div>
 
-			<button type=button class="btn btn-sm btn-secondary" data-add=in>+ vstup</button>
+			<div class="card mb-3">
+				<div class="card-header">Výstupy do mapy</div>
+				<div class="card-body">
+					<div class=table-responsive>
+						<table class="table table-sm align-middle">
+							<thead>
+								<tr>
+									<th scope=col>Co z kamene</th>
+									<th scope=col>Pod jakým klíčem do mapy</th>
+									<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+								</tr>
+							</thead>
+							<tbody id=out>
+								<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
+									<td>{input $row['channel']}</td>
+									<td>{input $row['value']}</td>
+									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 
-			<h2>Výstupy do mapy</h2>
-
-			<div class=table-responsive>
-				<table class="table table-sm align-middle">
-					<thead>
-						<tr>
-							<th scope=col>Co z kamene</th>
-							<th scope=col>Pod jakým klíčem do mapy</th>
-							<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-						</tr>
-					</thead>
-					<tbody id=out>
-						<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
-							<td>{input $row['channel']}</td>
-							<td>{input $row['value']}</td>
-							<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
-						</tr>
-					</tbody>
-				</table>
+					<button type=button class="btn btn-sm btn-secondary" data-add=out>+ výstup</button>
+				</div>
 			</div>
 
-			<button type=button class="btn btn-sm btn-secondary" data-add=out>+ výstup</button>
-
-			<h2>Ostatní</h2>
-			<p>{label timeout /} {input timeout}</p>
-			<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
-
-		{elseif $type === 'set'}
-			<p>{label key /} {input key}</p>
-			<p>{label value /} {input value}</p>
-
-		{elseif $type === 'if'}
-			<p>{label left /} {input left} {input op} {input right}</p>
-			<p class=keys>Operátory <code>empty</code> a <code>not_empty</code> pravou stranu ignorují.</p>
-
-		{elseif $type === 'foreach'}
-			<p>{label over /} {input over}</p>
-			<p>{label as /} {input as}</p>
+			<div class="card mb-3">
+				<div class="card-header">Ostatní</div>
+				<div class="card-body">
+					<p>{label timeout /} {input timeout}</p>
+					<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
+				</div>
+			</div>
 		{/if}
 
 		<p>{input save}</p>

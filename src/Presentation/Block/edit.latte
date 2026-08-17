@@ -31,72 +31,91 @@
 			</ul>
 		</div>
 
-		<p>{label name /} {input name}</p>
-		<p>{label description /} {input description}</p>
-		<p>{label command /} {input command}</p>
-
-		<h2>Argumenty</h2>
-		<p class=keys>Skupina, ve které se proměnná vyhodnotí na prázdno, vypadne celá.</p>
-
-		{* Vodorovný tvar skupiny: form-control z FormFactory je display:block
-		   na celou šířku, takže bez tohohle by z argumentů byl svislý sloupec
-		   stejně vypadajících políček a hranice skupiny by zmizela. Třída
-		   se sem píše celá i s form-control — ochrana ve FormFactory (doplní
-		   třídu jen tam, kde žádná není) se tu neuplatní, protože {input}
-		   s class => … atribut class přepíše celý; kdyby form-control
-		   v tomhle řetězci chybělo, v HTML by chybělo taky. *}
-		<div id=args>
-			<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
-				<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>
-				<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
-				<button type=button class="btn btn-sm btn-outline-danger del-group">× skupina</button>
+		<div class="card mb-3">
+			<div class="card-body">
+				<p>{label name /} {input name}</p>
+				<p>{label description /} {input description}</p>
+				<p>{label command /} {input command}</p>
 			</div>
 		</div>
 
-		<button type=button class="btn btn-sm btn-secondary" id=add-group>+ skupina</button>
+		<div class="card mb-3">
+			<div class="card-header">Argumenty</div>
+			<div class="card-body">
+				<p class=keys>Skupina, ve které se proměnná vyhodnotí na prázdno, vypadne celá.</p>
 
-		<h2>Vstupy</h2>
+				{* Vodorovný tvar skupiny: form-control z FormFactory je display:block
+				   na celou šířku, takže bez tohohle by z argumentů byl svislý sloupec
+				   stejně vypadajících políček a hranice skupiny by zmizela. Třída
+				   se sem píše celá i s form-control — ochrana ve FormFactory (doplní
+				   třídu jen tam, kde žádná není) se tu neuplatní, protože {input}
+				   s class => … atribut class přepíše celý; kdyby form-control
+				   v tomhle řetězci chybělo, v HTML by chybělo taky. *}
+				<div id=args>
+					<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
+						<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>
+						<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
+						<button type=button class="btn btn-sm btn-outline-danger del-group">× skupina</button>
+					</div>
+				</div>
 
-		{* table-responsive a aria-label doslova jako ve Workflow/edit.latte —
-		   je to táž tabulka vstupů. *}
-		<div class=table-responsive>
-			<table class="table table-sm align-middle">
-				<thead>
-					<tr>
-						<th scope=col>Jméno</th>
-						<th scope=col>Povinný</th>
-						<th scope=col>Výchozí</th>
-						<th scope=col>Popis</th>
-						<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
-					</tr>
-				</thead>
-				<tbody id=inputs>
-					<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
-						<td>{input $row['name']}</td>
-						<td>{input $row['required']}</td>
-						<td>{input $row['default']}</td>
-						<td>{input $row['description']}</td>
-						<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
-					</tr>
-				</tbody>
-			</table>
+				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ skupina</button>
+			</div>
 		</div>
 
-		<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
+		<div class="card mb-3">
+			<div class="card-header">Vstupy</div>
+			<div class="card-body">
+				{* table-responsive a aria-label doslova jako ve Workflow/edit.latte —
+				   je to táž tabulka vstupů. *}
+				<div class=table-responsive>
+					<table class="table table-sm align-middle">
+						<thead>
+							<tr>
+								<th scope=col>Jméno</th>
+								<th scope=col>Povinný</th>
+								<th scope=col>Výchozí</th>
+								<th scope=col>Popis</th>
+								<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+							</tr>
+						</thead>
+						<tbody id=inputs>
+							<tr class=js-row n:foreach="$form['inputs']->getComponents() as $row">
+								<td>{input $row['name']}</td>
+								<td>{input $row['required']}</td>
+								<td>{input $row['default']}</td>
+								<td>{input $row['description']}</td>
+								<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
 
-		<p class=form-text>
-			Výchozí hodnota se použije, když ji volající nepředá.
-			Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
-		</p>
+				<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
 
-		<h2>Stdin</h2>
-		<p>{input hasStdin} {label hasStdin /}</p>
-		<p>{input stdinRequired} {label stdinRequired /}</p>
-		<p>{label stdinDescription /} {input stdinDescription}</p>
+				<p class=form-text>
+					Výchozí hodnota se použije, když ji volající nepředá.
+					Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
+				</p>
+			</div>
+		</div>
 
-		<h2>Ostatní</h2>
-		<p>{label timeout /} {input timeout}</p>
-		<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
+		<div class="card mb-3">
+			<div class="card-header">Stdin</div>
+			<div class="card-body">
+				<p>{input hasStdin} {label hasStdin /}</p>
+				<p>{input stdinRequired} {label stdinRequired /}</p>
+				<p>{label stdinDescription /} {input stdinDescription}</p>
+			</div>
+		</div>
+
+		<div class="card mb-3">
+			<div class="card-header">Ostatní</div>
+			<div class="card-body">
+				<p>{label timeout /} {input timeout}</p>
+				<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
+			</div>
+		</div>
 
 		<p>{input save}</p>
 	{/form}
@@ -136,25 +155,28 @@
 {/if}
 
 {if $name !== null}
-	{if $usedBy}
-		<p class=keys>
-			Nejde smazat — používá ho: {implode(', ', $usedBy)}.
-		</p>
-	{else}
-		<h2>Smazat</h2>
+	<div class="card border-danger mb-3">
+		<div class="card-header text-danger">Smazat</div>
+		<div class="card-body">
+			{if $usedBy}
+				<p class=keys>
+					Nejde smazat — používá ho: {implode(', ', $usedBy)}.
+				</p>
+			{else}
+				{form deleteForm}
+					<div n:if="$form->getErrors()" class="alert alert-danger">
+						<ul class="mb-0">
+							<li n:foreach="$form->getErrors() as $err">{$err}</li>
+						</ul>
+					</div>
 
-		{form deleteForm}
-			<div n:if="$form->getErrors()" class="alert alert-danger">
-				<ul class="mb-0">
-					<li n:foreach="$form->getErrors() as $err">{$err}</li>
-				</ul>
-			</div>
-
-			<input type=hidden n:name=name value="{$name}">
-			{* Jméno se do confirm() nedává schválně: Latte hodnotu v JS
-			   kontextu json-enkóduje a v dialogu by byla v uvozovkách navíc.
-			   Escapování se nevypíná, text se přeformuloval. *}
-			<button type=submit n:name=delete onclick="return confirm('Opravdu smazat tenhle kámen?')">Smazat</button>
-		{/form}
-	{/if}
+					<input type=hidden n:name=name value="{$name}">
+					{* Jméno se do confirm() nedává schválně: Latte hodnotu v JS
+					   kontextu json-enkóduje a v dialogu by byla v uvozovkách navíc.
+					   Escapování se nevypíná, text se přeformuloval. *}
+					<button type=submit n:name=delete onclick="return confirm('Opravdu smazat tenhle kámen?')">Smazat</button>
+				{/form}
+			{/if}
+		</div>
+	</div>
 {/if}

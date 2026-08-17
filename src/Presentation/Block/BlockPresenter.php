@@ -81,7 +81,8 @@ final class BlockPresenter extends Presenter
 			// Chybějící adresář i nenaparsovatelný soubor končí stejně:
 			// stránka se vykreslí s hláškou a s odkazem na editaci, protože
 			// rozbitý kámen je ten, u kterého je cesta k opravě potřeba
-			// nejvíc. Totéž pravidlo má Workflow:detail.
+			// nejvíc. Totéž pravidlo má Workflow:detail — odkaz „upravit
+			// hlavičku" je v detail.latte mimo {if $workflow !== null}.
 			/** @var BlockDetailTemplate $template */
 			$template = $this->template;
 			$template->error = $e->getMessage();

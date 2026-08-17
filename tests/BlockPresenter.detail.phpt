@@ -64,8 +64,18 @@ Assert::match('~<a href="[^"]*action=edit[^"]*">upravit</a>~', $html);
 
 // --- rozbitý kámen musí jít otevřít ---
 FileSystem::write($dir . '/blocks/rozbity.json', 'toto neni json');
+FileSystem::write($dir . '/workflows/oprav.json', \json_encode([
+	'name' => 'oprav',
+	'steps' => [['type' => 'run', 'block' => 'rozbity', 'in' => []]],
+]));
 
 [, $rozbity] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'rozbity']);
 
 Assert::contains('class=error', $rozbity);
 Assert::match('~<a href="[^"]*action=edit[^"]*">upravit</a>~', $rozbity);
+
+// a hlavně: i u rozbitého kamene je vidět, kdo ho používá — $usedBy se počítá
+// z workflow, ne z kamene, a právě před opravou nebo mazáním je to ta
+// nejdůležitější informace na stránce
+Assert::contains('<h2>Používá</h2>', $rozbity);
+Assert::contains('<li>oprav</li>', $rozbity);

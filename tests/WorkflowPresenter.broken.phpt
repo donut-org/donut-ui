@@ -44,6 +44,15 @@ Assert::contains('class=error', $detailRozbity, 'chyba parsování se ohlásí')
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>rozbity</li>~', $detailRozbity);
 Assert::notContains('>chyba</li>', $detailRozbity);
 
+// --- a nabídnou úpravu hlavičky, stejně jako detail rozbitého kamene ---
+// Odkaz dřív seděl uvnitř {if $workflow !== null}, takže detail rozbitého
+// workflow ukázal jen hlášku a cesta k opravě z něj nevedla nikam.
+Assert::match(
+	'~<a href="[^"]*name=rozbity[^"]*">upravit hlavičku</a>~',
+	$detailRozbity,
+	'i rozbité workflow musí nabídnout cestu k opravě',
+);
+
 // --- POST soubor skutečně smaže ---
 // Mazání nesmí záviset na tom, že se soubor podařilo naparsovat: jméno jde
 // ze skrytého pole, ne z načteného workflow.

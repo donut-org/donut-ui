@@ -14,9 +14,16 @@
    validaci, ne celou stránku. Bez workflow zbývá jen hláška. *}
 <p n:if="$error" class=error>{$error}</p>
 
+<h1 n:if="$workflow !== null">{$workflow->name}</h1>
+
+{* Odkaz na editaci hlavičky je mimo podmínku schválně: rozbité workflow je to
+   jediné, u kterého uživatel cestu k opravě a k mazání potřebuje nejvíc.
+   Totéž pravidlo má Block:detail. Jméno jde z adresy, ne z načteného
+   workflow — u nenaparsovaného souboru žádné načtené není a hledá se stejně
+   podle jména souboru, tedy podle toho z adresy. *}
+<p><a n:href="Workflow:edit, name: $name">upravit hlavičku</a></p>
+
 {if $workflow !== null}
-	<h1>{$workflow->name}</h1>
-	<p><a n:href="Workflow:edit, name: $workflow->name">upravit hlavičku</a></p>
 	<p n:if="$workflow->description">{$workflow->description}</p>
 
 	{foreach $workflowProblems as $problem}

@@ -47,8 +47,12 @@
 		allow_failure: {is_array($block->allowFailure) ? implode(', ', $block->allowFailure) : 'jakýkoliv exit kód'}
 	</p>
 
-	<h2 n:if="$usedBy">Používá</h2>
-	<ul n:if="$usedBy">
-		<li n:foreach="$usedBy as $workflow">{$workflow}</li>
-	</ul>
 {/if}
+
+{* „Používá" je mimo podmínku schválně: $usedBy se počítá z workflow, ne
+   z kamene, takže ho známe i u rozbitého souboru — a zrovna před opravou nebo
+   mazáním je seznam workflow, která kámen volají, ta nejdůležitější informace. *}
+<h2 n:if="$usedBy">Používá</h2>
+<ul n:if="$usedBy">
+	<li n:foreach="$usedBy as $workflow">{$workflow}</li>
+</ul>

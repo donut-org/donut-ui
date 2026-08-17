@@ -43,5 +43,10 @@ Assert::match('~<a href="[^"]*name=sync[^"]*"[^>]*>upravit</a>~', $html);
 Assert::contains('aria-label="Upravit workflow rozbite"', $html);
 Assert::contains('aria-label="Upravit workflow sync"', $html);
 
+// tlačítka mají bootstrapí třídy — jinak vypadají jako holé odkazy
+// uprostřed jinak nastylované stránky
+Assert::match('~<a[^>]*class="btn btn-primary"[^>]*>\\+ nové workflow</a>~', $html);
+Assert::match('~<a[^>]*class="btn btn-primary btn-sm"[^>]*>upravit</a>~', $html);
+
 // starý seznam je pryč
 Assert::notContains('<ul>', $html);

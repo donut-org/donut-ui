@@ -21,7 +21,7 @@
    Totéž pravidlo má Block:detail. Jméno jde z adresy, ne z načteného
    workflow — u nenaparsovaného souboru žádné načtené není a hledá se stejně
    podle jména souboru, tedy podle toho z adresy. *}
-<p><a n:href="Workflow:edit, name: $name">upravit hlavičku</a></p>
+<p><a n:href="Workflow:edit, name: $name" class="btn btn-primary">upravit hlavičku</a></p>
 
 {if $workflow !== null}
 	<p n:if="$workflow->description">{$workflow->description}</p>

@@ -48,7 +48,7 @@ Assert::notContains('>chyba</li>', $detailRozbity);
 // Odkaz dřív seděl uvnitř {if $workflow !== null}, takže detail rozbitého
 // workflow ukázal jen hlášku a cesta k opravě z něj nevedla nikam.
 Assert::match(
-	'~<a href="[^"]*name=rozbity[^"]*">upravit hlavičku</a>~',
+	'~<a href="[^"]*name=rozbity[^"]*"[^>]*>upravit hlavičku</a>~',
 	$detailRozbity,
 	'i rozbité workflow musí nabídnout cestu k opravě',
 );

@@ -102,4 +102,9 @@ Assert::contains('table-responsive', $html);
 // a hláška rozbitého kamene sedí ve druhém sloupci, jako u rozbitého workflow
 Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=error>~', $html);
 
+// tlačítka mají bootstrapí třídy — bez nich vypadají jako holé odkazy
+// uprostřed jinak nastylované stránky
+Assert::match('~<a[^>]*class="btn btn-primary"[^>]*>\\+ nový kámen</a>~', $html);
+Assert::match('~<a[^>]*class="btn btn-primary btn-sm"[^>]*>upravit</a>~', $html);
+
 FileSystem::delete(TEMP_DIR);

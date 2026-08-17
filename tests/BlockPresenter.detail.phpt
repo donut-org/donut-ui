@@ -59,7 +59,7 @@ Assert::contains('22', $html);
 Assert::contains('sync', $html);
 
 // cesta na editaci
-Assert::match('~<a href="[^"]*action=edit[^"]*">upravit</a>~', $html);
+Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $html);
 
 
 // --- rozbitý kámen musí jít otevřít ---
@@ -72,7 +72,7 @@ FileSystem::write($dir . '/workflows/oprav.json', \json_encode([
 [, $rozbity] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'rozbity']);
 
 Assert::contains('class=error', $rozbity);
-Assert::match('~<a href="[^"]*action=edit[^"]*">upravit</a>~', $rozbity);
+Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $rozbity);
 
 // a hlavně: i u rozbitého kamene je vidět, kdo ho používá — $usedBy se počítá
 // z workflow, ne z kamene, a právě před opravou nebo mazáním je to ta

@@ -55,8 +55,12 @@ soubory odtamtud. Žádný build krok, žádný `npm`.
   typu (`run`, `set`, `if`, `foreach`); pod stromem i v každé vnořené větvi
   jde krok daného typu přidat, přesunout nahoru/dolů nebo smazat (mazání
   krokem s podstromem se ptá na potvrzení)
-- **přehled kamenů** — kameny z `blocks/` s jejich deklarovanými vstupy,
-  založení, editace a mazání kamene formulářem
+- **přehled kamenů** — tabulka kamenů z `blocks/`: jméno, popis, příkaz
+  a workflow, která kámen používají; založení, editace a mazání kamene
+  formulářem
+- **detail kamene** — popis, příkaz, argumenty ve skupinách, deklarované
+  vstupy, stdin, timeout, `allow_failure` a seznam workflow, která kámen
+  volají
 - **hlavička workflow** — založení nového workflow, editace jména (jen při
   založení), popisu a vstupů, a mazání; mazání jen upozorní, že se workflow
   spouští jménem z cronu a z CLI, což GUI nevidí

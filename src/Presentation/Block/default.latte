@@ -54,8 +54,13 @@
 				<td>{if isset($usage[$name])}{implode(', ', $usage[$name])}{/if}</td>
 				{* Odkaz na úpravu je mimo podmínku schválně: kámen, který se
 				   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
-				   a k mazání potřebuje nejvíc. Stejně to má Workflow/default.latte. *}
-				<td><a n:href="Block:edit, name: $name">upravit</a></td>
+				   a k mazání potřebuje nejvíc. Stejně to má Workflow/default.latte.
+
+				   aria-label rozlišuje odkazy mezi sebou: v seznamu odkazů
+				   odečítače obrazovky je jinak tolikrát „upravit", kolik má
+				   tabulka řádků, a který je který, z něj nepoznáš. Laťku
+				   nastavil aria-label="Smazat řádek" u řádkových tlačítek. *}
+				<td><a n:href="Block:edit, name: $name" aria-label="Upravit kámen {$name}">upravit</a></td>
 			</tr>
 		</tbody>
 	</table>

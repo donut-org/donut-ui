@@ -69,8 +69,10 @@ Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>nové workflow</li>~', $newWorkflow);
 
 // drobečky Workflow:edit se jménem: mezičlánek je odkaz na detail toho workflow
+// (na cíl, ne jen na text — vlastnost, kvůli které drobečky vznikly, je „z
+// editace vede cesta na detail")
 [, $editWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">w</a></li>~', $editWorkflow);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">w</a></li>~', $editWorkflow);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>hlavička</li>~', $editWorkflow);
 
 // drobečky Workflow:step: krok je aktivní, před ním odkaz na detail workflow
@@ -94,7 +96,7 @@ Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflow</a>~', $blockDefault
 // poslední položka je "úprava"
 [, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">k</a></li>~', $blockEdit);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">k</a></li>~', $blockEdit);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>úprava</li>~', $blockEdit);
 
 // drobečky Block:detail: sekce je odkaz, jméno kamene poslední

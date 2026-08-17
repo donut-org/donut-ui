@@ -74,7 +74,11 @@ FileSystem::write($sRozbitym . '/blocks/rozbity.json', 'toto neni json');
 
 Assert::contains('<strong>rozbity</strong>', $html);
 Assert::contains('class=error', $html);
-Assert::match('~<a href="[^"]*name=rozbity[^"]*">upravit</a>~', $html);
+Assert::match('~<a href="[^"]*name=rozbity[^"]*"[^>]*>upravit</a>~', $html);
+
+// odkazy „upravit" se v seznamu odkazů odečítače obrazovky musí rozlišit
+Assert::contains('aria-label="Upravit kámen rozbity"', $html);
+Assert::contains('aria-label="Upravit kámen dobry"', $html);
 
 // dobrý kámen vedle něj zůstane odkazem na detail
 Assert::match('~<a href="[^"]*action=detail[^"]*">dobry</a>~', $html);

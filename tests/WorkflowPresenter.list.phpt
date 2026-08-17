@@ -36,8 +36,12 @@ Assert::contains('<strong>rozbite</strong>', $html);
 Assert::contains('class=error', $html);
 
 // a hlavně: i rozbitý řádek má cestu k opravě a mazání
-Assert::match('~<a href="[^"]*name=rozbite[^"]*">upravit</a>~', $html);
-Assert::match('~<a href="[^"]*name=sync[^"]*">upravit</a>~', $html);
+Assert::match('~<a href="[^"]*name=rozbite[^"]*"[^>]*>upravit</a>~', $html);
+Assert::match('~<a href="[^"]*name=sync[^"]*"[^>]*>upravit</a>~', $html);
+
+// odkazy „upravit" se v seznamu odkazů odečítače obrazovky musí rozlišit
+Assert::contains('aria-label="Upravit workflow rozbite"', $html);
+Assert::contains('aria-label="Upravit workflow sync"', $html);
 
 // starý seznam je pryč
 Assert::notContains('<ul>', $html);

@@ -39,8 +39,13 @@
 				</td>
 				{* Odkaz na úpravu je mimo podmínku schválně: workflow, které se
 				   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
-				   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte. *}
-				<td><a n:href="Workflow:edit, name: $name">upravit</a></td>
+				   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte.
+
+				   aria-label rozlišuje odkazy mezi sebou, stejně jako
+				   v Block/default.latte — bez něj je v seznamu odkazů
+				   odečítače obrazovky jen tolikrát „upravit", kolik má
+				   tabulka řádků. *}
+				<td><a n:href="Workflow:edit, name: $name" aria-label="Upravit workflow {$name}">upravit</a></td>
 			</tr>
 		</tbody>
 	</table>

@@ -12,17 +12,36 @@
 <p n:if="$error" class=error>{$error}</p>
 <p n:if="!$error && !$workflows">V adresáři <code>{$dir}</code> žádná workflow nejsou.</p>
 
-<ul n:if="$workflows">
-	<li n:foreach="$workflows as $name => $workflow">
-		{* Odkaz na úpravu je mimo podmínku schválně: workflow, které se
-		   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
-		   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte. *}
-		{if is_string($workflow)}
-			<strong>{$name}</strong> — <span class=error>{$workflow}</span>
-		{else}
-			<a n:href="detail $name">{$name}</a>
-			{$workflow->description}
-		{/if}
-		<a n:href="Workflow:edit, name: $name">upravit</a>
-	</li>
-</ul>
+<div class=table-responsive n:if="$workflows">
+	<table class="table table-sm align-middle">
+		<thead>
+			<tr>
+				<th scope=col>Jméno</th>
+				<th scope=col>Popis</th>
+				<th scope=col><span class=visually-hidden>Akce</span></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr n:foreach="$workflows as $name => $workflow">
+				<td>
+					{if is_string($workflow)}
+						<strong>{$name}</strong>
+					{else}
+						<a n:href="detail $name">{$name}</a>
+					{/if}
+				</td>
+				<td>
+					{if is_string($workflow)}
+						<span class=error>{$workflow}</span>
+					{else}
+						{$workflow->description}
+					{/if}
+				</td>
+				{* Odkaz na úpravu je mimo podmínku schválně: workflow, které se
+				   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
+				   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte. *}
+				<td><a n:href="Workflow:edit, name: $name">upravit</a></td>
+			</tr>
+		</tbody>
+	</table>
+</div>

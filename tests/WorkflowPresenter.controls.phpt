@@ -53,8 +53,8 @@ Assert::same(2, substr_count($html, 'do=stepTree-moveDown'));
 // Prázdná větev then se vykreslí i tak — jinak by do ní v Tasku 6 nešlo
 // přidat „+ krok". Cesta k ní se v HTML nikde neobjeví (prázdný seznam nemá
 // žádné ovládání), takže se tvrdí na popisku větve.
-Assert::contains('then:', $html);
-Assert::contains('else:', $html);
+Assert::contains('>then</h3>', $html);
+Assert::contains('>else</h3>', $html);
 
 // --- přesun dolů ---
 

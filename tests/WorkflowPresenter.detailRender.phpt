@@ -136,13 +136,28 @@ Assert::notContains('Vybraný klíč', $html);
 
 $html = renderDetailIn($root, 'card-dev', 'repo');
 Assert::contains('Vybraný klíč: <code>repo</code>', $html);
-Assert::contains('class="write"', $html);
-Assert::contains('class="read"', $html);
+Assert::contains('class="step write"', $html);
+Assert::contains('class="step read"', $html);
 
 $html = renderDetailIn($root, 'sync', 'cards');
 Assert::contains('Vybraný klíč: <code>cards</code>', $html);
-Assert::contains('class="write"', $html);
-Assert::contains('class="read"', $html);
+Assert::contains('class="step write"', $html);
+Assert::contains('class="step read"', $html);
+
+// --- strom kroků je list-group a podbarvení sedí na řádku, ne na položce ---
+// Kdyby třída sedla na .list-group-item, přeteklo by pozadí na celé tělo
+// then/else/foreach. Tohle je jediná vlastnost projektu, která se dá rozbít
+// tiše — vypadalo by to jen „nějak divně".
+
+Assert::contains('list-group', $html);
+Assert::match('~<div class="list-group-item[^"]*">\s*<div class="step~', $html);
+
+// A teď to podstatné: podbarvení sedí na řádku, ne na položce.
+// Aserce níž by byla vakuová, kdyby žádný krok podbarvený nebyl —
+// proto se stránka renderuje s vybraným klíčem a nejdřív se ověří,
+// že se vůbec něco podbarvilo.
+Assert::match('~<div class="step [^"]*\b(write|read)\b~', $html, 'aspoň jeden krok musí být podbarvený, jinak aserce níž nic netvrdí');
+Assert::notMatch('~<div class="list-group-item[^"]*\b(write|read)\b~', $html, 'podbarvení nesmí sednout na položku — přeteklo by na celý podstrom');
 
 // --- M7: klíč, který ve workflow není ---
 

@@ -1,43 +1,47 @@
 {* Severita → CSS třída a ikona na jednom místě, ne dvakrát opsané. *}
 {define problem, Donut\Validator\Problem $problem}
-<div class="{$problem->severity === Donut\Validator\Problem::Error ? 'error' : 'warning'}">
+<div class="{$problem->severity === Donut\Validator\Problem::Error ? 'text-danger' : 'text-warning'}">
 	{$problem->severity === Donut\Validator\Problem::Error ? '✕' : '⚠'} {$problem->message}
 </div>
 {/define}
 
 
 {define steps, array $steps, Donut\Gui\StepPath $path, Donut\Gui\ProblemMap $problems, Donut\Gui\KeyMap $keys, ?string $selected, string $name}
-<ol>
+<div class="list-group">
 	{foreach $steps as $i => $step}
 		{var $at = $path->index($i)}
 		{* Kolik kroků zmizí spolu s tímhle — rekurzivně, i s vnořenými
 		   then/else/steps, jinak by potvrzení mazání číslo podhodnotilo. *}
 		{var $subtree = Donut\Gui\StepCount::subtree($step)}
-		<li>
-			{* Třída patří jen řádku kroku, ne <li> — to obaluje i vnořené
-			   <ol> s tělem then/else/foreach a background by se přenesl
-			   na celý podstrom. *}
-			<div n:class="$keys->classAt($at, $selected)">
-				<span class=controls>
-					<a href="{plink Workflow:step, name: $name, at: (string) $at}">upravit</a>
+		<div class="list-group-item">
+			{* Třída patří jen řádku kroku, ne položce seznamu — ta obaluje
+			   i vnořený .list-group s tělem then/else/foreach a background
+			   by se přenesl na celý podstrom. *}
+			<div n:class="step, $keys->classAt($at, $selected)">
+				<div class="d-flex gap-1 align-items-center float-end">
+					{* btn-group tu nejde: očekává tlačítka jako přímé
+					   sourozence, ale tři ze čtyř sedí každý ve vlastním
+					   <form> — Nette komponentu nelze renderovat uvnitř
+					   n:foreach, takže formuláře musí zůstat ruční. *}
+					<a class="btn btn-sm btn-outline-secondary" href="{plink Workflow:step, name: $name, at: (string) $at}">upravit</a>
 
-					<form n:if="$i > 0" method=post action="{link moveUp!}" style="display:inline">
+					<form n:if="$i > 0" method=post action="{link moveUp!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit>↑</button>
+						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Posunout nahoru">↑</button>
 					</form>
 
-					<form n:if="$i < count($steps) - 1" method=post action="{link moveDown!}" style="display:inline">
+					<form n:if="$i < count($steps) - 1" method=post action="{link moveDown!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit>↓</button>
+						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Posunout dolů">↓</button>
 					</form>
 
-					<form method=post action="{link deleteStep!}" style="display:inline">
+					<form method=post action="{link deleteStep!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit n:attr="onclick => $subtree
+						<button type=submit class="btn btn-sm btn-outline-danger" aria-label="Smazat krok" n:attr="onclick => $subtree
 							? 'return confirm(\'Smazat i ' . Donut\Gui\StepCount::label($subtree) . '?\')'
 							: null">×</button>
 					</form>
-				</span>
+				</div>
 
 				{if $step instanceof Donut\Format\RunStep}
 					<strong>run</strong> {$step->block}
@@ -80,21 +84,21 @@
 			</div>
 
 			{if $step instanceof Donut\Format\IfStep}
-				then:
+				<h3 class="h6 text-muted mt-2 mb-1">then</h3>
 				{include steps, steps: $step->then, path: $at->child('then'), problems: $problems, keys: $keys, selected: $selected, name: $name}
-				else:
+				<h3 class="h6 text-muted mt-2 mb-1">else</h3>
 				{include steps, steps: $step->else, path: $at->child('else'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 			{elseif $step instanceof Donut\Format\ForeachStep}
 				{include steps, steps: $step->steps, path: $at->child('steps'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 			{/if}
-		</li>
+		</div>
 	{/foreach}
 
-	<li class=add>
+	<div class="list-group-item">
 		+ krok:
 		{foreach ['run', 'set', 'if', 'foreach'] as $type}
 			<a href="{plink Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $type}">{$type}</a>{sep} {/sep}
 		{/foreach}
-	</li>
-</ol>
+	</div>
+</div>
 {/define}

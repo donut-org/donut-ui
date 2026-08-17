@@ -90,7 +90,14 @@ Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Workflow</a>~', $blockDef
 Assert::match('~<a[^>]*aria-current="page"[^>]*>Kameny</a>~', $blockDefault);
 Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflow</a>~', $blockDefault);
 
-// drobečky Block:edit: sekce je odkaz, jméno kamene poslední
+// drobečky Block:edit: sekce je odkaz, mezičlánek je odkaz na detail kamene,
+// poslední položka je "úprava"
 [, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $blockEdit);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">k</a></li>~', $blockEdit);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>úprava</li>~', $blockEdit);
+
+// drobečky Block:detail: sekce je odkaz, jméno kamene poslední
+[, $blockDetail] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'k']);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockDetail);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $blockDetail);

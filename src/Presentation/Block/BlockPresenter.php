@@ -26,6 +26,8 @@ final class BlockPresenter extends Presenter
 {
 	private ?Block $edited = null;
 
+	private ?Block $detail = null;
+
 
 	public function renderDefault(): void
 	{
@@ -67,6 +69,33 @@ final class BlockPresenter extends Presenter
 		$template->error = null;
 		$template->usage = BlockUsage::of($this->loadWorkflows());
 		$template->dir = $dir;
+	}
+
+
+	public function actionDetail(string $name): void
+	{
+		try {
+			$this->detail = $this->store()->get($name);
+
+		} catch (ParseException $e) {
+			// Chybějící adresář i nenaparsovatelný soubor končí stejně:
+			// stránka se vykreslí s hláškou a s odkazem na editaci, protože
+			// rozbitý kámen je ten, u kterého je cesta k opravě potřeba
+			// nejvíc. Totéž pravidlo má Workflow:detail.
+			/** @var BlockDetailTemplate $template */
+			$template = $this->template;
+			$template->error = $e->getMessage();
+		}
+	}
+
+
+	public function renderDetail(string $name): void
+	{
+		/** @var BlockDetailTemplate $template */
+		$template = $this->template;
+		$template->name = $name;
+		$template->block = $this->detail;
+		$template->usedBy = BlockUsage::of($this->loadWorkflows())[$name] ?? [];
 	}
 
 

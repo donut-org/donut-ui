@@ -2,7 +2,8 @@
 
 {block breadcrumbs}
 	<li class=breadcrumb-item><a n:href="Block:default">Kameny</a></li>
-	<li class="breadcrumb-item active" aria-current=page>{$name ?? 'nový kámen'}</li>
+	<li n:if="$name !== null" class=breadcrumb-item><a n:href="Block:detail, name: $name">{$name}</a></li>
+	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'nový kámen' : 'úprava'}</li>
 {/block}
 
 {block content}

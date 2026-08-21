@@ -96,6 +96,6 @@ FileSystem::write($bezKamenu . '/workflows/w.json', json_encode([
 Assert::contains('blocks', $detail, 'chybějící kameny se ohlásí');
 Assert::contains('<h1>w</h1>', $detail, 'hlavička se vykreslí i bez kamenů');
 Assert::contains('upravit hlavičku', $detail, 'odkaz na obálku nesmí zmizet');
-Assert::contains('<strong>set</strong>', $detail, 'strom kroků se vykreslí i bez validace');
+Assert::match('~<span class="badge [^"]*">set</span>~', $detail, 'strom kroků se vykreslí i bez validace');
 
 FileSystem::delete(TEMP_DIR);

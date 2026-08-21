@@ -12,3 +12,60 @@ code { background: #f4f4f4; padding: .1em .3em }
    znaků místo toho, aby se dala posouvat. Spodní hranice šířky je to, co
    posuv zapne. */
 .table-responsive > table { min-width: 34rem }
+
+/* Řetěz: uzly pod sebou, mezi sousedy svislá spojnice. Spojnice patří
+   druhému a dalším uzlům, ne prvnímu — jinak by čára visela z ničeho. */
+.chain { display: flex; flex-direction: column; align-items: center }
+.chain > * + *::before { content: ''; display: block; width: 2px; height: 1.75rem;
+	margin: 0 auto; background: var(--bs-border-color) }
+
+/* Bublina je 25rem; kontejnerový krok roste s tím, co obsahuje. Uzel je širší
+   než bublina jen u if — tam pod ní visí dva sloupce větví. */
+.node { display: flex; flex-direction: column; align-items: center }
+.step { width: 25rem; max-width: 100% }
+.step.loop { width: auto }
+
+/* Větve if: stejně široké sloupce, jinak vodorovná spojnice nesedí na jejich
+   středy a prázdná větev by byla zmáčknutá na šířku odkazu „+ krok". */
+.branches { --branch-gap: 2.5rem;
+	display: flex; gap: var(--branch-gap); align-items: flex-start;
+	position: relative; padding-top: 3rem }
+.branch { position: relative; flex: 1 1 0; min-width: 25rem }
+.branch-label { text-align: center; margin-bottom: .5rem }
+
+/* pahýl z bubliny dolů */
+.branches::before { content: ''; position: absolute; top: 0; left: 50%;
+	width: 2px; height: 1.5rem; background: var(--bs-border-color) }
+/* pahýl do každé větve */
+.branch::before { content: ''; position: absolute; top: -1.5rem; left: 50%;
+	width: 2px; height: 1.5rem; background: var(--bs-border-color) }
+/* Vodorovná spojnice po polovinách, každá ukotvená ve své větvi a zatažená do
+   mezery mezi sloupci. Jedna čára přes celé .branches s left/right v procentech
+   by nesedla: procenta počítají i s mezerou, takže by konce minuly středy
+   sloupců o čtvrtinu mezery. */
+.branch::after { content: ''; position: absolute; top: -1.5rem; height: 2px;
+	background: var(--bs-border-color) }
+.branch:first-child::after { left: 50%; right: calc(var(--branch-gap) / -2) }
+.branch:last-child::after { right: 50%; left: calc(var(--branch-gap) / -2) }
+
+/* Tělo cyklu: tónované pozadí říká, kde foreach začíná a končí. */
+.loop-body { padding: 1rem; background: var(--bs-tertiary-bg);
+	border-radius: var(--bs-border-radius) }
+
+/* Pruhy toku klíčů */
+.flow { padding: .35rem .6rem; font-size: .875rem; margin-bottom: .75rem }
+.flow:last-child { margin-bottom: 0 }
+
+/* Karta kamene je <details>, ne bootstrapí collapse — bez JS a stav
+   „otevřeno" je pak jen atribut v šabloně, ne skript. */
+details.block { border: 1px solid var(--bs-border-color);
+	border-radius: var(--bs-border-radius); margin-bottom: .75rem }
+details.block > summary { cursor: pointer; padding: .35rem .6rem; font-size: .875rem }
+details.block > .block-body { padding: .6rem; border-top: 1px solid var(--bs-border-color) }
+.in-row { display: grid; grid-template-columns: 8rem 1fr; gap: .4rem;
+	padding: .2rem 0; align-items: baseline }
+.in-row + .in-row { border-top: 1px dashed var(--bs-border-color) }
+
+/* + krok na konci řetězu */
+.add { border: 1px dashed var(--bs-border-color); border-radius: var(--bs-border-radius);
+	padding: .5rem .75rem; font-size: .875rem }

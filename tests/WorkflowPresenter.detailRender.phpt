@@ -136,31 +136,45 @@ Assert::notContains('Vybraný klíč', $html);
 
 $html = renderDetailIn($root, 'card-dev', 'repo');
 Assert::contains('Vybraný klíč: <code>repo</code>', $html);
-Assert::contains('class="step write"', $html);
-Assert::contains('class="step read"', $html);
+Assert::contains('class="card step write"', $html);
+Assert::contains('class="card step read"', $html);
 
 $html = renderDetailIn($root, 'sync', 'cards');
 Assert::contains('Vybraný klíč: <code>cards</code>', $html);
-Assert::contains('class="step write"', $html);
-Assert::contains('class="step read"', $html);
+Assert::contains('class="card step write"', $html);
+Assert::contains('class="card step loop read"', $html, 'cards čte jen foreach nad {%cards%}, takže jeho bublina nese i loop');
 
-// --- strom kroků je list-group a podbarvení sedí na řádku, ne na položce ---
-// Kdyby třída sedla na .list-group-item, přeteklo by pozadí na celé tělo
+// --- strom kroků je řetěz bublin a podbarvení sedí na bublině, ne na uzlu ---
+// Kdyby třída sedla na .node, přeteklo by pozadí na celé tělo
 // then/else/foreach. Tohle je jediná vlastnost projektu, která se dá rozbít
 // tiše — vypadalo by to jen „nějak divně".
 
-Assert::contains('list-group', $html);
-Assert::match('~<div class="list-group-item[^"]*">\s*<div class="step~', $html);
+Assert::contains('class="chain"', $html);
+Assert::match('~<div class="node">\s*<div class="card step~', $html);
 
-// A teď to podstatné: podbarvení sedí na řádku, ne na položce.
+// A teď to podstatné: podbarvení sedí na bublině, ne na tělu cyklu.
 // Aserce níž by byla vakuová, kdyby žádný krok podbarvený nebyl —
 // proto se stránka renderuje s vybraným klíčem a nejdřív se ověří,
 // že se vůbec něco podbarvilo.
-Assert::match('~<div class="step [^"]*\b(write|read)\b~', $html, 'aspoň jeden krok musí být podbarvený, jinak aserce níž nic netvrdí');
-Assert::notMatch('~<div class="list-group-item[^"]*\b(write|read)\b~', $html, 'podbarvení nesmí sednout na položku — přeteklo by na celý podstrom');
+Assert::match('~<div class="card step [^"]*\b(write|read)\b~', $html, 'aspoň jedna bublina musí být zvýrazněná, jinak aserce níž nic netvrdí');
+Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'zvýraznění nesmí sednout na tělo cyklu — tvrdilo by, že je vybraný celý podstrom');
 
 // --- M7: klíč, který ve workflow není ---
 
 $html = renderDetailIn($root, 'card-dev', 'nesmysl');
 Assert::contains('Vybraný klíč: <code>nesmysl</code>', $html);
 Assert::contains('tento klíč se ve workflow nevyskytuje', $html);
+
+// --- if má dvě větve i s prázdným else ---
+// card-dev má dvě podmínky a obě mají prázdný else. Kdyby se prázdná větev
+// nevykreslila, nešlo by do else nic přidat — a poznalo by se to až tím, že
+// uživateli chybí odkaz, ne pádem testu.
+
+$html = renderDetailIn($root, 'card-dev');
+Assert::same(4, substr_count($html, '<div class="branch">'), 'dvě podmínky × dvě větve');
+
+$pos = strpos($html, '>else</span>');
+Assert::type('int', $pos, 'bez popisku větve by aserce níž nic netvrdila');
+$vetev = substr($html, $pos, 400);
+Assert::contains('class="add"', $vetev, 'prázdná větev else musí nabízet „+ krok"');
+Assert::notContains('class="card step', $vetev, 'prázdná větev nesmí obsahovat bublinu');

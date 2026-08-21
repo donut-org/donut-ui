@@ -159,6 +159,15 @@ Assert::match('~<div class="node">\s*<div class="card step~', $html);
 Assert::match('~<div class="card step [^"]*\b(write|read)\b~', $html, 'aspoň jedna bublina musí být zvýrazněná, jinak aserce níž nic netvrdí');
 Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'zvýraznění nesmí sednout na tělo cyklu — tvrdilo by, že je vybraný celý podstrom');
 
+// --- pruhy se zvýrazňují jen při vybraném klíči ---
+
+Assert::contains('flow-on', $html, 'pruh s vybraným klíčem musí zesílit');
+Assert::contains('flow-dim', $html, 'ostatní pruhy musí zblednout');
+
+$bezKlice = renderDetailIn($root, 'sync');
+Assert::notContains('flow-on', $bezKlice, 'bez vybraného klíče nemá stav pruhu smysl');
+Assert::notContains('flow-dim', $bezKlice);
+
 // --- M7: klíč, který ve workflow není ---
 
 $html = renderDetailIn($root, 'card-dev', 'nesmysl');

@@ -6,10 +6,12 @@
 {/define}
 
 
-{* Pruh „zapisuje" má stejný tvar u set i foreach, na jednom místě, aby v
-   dalším kroku přibyl stav vybraného klíče (flow-on/flow-dim) jen jednou. *}
-{define writes, array $writes}
-<div n:if="$writes" class="alert alert-info flow">zapisuje
+{* Pruh „zapisuje" má stejný tvar u set i foreach, na jednom místě, aby stav
+   vybraného klíče (flow-on/flow-dim) přibyl jen jednou. *}
+{define writes, array $writes, ?string $selected}
+<div n:if="$writes" n:class="alert, alert-info, flow,
+	$selected !== null && in_array($selected, $writes, true) ? 'flow-on'
+	: ($selected !== null ? 'flow-dim' : null)">zapisuje
 	{foreach $writes as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
 </div>
 {/define}
@@ -45,7 +47,9 @@
 				</div>
 
 				<div class="card-body">
-					<div n:if="$reads" class="alert alert-success flow">čte
+					<div n:if="$reads" n:class="alert, alert-success, flow,
+						$selected !== null && in_array($selected, $reads, true) ? 'flow-on'
+						: ($selected !== null ? 'flow-dim' : null)">čte
 						{foreach $reads as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
 					</div>
 
@@ -65,14 +69,16 @@
 							</div>
 						</details>
 
-						<div n:if="$step->out" class="alert alert-info flow">
+						<div n:if="$step->out" n:class="alert, alert-info, flow,
+							$selected !== null && in_array($selected, $writes, true) ? 'flow-on'
+							: ($selected !== null ? 'flow-dim' : null)">
 							{foreach $step->out as $channel => $key}{$channel} →
 								<a href="{plink this, key: $key}"><code>{$key}</code></a>{sep}<br>{/sep}{/foreach}
 						</div>
 
 					{elseif $type === 'set'}
 						<div class="alert alert-light flow"><code>{$step->value->getSource()}</code></div>
-						{include writes, writes: $writes}
+						{include writes, writes: $writes, selected: $selected}
 
 					{elseif $type === 'if'}
 						<div class="alert alert-light flow">
@@ -82,7 +88,7 @@
 						</div>
 
 					{else}
-						{include writes, writes: $writes}
+						{include writes, writes: $writes, selected: $selected}
 						<div class="loop-body">
 							{include steps, steps: $step->steps, path: $at->child('steps'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 						</div>

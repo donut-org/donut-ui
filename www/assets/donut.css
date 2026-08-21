@@ -1,10 +1,4 @@
 code { background: #f4f4f4; padding: .1em .3em }
-/* Na řádku kroku, ne na .list-group-item — ta obaluje i vnořený .list-group
-   s tělem then/else/foreach a background by obarvil celý podstrom místo
-   jednoho kroku. */
-.step.write { background: #eafbea }
-.step.read { background: #eef3fb }
-.step.write.read { background: #f4f0e6 }
 .keys { font-size: .85em; color: #666 }
 .keys a { color: #06c }
 /* Samotné .table-responsive v úzkém okně nestačí: políčka mají width:100%
@@ -24,6 +18,18 @@ code { background: #f4f4f4; padding: .1em .3em }
 .node { display: flex; flex-direction: column; align-items: center }
 .step { width: 25rem; max-width: 100% }
 .step.loop { width: auto }
+
+/* Vybraný klíč: žlutý prstenec box-shadow, ne border — border by o dva pixely
+   změnil rozměr bubliny a graf by při kliknutí na klíč poskočil. Žlutá je
+   vyhrazená právě tomuhle, proto má štítek if tmavou a ne žlutou. */
+.step.write, .step.read { box-shadow: 0 0 0 2px var(--bs-warning) }
+
+/* U cyklu jen hlavička: prstenec kolem celého rámu by tvrdil, že je vybraný
+   i každý krok v těle uvnitř. Tohle je jediná vlastnost projektu, která se dá
+   rozbít tiše. */
+.step.loop.write, .step.loop.read { box-shadow: none }
+.step.loop.write > .card-header, .step.loop.read > .card-header {
+	box-shadow: inset 0 0 0 2px var(--bs-warning) }
 
 /* Větve if: stejně široké sloupce, jinak vodorovná spojnice nesedí na jejich
    středy a prázdná větev by byla zmáčknutá na šířku odkazu „+ krok". */
@@ -55,6 +61,11 @@ code { background: #f4f4f4; padding: .1em .3em }
 /* Pruhy toku klíčů */
 .flow { padding: .35rem .6rem; font-size: .875rem; margin-bottom: .75rem }
 .flow:last-child { margin-bottom: 0 }
+
+/* Pruh s vybraným klíčem zesílí, ostatní zblednou — jinak zvýrazněný pruh
+   v hustém kroku zanikne. */
+.flow-dim { opacity: .45 }
+.flow-on { box-shadow: 0 0 0 .2rem rgba(var(--bs-warning-rgb), .35) }
 
 /* Karta kamene je <details>, ne bootstrapí collapse — bez JS a stav
    „otevřeno" je pak jen atribut v šabloně, ne skript. */

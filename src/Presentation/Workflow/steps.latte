@@ -6,6 +6,15 @@
 {/define}
 
 
+{* Pruh „zapisuje" má stejný tvar u set i foreach, na jednom místě, aby v
+   dalším kroku přibyl stav vybraného klíče (flow-on/flow-dim) jen jednou. *}
+{define writes, array $writes}
+<div n:if="$writes" class="alert alert-info flow">zapisuje
+	{foreach $writes as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
+</div>
+{/define}
+
+
 {define steps, array $steps, Donut\Gui\StepPath $path, Donut\Gui\ProblemMap $problems, Donut\Gui\KeyMap $keys, ?string $selected, string $name}
 <div class="chain">
 	{foreach $steps as $i => $step}
@@ -63,9 +72,7 @@
 
 					{elseif $type === 'set'}
 						<div class="alert alert-light flow"><code>{$step->value->getSource()}</code></div>
-						<div n:if="$writes" class="alert alert-info flow">zapisuje
-							{foreach $writes as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
-						</div>
+						{include writes, writes: $writes}
 
 					{elseif $type === 'if'}
 						<div class="alert alert-light flow">
@@ -75,9 +82,7 @@
 						</div>
 
 					{else}
-						<div n:if="$writes" class="alert alert-info flow">zapisuje
-							{foreach $writes as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
-						</div>
+						{include writes, writes: $writes}
 						<div class="loop-body">
 							{include steps, steps: $step->steps, path: $at->child('steps'), problems: $problems, keys: $keys, selected: $selected, name: $name}
 						</div>

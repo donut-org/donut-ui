@@ -187,3 +187,18 @@ Assert::type('int', $pos, 'bez popisku větve by aserce níž nic netvrdila');
 $vetev = substr($html, $pos, 400);
 Assert::contains('class="add"', $vetev, 'prázdná větev else musí nabízet „+ krok"');
 Assert::notContains('class="card step', $vetev, 'prázdná větev nesmí obsahovat bublinu');
+
+// --- karta kamene se otevře jen u kroku, který s vybraným klíčem pracuje ---
+// Bez toho by uživatel po kliknutí na klíč proklikával bubliny, aby našel,
+// kde se používá. Otevřít všechny by ale bylo stejně k ničemu jako neotevřít
+// žádnou, proto se testuje obojí.
+
+$bezKlice = renderDetailIn($root, 'card-dev');
+Assert::match('~<details~', $bezKlice, 'bez karet kamene by aserce níž nic netvrdily');
+Assert::notMatch('~<details[^>]*\bopen\b~', $bezKlice, 'bez vybraného klíče se nesmí otevřít žádná');
+
+$html = renderDetailIn($root, 'card-dev', 'meJson');
+$otevrenych = preg_match_all('~<details[^>]*\bopen\b~', $html);
+$vsech = preg_match_all('~<details~', $html);
+Assert::true($otevrenych > 0, 's vybraným klíčem se musí otevřít aspoň jedna');
+Assert::true($otevrenych < $vsech, 'otevřít se smí jen kroky s vybraným klíčem, ne všechny');

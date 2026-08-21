@@ -125,6 +125,7 @@ Assert::contains('card-dev', $html);
 Assert::contains('čte', $html);
 Assert::contains('zapisuje', $html);
 Assert::notContains('Vybraný klíč', $html);
+Assert::contains('result →', $html, 'run musí ukázat, do kterého klíče zapisuje');
 
 $html = renderDetailIn($root, 'sync');
 Assert::contains('sync', $html);
@@ -144,19 +145,22 @@ Assert::contains('Vybraný klíč: <code>cards</code>', $html);
 Assert::contains('class="card step write"', $html);
 Assert::contains('class="card step loop read"', $html, 'cards čte jen foreach nad {%cards%}, takže jeho bublina nese i loop');
 
-// --- strom kroků je řetěz bublin a podbarvení sedí na bublině, ne na uzlu ---
-// Kdyby třída sedla na .node, přeteklo by pozadí na celé tělo
-// then/else/foreach. Tohle je jediná vlastnost projektu, která se dá rozbít
-// tiše — vypadalo by to jen „nějak divně".
+// --- strom kroků je řetěz bublin a zvýraznění sedí na bublině, ne na uzlu ---
+// Kdyby třída sedla na .node, přetekl by prstenec na celé tělo
+// then/else/foreach.
 
 Assert::contains('class="chain"', $html);
 Assert::match('~<div class="node">\s*<div class="card step~', $html);
 
-// A teď to podstatné: podbarvení sedí na bublině, ne na tělu cyklu.
-// Aserce níž by byla vakuová, kdyby žádný krok podbarvený nebyl —
+// A teď to podstatné: zvýraznění sedí na bublině, ne na tělu cyklu.
+// Aserce níž by byla vakuová, kdyby žádný krok zvýrazněný nebyl —
 // proto se stránka renderuje s vybraným klíčem a nejdřív se ověří,
-// že se vůbec něco podbarvilo.
+// že se vůbec něco zvýraznilo.
 Assert::match('~<div class="card step [^"]*\b(write|read)\b~', $html, 'aspoň jedna bublina musí být zvýrazněná, jinak aserce níž nic netvrdí');
+
+// Tohle je jediná vlastnost projektu, která se dá rozbít tiše — vypadalo by
+// to jen „nějak divně": prstenec cyklu smí orámovat jen jeho hlavičku,
+// nikdy celé tělo, jinak by tvrdil, že je vybraný celý podstrom.
 Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'zvýraznění nesmí sednout na tělo cyklu — tvrdilo by, že je vybraný celý podstrom');
 
 // --- pruhy se zvýrazňují jen při vybraném klíči ---
@@ -164,9 +168,9 @@ Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'zvýraz
 Assert::contains('flow-on', $html, 'pruh s vybraným klíčem musí zesílit');
 Assert::contains('flow-dim', $html, 'ostatní pruhy musí zblednout');
 
-$bezKlice = renderDetailIn($root, 'sync');
-Assert::notContains('flow-on', $bezKlice, 'bez vybraného klíče nemá stav pruhu smysl');
-Assert::notContains('flow-dim', $bezKlice);
+$syncBezKlice = renderDetailIn($root, 'sync');
+Assert::notContains('flow-on', $syncBezKlice, 'bez vybraného klíče nemá stav pruhu smysl');
+Assert::notContains('flow-dim', $syncBezKlice);
 
 // --- M7: klíč, který ve workflow není ---
 
@@ -193,9 +197,9 @@ Assert::notContains('class="card step', $vetev, 'prázdná větev nesmí obsahov
 // kde se používá. Otevřít všechny by ale bylo stejně k ničemu jako neotevřít
 // žádnou, proto se testuje obojí.
 
-$bezKlice = renderDetailIn($root, 'card-dev');
-Assert::match('~<details~', $bezKlice, 'bez karet kamene by aserce níž nic netvrdily');
-Assert::notMatch('~<details[^>]*\bopen\b~', $bezKlice, 'bez vybraného klíče se nesmí otevřít žádná');
+$cardDevBezKlice = renderDetailIn($root, 'card-dev');
+Assert::match('~<details~', $cardDevBezKlice, 'bez karet kamene by aserce níž nic netvrdily');
+Assert::notMatch('~<details[^>]*\bopen\b~', $cardDevBezKlice, 'bez vybraného klíče se nesmí otevřít žádná');
 
 $html = renderDetailIn($root, 'card-dev', 'meJson');
 $otevrenych = preg_match_all('~<details[^>]*\bopen\b~', $html);

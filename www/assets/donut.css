@@ -1,6 +1,5 @@
 code { background: #f4f4f4; padding: .1em .3em }
 .keys { font-size: .85em; color: #666 }
-.keys a { color: #06c }
 /* Samotné .table-responsive v úzkém okně nestačí: políčka mají width:100%
    a min-width:0, takže se tabulka smrskne s ním a sloupce spadnou na pár
    znaků místo toho, aby se dala posouvat. Spodní hranice šířky je to, co

@@ -146,4 +146,24 @@ $write([
 Assert::type(RedirectResponse::class, $response);
 Assert::same('a', $steps()[0]->key);
 
+// --- tlačítko × u kroku s podstromem nabízí potvrzení, jinak ne ---
+// Je to jediná pojistka před smazáním podstromu — bez ní by × smazal
+// vnořené kroky bez varování stejně tiše jako ten jeden krok samotný.
+
+$write([
+	['type' => 'set', 'key' => 'a', 'value' => '1'],
+	['type' => 'if', 'condition' => ['left' => '{%x%}', 'op' => 'not_empty'], 'then' => [
+		['type' => 'set', 'key' => 'b', 'value' => '2'],
+	]],
+]);
+
+[, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
+
+Assert::contains(
+	"onclick=\"return confirm(&apos;Smazat i 1 vnořený krok?&apos;)\"",
+	$html,
+	'krok s podstromem musí nabídnout potvrzení mazání',
+);
+Assert::same(1, substr_count($html, 'confirm('), 'krok bez dětí (set a, set b) nesmí potvrzení nabízet vůbec');
+
 FileSystem::delete(TEMP_DIR);

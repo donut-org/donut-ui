@@ -33,13 +33,13 @@
 		{var $writes = $keys->writesAt($at)}
 		{* Prázdno znamená, že krok s vybraným klíčem nepracuje. Bez vybraného
 		   klíče vrací classAt() prázdno vždycky, takže se nic neotevře. *}
-		{var $touches = $keys->classAt($at, $selected) !== ''}
+		{var $keyClass = $keys->classAt($at, $selected)}
 
 		<div class="node">
 			{* Třída z classAt() patří bublině. U cyklu bublina obsahuje i své
 			   tělo, proto navíc třída loop — CSS pak kreslí prstenec jen na
 			   hlavičce, jinak by orámoval celý podstrom uvnitř. *}
-			<div n:class="card, step, $type === 'foreach' ? 'loop' : null, $keys->classAt($at, $selected)">
+			<div n:class="card, step, $type === 'foreach' ? 'loop' : null, $keyClass">
 				<div class="card-header d-flex align-items-center gap-2 flex-wrap">
 					<span n:class="badge, $typeClass">{$type}</span>
 					<span n:if="$step->name" class="fw-medium">{$step->name}</span>
@@ -58,7 +58,7 @@
 
 					{if $type === 'run'}
 						{var $inputCount = count($step->in)}
-						<details class="block" n:attr="open => $touches">
+						<details class="block" n:attr="open => $keyClass !== ''">
 							<summary><code>{$step->block}</code>
 								<span class="text-muted">· {if $inputCount === 0}bez vstupů{else}{$inputCount}
 									{$inputCount === 1 ? 'vstup' : ($inputCount < 5 ? 'vstupy' : 'vstupů')}{/if}</span>

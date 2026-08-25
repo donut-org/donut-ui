@@ -180,7 +180,7 @@ FileSystem::createDir($bezAdresare);
 Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
 Assert::contains('neexistuje', $html);
 // M8: hláška musí říct, co s tím — jinak je prázdný projekt slepá ulička.
-Assert::contains('mkdir blocks', $html);
+Assert::contains('mkdir -p ' . $bezAdresare . '/blocks', $html);
 
 // --- cizí POST nesmí formulář kamene vyprázdnit ---
 //

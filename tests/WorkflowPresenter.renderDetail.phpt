@@ -85,7 +85,7 @@ Assert::contains('Validace neproběhla', $presenter->template->error);
 // N3: detail workflow je po založení první místo, kam se čerstvý uživatel
 // dostane. Bez návodu je prázdný projekt slepá ulička — přehled kamenů ho má,
 // tady chyběl.
-Assert::contains('mkdir blocks', $presenter->template->error);
+Assert::contains('mkdir -p ' . $dir . '/blocks', $presenter->template->error);
 
 
 // Vadný kámen — BlockRepository ho zná ze seznamu souborů, ale parsuje ho

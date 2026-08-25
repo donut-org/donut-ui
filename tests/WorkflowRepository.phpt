@@ -52,7 +52,7 @@ Assert::same([], (new WorkflowRepository($empty))->loadAll());
 Assert::exception(
 	fn() => new WorkflowRepository($dir . '/chybi'),
 	ParseException::class,
-	"Adresář s workflow '{$dir}/chybi' neexistuje. GUI ho sám nezaloží — vytvoř ho příkazem `mkdir chybi`, nebo spusť server z adresáře projektu.",
+	"Adresář s workflow '{$dir}/chybi' neexistuje. Donut ho sám nezaloží — vytvoř ho příkazem `mkdir -p {$dir}/chybi`.",
 );
 
 FileSystem::delete(TEMP_DIR);

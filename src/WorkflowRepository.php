@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Donut\Gui;
 
 use Donut\Format\Workflow;
+use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Parser\WorkflowParser;
 

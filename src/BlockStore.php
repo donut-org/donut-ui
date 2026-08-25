@@ -6,6 +6,7 @@ namespace Donut\Gui;
 
 use Donut\BlockRepository;
 use Donut\Format\Block;
+use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Writer\BlockWriter;
 use Nette\Utils\FileSystem;

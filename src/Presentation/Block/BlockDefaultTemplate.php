@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Block;
 
 use Donut\Format\Block;
-use Nette\Bridges\ApplicationLatte\Template;
+use Donut\Gui\Presentation\LayoutTemplate;
 
 
 /**
  * Šablona pro Block:default — přehled kamenů z blocks/.
  */
-final class BlockDefaultTemplate extends Template
+final class BlockDefaultTemplate extends LayoutTemplate
 {
 	/** @var array<string, Block|string> jméno => kámen, nebo hláška o chybě */
 	public array $blocks = [];

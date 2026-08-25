@@ -11,6 +11,7 @@ use Donut\Gui\BlockMapper;
 use Donut\Gui\BlockStore;
 use Donut\Gui\BlockUsage;
 use Donut\Gui\FormFactory;
+use Donut\Gui\Presentation\LayoutTemplate;
 use Donut\Gui\WorkflowRepository;
 use Donut\MissingDir;
 use Donut\Parser\ParseException;
@@ -33,6 +34,14 @@ final class BlockPresenter extends Presenter
 	private ?Block $edited = null;
 
 	private ?Block $detail = null;
+
+
+	protected function beforeRender(): void
+	{
+		/** @var LayoutTemplate $template */
+		$template = $this->template;
+		$template->profile = $this->profile->name();
+	}
 
 
 	public function renderDefault(): void

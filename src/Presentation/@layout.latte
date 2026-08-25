@@ -19,6 +19,10 @@
 				<button type=button class="btn-close d-md-none" data-bs-dismiss=offcanvas data-bs-target="#nav" aria-label="Zavřít"></button>
 			</div>
 
+			{* Kterou sadu právě edituju. Bez tohohle GUI o profilu mlčí a
+			   splete se jen jednou — zato tiše. *}
+			<div class="text-body-secondary small mb-3">Profil: <code>{$profile}</code></div>
+
 			{* aria-current říká odečítači obrazovky totéž, co vidícímu uživateli
 			   zvýrazněná položka. Třída active sama o sobě je jen barva. *}
 			<ul class="nav nav-pills flex-column">

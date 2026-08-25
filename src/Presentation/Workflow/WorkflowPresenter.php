@@ -11,6 +11,7 @@ use Donut\Format\Step;
 use Donut\Format\Workflow;
 use Donut\Gui\FormFactory;
 use Donut\Gui\KeyMap;
+use Donut\Gui\Presentation\LayoutTemplate;
 use Donut\Gui\ProblemMap;
 use Donut\Gui\RowShape;
 use Donut\Gui\StepMapper;
@@ -48,6 +49,14 @@ final class WorkflowPresenter extends Presenter
 	private string $stepType = '';
 
 	private ?Workflow $editedWorkflow = null;
+
+
+	protected function beforeRender(): void
+	{
+		/** @var LayoutTemplate $template */
+		$template = $this->template;
+		$template->profile = $this->profile->name();
+	}
 
 
 	public function renderDefault(): void

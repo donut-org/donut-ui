@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Block;
 
 use Donut\Format\Block;
-use Nette\Bridges\ApplicationLatte\Template;
+use Donut\Gui\Presentation\LayoutTemplate;
 
 
-final class BlockDetailTemplate extends Template
+final class BlockDetailTemplate extends LayoutTemplate
 {
 	public ?string $name = null;
 

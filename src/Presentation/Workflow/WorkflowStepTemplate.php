@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Donut\Gui\Presentation\Workflow;
 
-use Nette\Bridges\ApplicationLatte\Template;
+use Donut\Gui\Presentation\LayoutTemplate;
 
 
-final class WorkflowStepTemplate extends Template
+final class WorkflowStepTemplate extends LayoutTemplate
 {
 	public ?string $error = null;
 

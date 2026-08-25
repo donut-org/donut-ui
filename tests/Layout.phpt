@@ -103,3 +103,9 @@ Assert::match('~<li class="breadcrumb-item active" aria-current=page>úprava</li
 [, $blockDetail] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockDetail);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $blockDetail);
+
+// jméno profilu v hlavičce: pracovní adresář o sadě nerozhoduje, takže je to
+// jediné, z čeho uživatel pozná, co vlastně edituje. Musí být na obou
+// sekcích — kterákoli může být první, kam se dostane.
+Assert::contains('<code>projekt</code>', $html);
+Assert::contains('<code>projekt</code>', $blockDefault);

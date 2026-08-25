@@ -6,9 +6,9 @@ namespace Donut\Gui\Presentation\Workflow;
 
 use Donut\Format\Workflow;
 use Donut\Gui\KeyMap;
+use Donut\Gui\Presentation\LayoutTemplate;
 use Donut\Gui\ProblemMap;
 use Donut\Validator\Problem;
-use Nette\Bridges\ApplicationLatte\Template;
 
 
 /**
@@ -20,7 +20,7 @@ use Nette\Bridges\ApplicationLatte\Template;
  * ostatní: hlavička i strom kroků se vykreslí, chybí jen nálezy validátoru.
  * Proto se detail.latte ptá na $workflow === null, ne na $error.
  */
-final class WorkflowDetailTemplate extends Template
+final class WorkflowDetailTemplate extends LayoutTemplate
 {
 	public ?string $error = null;
 

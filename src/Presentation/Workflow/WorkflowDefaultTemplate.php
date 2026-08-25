@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Workflow;
 
 use Donut\Format\Workflow;
-use Nette\Bridges\ApplicationLatte\Template;
+use Donut\Gui\Presentation\LayoutTemplate;
 
 
 /**
  * Šablona pro Workflow:default — seznam workflow z workflows/.
  */
-final class WorkflowDefaultTemplate extends Template
+final class WorkflowDefaultTemplate extends LayoutTemplate
 {
 	/** @var array<string, Workflow|string> jméno => workflow, nebo hláška o chybě */
 	public array $workflows = [];

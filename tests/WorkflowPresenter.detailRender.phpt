@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
+use Donut\Profile;
 use Latte\Engine;
 use Nette\Application\IPresenter;
 use Nette\Application\IPresenterFactory;
@@ -33,7 +34,7 @@ require __DIR__ . '/bootstrap.php';
  * Na rozdíl od WorkflowPresenter.renderDetail.phpt dostane Engine se skutečnou
  * UIExtension (jinak by n:href v steps.latte nefungovalo) a temp adresář.
  */
-function createPresenter(): WorkflowPresenter
+function createPresenter(Profile $profile): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -66,7 +67,7 @@ function createPresenter(): WorkflowPresenter
 		}
 	};
 
-	$presenter = new WorkflowPresenter;
+	$presenter = new WorkflowPresenter($profile);
 	$presenter->injectPrimary(
 		new HttpRequest(new UrlScript('http://localhost/')),
 		new HttpResponse,
@@ -85,34 +86,26 @@ function createPresenter(): WorkflowPresenter
 
 
 /**
- * renderDetail() čte cwd (WorkflowRepository::projectDir()), fixtura tedy
- * musí být aktuálním adresářem po dobu volání — referenční zátěž má reálné
- * then/else/foreach větve, není potřeba stavět vlastní.
+ * renderDetail() čte profil, fixtura se mu tedy předává jako Profile —
+ * referenční zátěž má reálné then/else/foreach větve, není potřeba stavět
+ * vlastní.
  */
 function renderDetailIn(string $dir, string $name, ?string $key = null): string
 {
-	$cwd = getcwd();
-	chdir($dir);
+	$presenter = createPresenter(new Profile(basename($dir), $dir));
+	$params = ['name' => $name] + ($key === null ? [] : ['key' => $key]);
+	$request = new Request('Workflow', 'GET', ['action' => 'detail'] + $params);
 
-	try {
-		$presenter = createPresenter();
-		$params = ['name' => $name] + ($key === null ? [] : ['key' => $key]);
-		$request = new Request('Workflow', 'GET', ['action' => 'detail'] + $params);
+	$response = null;
+	Assert::noError(function () use ($presenter, $request, &$response) {
+		$response = $presenter->run($request);
+	});
 
-		$response = null;
-		Assert::noError(function () use ($presenter, $request, &$response) {
-			$response = $presenter->run($request);
-		});
+	Assert::type(TextResponse::class, $response);
+	$source = $response->getSource();
+	Assert::type(Template::class, $source);
 
-		Assert::type(TextResponse::class, $response);
-		$source = $response->getSource();
-		Assert::type(Template::class, $source);
-
-		return $source->renderToString();
-
-	} finally {
-		chdir($cwd);
-	}
+	return $source->renderToString();
 }
 
 

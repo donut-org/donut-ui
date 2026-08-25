@@ -21,6 +21,7 @@ use Donut\Gui\WorkflowRepository;
 use Donut\Gui\WorkflowStore;
 use Donut\MissingDir;
 use Donut\Parser\ParseException;
+use Donut\Profile;
 use Donut\Validator\Result;
 use Donut\Validator\Validator;
 use Donut\Writer\WriteException;
@@ -30,11 +31,16 @@ use Nette\IOException;
 
 
 /**
- * Workflow se čtou z pracovního adresáře serveru, stejně jako u CLI.
- * Nic se necachuje — soubor se čte při každém requestu.
+ * Workflow se čtou z profilu, stejně jako u CLI. Nic se necachuje — soubor
+ * se čte při každém requestu.
  */
 final class WorkflowPresenter extends Presenter
 {
+	public function __construct(private readonly Profile $profile)
+	{
+	}
+
+
 	private ?Step $editedStep = null;
 
 	private ?StepPath $stepAt = null;
@@ -541,12 +547,12 @@ final class WorkflowPresenter extends Presenter
 
 	private function workflowDir(): string
 	{
-		return WorkflowRepository::projectDir() . '/workflows';
+		return $this->profile->workflowsDir();
 	}
 
 
 	private function blockDir(): string
 	{
-		return WorkflowRepository::projectDir() . '/blocks';
+		return $this->profile->blocksDir();
 	}
 }

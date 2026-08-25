@@ -3,6 +3,11 @@ application:
 		*: Donut\Gui\Presentation\*\**Presenter
 
 services:
+	# Kde leží kameny a workflow. Prostředí se čte při startu serveru, jako
+	# u CLI — GUI profily nepřepíná za běhu, přepnutí je restart s jinou
+	# proměnnou.
+	- Donut\Profile::fromEnvironment(::getenv())
+
 	# SimpleRouter stačí: adresy jsou v query stringu
 	# (?presenter=Workflow&action=detail&name=card-dev) a nic hezčího
 	# lokální autorský nástroj nepotřebuje. Bez routeru by aplikace

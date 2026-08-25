@@ -14,6 +14,7 @@ use Donut\Gui\FormFactory;
 use Donut\Gui\WorkflowRepository;
 use Donut\MissingDir;
 use Donut\Parser\ParseException;
+use Donut\Profile;
 use Donut\Validator\BlockValidator;
 use Donut\Validator\Problem;
 use Donut\Writer\WriteException;
@@ -24,6 +25,11 @@ use Nette\IOException;
 
 final class BlockPresenter extends Presenter
 {
+	public function __construct(private readonly Profile $profile)
+	{
+	}
+
+
 	private ?Block $edited = null;
 
 	private ?Block $detail = null;
@@ -34,7 +40,7 @@ final class BlockPresenter extends Presenter
 		/** @var BlockDefaultTemplate $template */
 		$template = $this->template;
 
-		$dir = WorkflowRepository::projectDir() . '/blocks';
+		$dir = $this->profile->blocksDir();
 
 		try {
 			$repository = new BlockRepository($dir);
@@ -455,7 +461,7 @@ final class BlockPresenter extends Presenter
 
 	private function store(): BlockStore
 	{
-		return new BlockStore(WorkflowRepository::projectDir() . '/blocks');
+		return new BlockStore($this->profile->blocksDir());
 	}
 
 
@@ -465,7 +471,7 @@ final class BlockPresenter extends Presenter
 		$workflows = [];
 
 		try {
-			$repository = new WorkflowRepository(WorkflowRepository::projectDir() . '/workflows');
+			$repository = new WorkflowRepository($this->profile->workflowsDir());
 
 			foreach ($repository->loadAll() as $name => $workflow) {
 				// Vadné workflow nesmí shodit stránku — o použití kamene

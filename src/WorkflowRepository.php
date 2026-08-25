@@ -101,10 +101,4 @@ final class WorkflowRepository
 
 		return $loaded;
 	}
-
-
-	public static function projectDir(): string
-	{
-		return \getcwd() ?: '.';
-	}
 }

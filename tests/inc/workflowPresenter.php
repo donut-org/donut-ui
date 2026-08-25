@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Donut\Gui\Presentation\Block\BlockPresenter;
 use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
+use Donut\Profile;
 use Latte\Engine;
 use Nette\Application\IPresenter;
 use Nette\Application\IPresenterFactory;
@@ -33,7 +34,7 @@ use Tester\Assert;
  *                                         se dá jen výslovně — je to model
  *                                         cizího webu, ne vedlejší efekt $post.
  */
-function createWorkflowPresenter(array $post = [], bool $sameOrigin = true): WorkflowPresenter
+function createWorkflowPresenter(array $post, bool $sameOrigin, Profile $profile): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -67,7 +68,7 @@ function createWorkflowPresenter(array $post = [], bool $sameOrigin = true): Wor
 		}
 	};
 
-	$presenter = new WorkflowPresenter;
+	$presenter = new WorkflowPresenter($profile);
 	$presenter->injectPrimary(
 		new HttpRequest(
 			new UrlScript('http://localhost/'),
@@ -97,8 +98,9 @@ function createWorkflowPresenter(array $post = [], bool $sameOrigin = true): Wor
 
 
 /**
- * Prezenter čte pracovní adresář (WorkflowRepository::projectDir()), fixtura
- * tedy musí být aktuálním adresářem po dobu volání.
+ * Prezenter čte profil, ne pracovní adresář — fixtura se mu předává jako
+ * Profile. Jméno profilu je jméno adresáře fixtury, aby se dalo tvrdit i o
+ * tom, co GUI ukazuje v hlavičce.
  *
  * @param  array<string, mixed> $params
  * @param  array<string, mixed> $post
@@ -107,34 +109,26 @@ function createWorkflowPresenter(array $post = [], bool $sameOrigin = true): Wor
  */
 function runWorkflowPresenterIn(string $dir, array $params, array $post = [], bool $sameOrigin = true): array
 {
-	$cwd = \getcwd();
-	\chdir($dir);
+	$presenter = createWorkflowPresenter($post, $sameOrigin, new Profile(\basename($dir), $dir));
+	$request = new Request('Workflow', $post === [] ? 'GET' : 'POST', $params, $post);
 
-	try {
-		$presenter = createWorkflowPresenter($post, $sameOrigin);
-		$request = new Request('Workflow', $post === [] ? 'GET' : 'POST', $params, $post);
+	$response = null;
+	Assert::noError(function () use ($presenter, $request, &$response) {
+		$response = $presenter->run($request);
+	});
 
-		$response = null;
-		Assert::noError(function () use ($presenter, $request, &$response) {
-			$response = $presenter->run($request);
-		});
-
-		if (!$response instanceof TextResponse) {
-			return [$response, ''];
-		}
-
-		$source = $response->getSource();
-		Assert::type(Template::class, $source);
-
-		// getSource() má návratový typ mixed — Assert::type() to ověří za
-		// běhu, ale PHPStanu typ nezúží. Instanceof je tu jen kvůli tomu.
-		if (!$source instanceof Template) {
-			throw new \LogicException('nedosažitelné — Assert::type() by už selhalo');
-		}
-
-		return [$response, $source->renderToString()];
-
-	} finally {
-		\chdir((string) $cwd);
+	if (!$response instanceof TextResponse) {
+		return [$response, ''];
 	}
+
+	$source = $response->getSource();
+	Assert::type(Template::class, $source);
+
+	// getSource() má návratový typ mixed — Assert::type() to ověří za
+	// běhu, ale PHPStanu typ nezúží. Instanceof je tu jen kvůli tomu.
+	if (!$source instanceof Template) {
+		throw new \LogicException('nedosažitelné — Assert::type() by už selhalo');
+	}
+
+	return [$response, $source->renderToString()];
 }

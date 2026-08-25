@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
+use Donut\Profile;
 use Latte\Engine;
 use Nette\Application\UI\Control;
 use Nette\Bridges\ApplicationLatte\LatteFactory;
@@ -24,7 +25,7 @@ require __DIR__ . '/bootstrap.php';
  * jinak Presenter::getTemplateFactory() vyhodí "Service TemplateFactory has
  * not been set."
  */
-function createPresenter(): WorkflowPresenter
+function createPresenter(Profile $profile): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -33,7 +34,7 @@ function createPresenter(): WorkflowPresenter
 		}
 	};
 
-	$presenter = new WorkflowPresenter;
+	$presenter = new WorkflowPresenter($profile);
 	$presenter->injectPrimary(
 		new Request(new UrlScript('http://localhost/')),
 		new Response,
@@ -45,23 +46,14 @@ function createPresenter(): WorkflowPresenter
 
 
 /**
- * renderDetail() čte cwd (WorkflowPresenter::projectDir()), fixtura tedy
- * musí být aktuálním adresářem po dobu volání.
+ * renderDetail() čte profil, fixtura se mu tedy předává jako Profile.
  */
 function renderDetailIn(string $dir): WorkflowPresenter
 {
-	$cwd = getcwd();
-	chdir($dir);
+	$presenter = createPresenter(new Profile(basename($dir), $dir));
+	Assert::noError(fn() => $presenter->renderDetail('w'));
 
-	try {
-		$presenter = createPresenter();
-		Assert::noError(fn() => $presenter->renderDetail('w'));
-
-		return $presenter;
-
-	} finally {
-		chdir($cwd);
-	}
+	return $presenter;
 }
 
 

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Donut\Gui\Presentation\Workflow\WorkflowPresenter;
+use Donut\Profile;
 use Latte\Engine;
 use Nette\Application\UI\Control;
 use Nette\Bridges\ApplicationLatte\LatteFactory;
@@ -19,7 +20,7 @@ require __DIR__ . '/bootstrap.php';
 // ?name=../blocks/echo otevřelo soubor mimo workflows/. basename() v
 // renderDetail() to utne dřív, než se z něj vůbec postaví cesta k souboru.
 
-function createPresenter(): WorkflowPresenter
+function createPresenter(Profile $profile): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
@@ -28,7 +29,7 @@ function createPresenter(): WorkflowPresenter
 		}
 	};
 
-	$presenter = new WorkflowPresenter;
+	$presenter = new WorkflowPresenter($profile);
 	$presenter->injectPrimary(
 		new Request(new UrlScript('http://localhost/')),
 		new Response,
@@ -50,23 +51,17 @@ FileSystem::write($dir . '/blocks/echo.json', json_encode([
 	'args' => [],
 ]));
 
-$cwd = getcwd();
-chdir($dir);
+$profile = new Profile(basename($dir), $dir);
 
-try {
-	// Existující workflow se jménem bez lomítek se najde normálně.
-	$presenter = createPresenter();
-	Assert::noError(fn() => $presenter->renderDetail('w'));
-	Assert::null($presenter->template->error);
+// Existující workflow se jménem bez lomítek se najde normálně.
+$presenter = createPresenter($profile);
+Assert::noError(fn() => $presenter->renderDetail('w'));
+Assert::null($presenter->template->error);
 
-	// Pokus dostat se lomítky mimo workflows/ dostane stejnou hlášku jako
-	// neexistující workflow — ne obsah souboru mimo workflows/.
-	$presenter = createPresenter();
-	Assert::noError(fn() => $presenter->renderDetail('../blocks/echo'));
-	Assert::type('string', $presenter->template->error);
-	Assert::contains('neexistuje', $presenter->template->error);
-	Assert::notContains('command', $presenter->template->error);
-
-} finally {
-	chdir($cwd);
-}
+// Pokus dostat se lomítky mimo workflows/ dostane stejnou hlášku jako
+// neexistující workflow — ne obsah souboru mimo workflows/.
+$presenter = createPresenter($profile);
+Assert::noError(fn() => $presenter->renderDetail('../blocks/echo'));
+Assert::type('string', $presenter->template->error);
+Assert::contains('neexistuje', $presenter->template->error);
+Assert::notContains('command', $presenter->template->error);

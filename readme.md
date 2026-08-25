@@ -21,20 +21,33 @@ Používá ho pro cache kontejneru a šablon.
 
 ## Spuštění
 
-GUI hledá `blocks/` a `workflows/` v **pracovním adresáři serveru**, stejně
-jako CLI. Spouští se tedy z adresáře projektu, ne z `gui/`:
+GUI hledá `blocks/` a `workflows/` v **profilu**, stejně jako CLI: v
+`$DONUT_HOME/$DONUT_PROFILE/{blocks,workflows}`, výchozí
+`~/.config/donut/default`. Pracovní adresář, odkud server spustíš, roli
+nehraje.
+
+Nejrychlejší cesta je `make server` v `gui/` — spustí vestavěný PHP server
+nad profilem z `gui/Makefile` (`docs/workflows/donut`):
 
 ```bash
-cd /muj/projekt
-php -S 127.0.0.1:8000 -t /cesta/k/donut/gui/www /cesta/k/donut/gui/www/index.php
+cd gui
+make server
+```
+
+Ruční spuštění nad libovolným profilem:
+
+```bash
+DONUT_HOME=~/.config/donut DONUT_PROFILE=default \
+	php -S 127.0.0.1:8000 -t /cesta/k/donut/gui/www /cesta/k/donut/gui/www/index.php
 ```
 
 a otevřít <http://127.0.0.1:8000/>.
 
 Router script (`gui/www/index.php` jako poslední argument) je nutný proto,
 aby vestavěný server **neudělal** `chdir()` do docrootu — díky tomu může
-`-t` ukazovat na `gui/www` (odkud se servírují assety) a GUI přesto hledá
-`blocks/` a `workflows/` v adresáři, ze kterého jsi server spustil.
+`-t` ukazovat na `gui/www` (odkud se servírují assety), a GUI přitom
+`blocks/` a `workflows/` vůbec nehledá podle toho, odkud proces běží —
+o tom rozhoduje jen profil z `DONUT_HOME`/`DONUT_PROFILE`.
 
 Router zároveň každý požadavek nejdřív pošle do `index.php`; statický soubor
 se vydá jen tehdy, když ho `Donut\Gui\StaticFile::shouldServe()` uzná za
@@ -92,9 +105,11 @@ Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
   `handle*` připojuje Nette `Requires(sameOrigin: true)` automaticky — a jinou
   cestou než formulářem nebo signálem `handle*` GUI na disk nezapisuje
   (přesun a mazání kroku jsou `handle*` ve `StepTreeControl`)
-- **zakládat adresáře `workflows/` a `blocks/`** — server běží v tom
-  pracovním adresáři, ze kterého ho někdo spustil; chybějící adresář se
-  ohlásí i s příkazem, kterým ho vytvořit
+- **zakládat adresáře `workflows/` a `blocks/`** — chybějící adresář v
+  profilu se jen ohlásí, i s příkazem `mkdir -p`, kterým ho vytvořit
+- **přepínat profil za běhu** — profil určí proměnné prostředí
+  `DONUT_HOME`/`DONUT_PROFILE` při startu serveru; přepnutí znamená restart
+  s jinou hodnotou. GUI jméno profilu jen ukazuje v hlavičce
 
 
 ## Testy a statická analýza

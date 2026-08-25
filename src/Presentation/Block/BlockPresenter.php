@@ -26,14 +26,14 @@ use Nette\IOException;
 
 final class BlockPresenter extends Presenter
 {
-	public function __construct(private readonly Profile $profile)
-	{
-	}
-
-
 	private ?Block $edited = null;
 
 	private ?Block $detail = null;
+
+
+	public function __construct(private readonly Profile $profile)
+	{
+	}
 
 
 	protected function beforeRender(): void

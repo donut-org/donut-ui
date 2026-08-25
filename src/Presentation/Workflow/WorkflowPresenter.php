@@ -37,11 +37,6 @@ use Nette\IOException;
  */
 final class WorkflowPresenter extends Presenter
 {
-	public function __construct(private readonly Profile $profile)
-	{
-	}
-
-
 	private ?Step $editedStep = null;
 
 	private ?StepPath $stepAt = null;
@@ -49,6 +44,11 @@ final class WorkflowPresenter extends Presenter
 	private string $stepType = '';
 
 	private ?Workflow $editedWorkflow = null;
+
+
+	public function __construct(private readonly Profile $profile)
+	{
+	}
 
 
 	protected function beforeRender(): void
@@ -122,7 +122,7 @@ final class WorkflowPresenter extends Presenter
 			// neexistuje"). Bez téhle předsádky vypadá stránka zvalidovaně.
 			$dir = $this->blockDir();
 
-			// Rada `mkdir blocks` dává smysl jen u chybějícího adresáře, ne
+			// Rada `mkdir -p` dává smysl jen u chybějícího adresáře, ne
 			// u rozbitého souboru kamene. Přehled kamenů ji má; detail je po
 			// založení workflow to místo, kam se čerstvý uživatel dostane dřív.
 			$hint = \is_dir($dir) ? '' : ' ' . MissingDir::hint($dir);

@@ -30,9 +30,9 @@ use Tester\Assert;
  * potřebovat stránka kroku z Tasku 6.
  *
  * @param array<string, mixed> $post
- * @param bool                 $sameOrigin poslat hlavičku sec-fetch-site? Vypnout
- *                                         se dá jen výslovně — je to model
- *                                         cizího webu, ne vedlejší efekt $post.
+ * @param bool                 $sameOrigin poslat hlavičku sec-fetch-site, jako by
+ *                                         požadavek přišel ze stejného webu?
+ * @param Profile              $profile   fixtura místo pracovního adresáře
  */
 function createWorkflowPresenter(array $post, bool $sameOrigin, Profile $profile): WorkflowPresenter
 {

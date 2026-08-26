@@ -15,11 +15,11 @@ FileSystem::createDir($dir);
 
 FileSystem::write($dir . '/b.json', json_encode(['name' => 'b', 'steps' => []]));
 FileSystem::write($dir . '/a.json', json_encode(['name' => 'a', 'steps' => []]));
-FileSystem::write($dir . '/broken.json', '{ neplatny json');
+FileSystem::write($dir . '/broken.json', '{ invalid json');
 
 $repo = new WorkflowRepository($dir);
 
-// Řazení podle jména, ne podle pořadí v adresáři.
+// Sorted by name, not by order in the directory.
 Assert::same(['a', 'b', 'broken'], $repo->getNames());
 
 Assert::true($repo->has('a'));
@@ -29,30 +29,31 @@ Assert::same('a', $repo->get('a')->name);
 Assert::exception(
 	fn() => $repo->get('nope'),
 	ParseException::class,
-	'Workflow "nope" neexistuje. Hledal jsem v: ' . $dir,
+	'Workflow "nope" does not exist. Searched in: ' . $dir,
 );
 
-// Vadný soubor nezastíní ostatní — stejné pravidlo jako u BlockRepository
-// a `donut --list`.
+// A broken file doesn't hide the rest — same rule as BlockRepository
+// and `donut --list`.
 $loaded = $repo->loadAll();
 Assert::same(['a', 'b', 'broken'], array_keys($loaded));
 Assert::type(Workflow::class, $loaded['a']);
 Assert::type(Workflow::class, $loaded['b']);
 Assert::type('string', $loaded['broken']);
 
-// Existující, ale prázdný adresář — validní stav, žádná chyba.
-$empty = TEMP_DIR . '/prazdne';
+// An existing but empty directory — a valid state, no error.
+$empty = TEMP_DIR . '/empty';
 FileSystem::createDir($empty);
 Assert::noError(fn() => new WorkflowRepository($empty));
 Assert::same([], (new WorkflowRepository($empty))->loadAll());
 
-// Chybějící adresář je jiná situace než prázdný — musí hodit, ne vrátit [].
-// Hláška je návodná: od prázdného projektu se jinak bez shellu nikam nedojde
-// a GUI adresáře vědomě nezakládá.
+// A missing directory is a different situation than an empty one — it must
+// throw, not return []. The message is actionable: otherwise there's no way
+// forward from an empty project without a shell, and the GUI deliberately
+// doesn't create directories.
 Assert::exception(
-	fn() => new WorkflowRepository($dir . '/chybi'),
+	fn() => new WorkflowRepository($dir . '/gone'),
 	ParseException::class,
-	"Adresář s workflow '{$dir}/chybi' neexistuje. Donut will not create it — run `mkdir -p {$dir}/chybi`.",
+	"Workflows directory '{$dir}/gone' does not exist. Donut will not create it — run `mkdir -p {$dir}/gone`.",
 );
 
 FileSystem::delete(TEMP_DIR);

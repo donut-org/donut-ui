@@ -148,7 +148,7 @@ FileSystem::createDir($bezAdresare);
 );
 
 Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
-Assert::contains('neexistuje', $html);
+Assert::contains('does not exist', $html);
 // M8: hláška musí říct, co s tím — jinak je prázdný projekt slepá ulička.
 Assert::contains('mkdir -p ' . $bezAdresare . '/workflows', $html);
 

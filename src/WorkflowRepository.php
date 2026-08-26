@@ -11,12 +11,13 @@ use Donut\Parser\WorkflowParser;
 
 
 /**
- * Workflow z adresáře workflows/, hledaná podle jména — obdoba
- * Donut\BlockRepository pro workflow.
+ * Workflows from the workflows/ directory, looked up by name — the
+ * counterpart of Donut\BlockRepository for workflows.
  *
- * Chybějící adresář je jiná situace než prázdný — konstruktor proto hází,
- * stejně jako BlockRepository. `glob()` na neexistujícím adresáři by vrátil
- * [] a "žádné workflow" by bylo k nerozeznání od "spustil jsi mě odjinud".
+ * A missing directory is a different situation than an empty one — the
+ * constructor throws for that reason, same as BlockRepository. `glob()` on
+ * a nonexistent directory would return [] and "no workflows" would be
+ * indistinguishable from "you ran me from the wrong place".
  */
 final class WorkflowRepository
 {
@@ -24,7 +25,7 @@ final class WorkflowRepository
 
 	private readonly string $directory;
 
-	/** @var array<string, string> jméno => cesta k souboru */
+	/** @var array<string, string> name => file path */
 	private array $files = [];
 
 
@@ -40,7 +41,7 @@ final class WorkflowRepository
 
 		if (!\is_dir($directory)) {
 			throw new ParseException(
-				"Adresář s workflow '{$directory}' neexistuje. " . MissingDir::hint($directory)
+				"Workflows directory '{$directory}' does not exist. " . MissingDir::hint($directory)
 			);
 		}
 
@@ -66,7 +67,7 @@ final class WorkflowRepository
 	public function get(string $name): Workflow
 	{
 		if (!isset($this->files[$name])) {
-			throw new ParseException("Workflow \"{$name}\" neexistuje. Hledal jsem v: {$this->directory}");
+			throw new ParseException("Workflow \"{$name}\" does not exist. Searched in: {$this->directory}");
 		}
 
 		return $this->parser->parseFile($this->files[$name]);
@@ -81,10 +82,10 @@ final class WorkflowRepository
 
 
 	/**
-	 * Přečte všechna workflow. Vadný soubor nesmí schovat ostatní — stejné
-	 * pravidlo jako u `donut --list`.
+	 * Reads all workflows. A broken file must not hide the rest — same rule
+	 * as `donut --list`.
 	 *
-	 * @return array<string, Workflow|string> jméno => workflow, nebo hláška o chybě
+	 * @return array<string, Workflow|string> name => workflow, or the error message
 	 */
 	public function loadAll(): array
 	{

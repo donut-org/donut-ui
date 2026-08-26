@@ -63,5 +63,5 @@ Assert::null($presenter->template->error);
 $presenter = createPresenter($profile);
 Assert::noError(fn() => $presenter->renderDetail('../blocks/echo'));
 Assert::type('string', $presenter->template->error);
-Assert::contains('neexistuje', $presenter->template->error);
+Assert::contains('does not exist', $presenter->template->error);
 Assert::notContains('command', $presenter->template->error);

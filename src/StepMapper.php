@@ -14,20 +14,21 @@ use Donut\Template;
 
 
 /**
- * Hodnoty formuláře ↔ Step. Čistá konverze, nezná Nette ani HTTP.
+ * Form values ↔ Step. A pure conversion, knows nothing of Nette or HTTP.
  *
- * Vnořené kroky (then, else, foreach.steps) se nepřenášejí — stránka kroku
- * větve needituje, ty se plní z přehledu. toStep() proto u if a foreach
- * vrací krok s prázdnými větvemi a volající si je doplní sám.
+ * Nested steps (then, else, foreach.steps) aren't carried over — the step
+ * page doesn't edit branches, those are filled in from the overview. That's
+ * why toStep() returns an if or foreach step with empty branches, and the
+ * caller fills them in itself.
  *
- * Indexy v in a out můžou mít díry — JS řádky nikdy nepřečísluje. Srovnání
- * je tady, stejně jako v BlockMapperu.
+ * Indexes in in and out can have holes — JS never renumbers rows. The
+ * sorting happens here, same as in BlockMapper.
  */
 final class StepMapper
 {
 	/**
 	 * @param  array<string, mixed> $values
-	 * @throws \InvalidArgumentException na neznámý typ kroku
+	 * @throws \InvalidArgumentException on an unknown step type
 	 */
 	public static function toStep(array $values): Step
 	{
@@ -61,7 +62,7 @@ final class StepMapper
 			),
 
 			default => throw new \InvalidArgumentException(
-				'Neznámý typ kroku "' . self::text($values['type'] ?? '') . '".'
+				'Unknown step type "' . self::text($values['type'] ?? '') . '".'
 			),
 		};
 	}
@@ -132,19 +133,21 @@ final class StepMapper
 			];
 		}
 
-		// Nový typ kroku se nesmí tiše přeskočit — formulář by se otevřel
-		// prázdný a uložením by se krok přepsal na něco jiného.
-		throw new \InvalidArgumentException('Neznámý typ kroku ' . $step::class . '.');
+		// A new step type must not be silently skipped — the form would open
+		// empty and saving would overwrite the step with something else.
+		throw new \InvalidArgumentException('Unknown step type ' . $step::class . '.');
 	}
 
 
 	/**
-	 * Nový krok z formuláře nese prázdné větve, protože je formulář needituje.
-	 * Při nahrazení existujícího kroku se proto musí převzít z původního —
-	 * jinak by úprava podmínky smazala celý podstrom.
+	 * A new step from the form carries empty branches because the form
+	 * doesn't edit them. When replacing an existing step, they must
+	 * therefore be taken over from the original — otherwise editing the
+	 * condition would delete the whole subtree.
 	 *
-	 * Když se typ neshoduje, vrací se nový krok beze změny: přenášet větve
-	 * mezi různými typy nedává smysl a přes formulář se typ změnit nedá.
+	 * When the type doesn't match, the new step is returned unchanged:
+	 * carrying branches between different types makes no sense, and the
+	 * form can't change a step's type anyway.
 	 */
 	public static function keepChildren(Step $original, Step $updated): Step
 	{
@@ -171,8 +174,8 @@ final class StepMapper
 		return new Condition(
 			left: Template::parse(self::text($values['left'] ?? '')),
 			op: $op,
-			// Unární operátor pravou stranu ignoruje; kdyby ve formuláři
-			// zbyla, zapsala by se do souboru a mátla by při čtení.
+			// A unary operator ignores the right side; if it stayed in the
+			// form, it would be written to the file and confuse readers.
 			right: \in_array($op, Condition::UnaryOperators, true) || $right === null
 				? null
 				: Template::parse($right),
@@ -212,7 +215,7 @@ final class StepMapper
 			$channel = self::text($row['channel'] ?? '');
 			$value = self::text($row['value'] ?? '');
 
-			// Kanál bez klíče nikam nezapisuje — je to nedopsaný řádek.
+			// A channel without a key writes nowhere — it's an unfinished row.
 			if ($channel !== '' && $value !== '') {
 				$out[$channel] = $value;
 			}
@@ -223,8 +226,8 @@ final class StepMapper
 
 
 	/**
-	 * Řádky seřazené podle indexu. Pořadí klíčů z POSTu není zaručené
-	 * a u in i out na pořadí záleží.
+	 * Rows sorted by index. The order of keys from POST isn't guaranteed,
+	 * and order matters for both in and out.
 	 *
 	 * @param  mixed $raw
 	 * @return list<array<array-key, mixed>>
@@ -279,7 +282,7 @@ final class StepMapper
 			}
 		}
 
-		// Prázdný výčet by parser odmítl — je to totéž jako „nenastaveno".
+		// The parser would reject an empty list — it's the same as "not set".
 		return $codes === [] ? null : $codes;
 	}
 

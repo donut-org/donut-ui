@@ -13,41 +13,41 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- rekurze: vnořený foreach uvnitř foreach se počítá celý, ne jen první úroveň ---
+// --- recursion: a foreach nested inside a foreach counts fully, not just the first level ---
 
 $leaf = new SetStep('a', \Donut\Template::parse('1'));
 
 $inner = new ForeachStep(\Donut\Template::parse('{%x%}'), 'x', [$leaf, $leaf]);
 $outer = new ForeachStep(\Donut\Template::parse('{%y%}'), 'y', [$leaf, $inner]);
 
-// Přímých potomků $outer jsou dva ($leaf, $inner), ale $inner má další dva
-// vlastní — dohromady zmizí 4 vnořené kroky, ne 2, jak by řekl součet jen
-// přímých potomků.
+// $outer has two direct children ($leaf, $inner), but $inner has two more of
+// its own — 4 nested steps disappear in total, not 2, as summing only the
+// direct children would say.
 Assert::same(4, StepCount::subtree($outer));
 
 $if = new IfStep(new \Donut\Format\Condition(\Donut\Template::parse('{%x%}'), 'not_empty'), [$leaf], [$outer]);
 
-// then má 1 krok, else má $outer s jeho čtyřmi vnořenými + $outer sám → 5.
+// then has 1 step, else has $outer with its four nested steps + $outer itself → 5.
 Assert::same(1 + (1 + 4), StepCount::subtree($if));
 
-// List bez potomků (run/set) nemá co počítat.
+// A leaf with no children (run/set) has nothing to count.
 Assert::same(0, StepCount::subtree($leaf));
 
-// --- referenční zátěž: sync.json:steps[5] má 14 přímých potomků, ale tři
-// z nich jsou foreach s dalším krokem uvnitř — staré (neregresivní) počítání
-// hlásilo 14, skutečně zmizí 17 vnořených kroků (+ krok samotný = 18 kroků
-// v souboru celkem). ---
+// --- reference load: sync.json:steps[5] has 14 direct children, but three
+// of them are a foreach with another step inside — the old (non-recursive)
+// count reported 14, in reality 17 nested steps disappear (+ the step
+// itself = 18 steps in the file in total). ---
 
 $sync = (new WorkflowParser)->parseFile(__DIR__ . '/../../docs/workflows/donut/workflows/sync.json');
 $step = StepTree::get($sync, StepPath::parse('sync.json:steps[5]'));
 
 Assert::type(ForeachStep::class, $step);
-Assert::same(17, StepCount::subtree($step), 'starý (nerekurzivní) výpočet by tu vrátil 14');
+Assert::same(17, StepCount::subtree($step), 'the old (non-recursive) count would return 14 here');
 
-// --- český tvar 1 / 2–4 / 5+ ---
+// --- English plural: 1 / 2+ ---
 
-Assert::same('1 vnořený krok', StepCount::label(1));
-Assert::same('2 vnořené kroky', StepCount::label(2));
-Assert::same('4 vnořené kroky', StepCount::label(4));
-Assert::same('5 vnořených kroků', StepCount::label(5));
-Assert::same('17 vnořených kroků', StepCount::label(17));
+Assert::same('1 nested step', StepCount::label(1));
+Assert::same('2 nested steps', StepCount::label(2));
+Assert::same('4 nested steps', StepCount::label(4));
+Assert::same('5 nested steps', StepCount::label(5));
+Assert::same('17 nested steps', StepCount::label(17));

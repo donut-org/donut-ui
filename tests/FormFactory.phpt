@@ -9,47 +9,47 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 
 $form = FormFactory::create();
-$form->addText('jmeno', 'Jméno');
-$form->addTextArea('popis', 'Popis');
-$form->addSelect('op', 'Operátor', ['eq' => '=']);
-$form->addCheckbox('povinny', 'Povinný');
-$form->addRadioList('selhani', 'Povolené selhání', ['none' => 'jen exit 0']);
-$form->addSubmit('save', 'Uložit');
-$form->addHidden('typ');
+$form->addText('name', 'Name');
+$form->addTextArea('description', 'Description');
+$form->addSelect('op', 'Operator', ['eq' => '=']);
+$form->addCheckbox('required', 'Required');
+$form->addRadioList('failure', 'Allowed failure', ['none' => 'exit 0 only']);
+$form->addSubmit('save', 'Save');
+$form->addHidden('type');
 
-// třídu doplňuje onRender, které spouští tag {form} přes fireRenderEvents()
-Assert::notContains('form-control', (string) $form['jmeno']->getControl(), 'před vykreslením ještě ne');
+// the class is added by onRender, which the {form} tag triggers via fireRenderEvents()
+Assert::notContains('form-control', (string) $form['name']->getControl(), 'not yet before rendering');
 
 $form->fireRenderEvents();
 
-Assert::contains('class="form-control"', (string) $form['jmeno']->getControl());
-Assert::contains('class="form-control"', (string) $form['popis']->getControl());
+Assert::contains('class="form-control"', (string) $form['name']->getControl());
+Assert::contains('class="form-control"', (string) $form['description']->getControl());
 Assert::contains('class="form-select"', (string) $form['op']->getControl());
-Assert::contains('class="form-check-input"', (string) $form['povinny']->getControl());
-Assert::contains('class="form-check-input"', (string) $form['selhani']->getControl());
+Assert::contains('class="form-check-input"', (string) $form['required']->getControl());
+Assert::contains('class="form-check-input"', (string) $form['failure']->getControl());
 Assert::contains('class="btn btn-primary"', (string) $form['save']->getControl());
 
-// skryté pole žádnou třídu nedostane
-Assert::notContains('class=', (string) $form['typ']->getControl());
+// a hidden field doesn't get any class
+Assert::notContains('class=', (string) $form['type']->getControl());
 
-// vlastní třídu továrna nepřepíše — na tom stojí mazací tlačítko
-$vlastni = FormFactory::create();
-$vlastni->addSubmit('smazat', 'Smazat')
+// the factory doesn't overwrite a custom class — the delete button relies on this
+$custom = FormFactory::create();
+$custom->addSubmit('delete', 'Delete')
 	->getControlPrototype()->setAttribute('class', 'btn btn-danger');
-$vlastni->addText('jmeno')
+$custom->addText('name')
 	->getControlPrototype()->setAttribute('class', 'form-control form-control-lg');
 
-$vlastni->fireRenderEvents();
+$custom->fireRenderEvents();
 
-Assert::contains('class="btn btn-danger"', (string) $vlastni['smazat']->getControl());
-Assert::notContains('btn-primary', (string) $vlastni['smazat']->getControl());
-Assert::contains('class="form-control form-control-lg"', (string) $vlastni['jmeno']->getControl());
+Assert::contains('class="btn btn-danger"', (string) $custom['delete']->getControl());
+Assert::notContains('btn-primary', (string) $custom['delete']->getControl());
+Assert::contains('class="form-control form-control-lg"', (string) $custom['name']->getControl());
 
-// opakované vykreslení třídu nezdvojí
+// repeated rendering doesn't duplicate the class
 $form->fireRenderEvents();
-Assert::same(1, \substr_count((string) $form['jmeno']->getControl(), 'form-control'));
+Assert::same(1, \substr_count((string) $form['name']->getControl(), 'form-control'));
 
-// továrna vrací UI\Form, ne holý Nette\Forms\Form — prezentéry ho registrují
-// jako komponentu
+// the factory returns UI\Form, not a bare Nette\Forms\Form — presenters
+// register it as a component
 Assert::type(Nette\Application\UI\Form::class, $form);
 Assert::type(Form::class, $form);

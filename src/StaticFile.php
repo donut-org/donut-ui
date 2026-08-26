@@ -6,11 +6,12 @@ namespace Donut\Gui;
 
 
 /**
- * Rozhoduje, jestli má router script vestavěného PHP serveru přenechat
- * požadavek serveru jako statický soubor.
+ * Decides whether the built-in PHP server's router script should hand a
+ * request off to the server as a static file.
  *
- * Vestavěný server po souboru sáhne jen tehdy, když router vrátí false;
- * bez toho dostane index.php i požadavek na bootstrap.min.css.
+ * The built-in server only serves the file itself when the router returns
+ * false; without that, index.php would get even a request for
+ * bootstrap.min.css.
  */
 final class StaticFile
 {
@@ -24,9 +25,10 @@ final class StaticFile
 
 		$decoded = \urldecode($path);
 
-		// realpath() na cestě s nulovým bytem hází ValueError. Stráž běží před
-		// Bootstrap::boot(), takže by ho nezachytila ani Tracy a /assets/x%00.css
-		// by skončilo holou pětistovkou s absolutními cestami v logu.
+		// realpath() on a path with a null byte throws a ValueError. This
+		// guard runs before Bootstrap::boot(), so not even Tracy would catch
+		// it, and /assets/x%00.css would end up a bare 500 with absolute
+		// paths in the log.
 		if (\str_contains($decoded, "\0")) {
 			return false;
 		}
@@ -38,17 +40,19 @@ final class StaticFile
 			return false;
 		}
 
-		// Router sám sobě: index.php je pod docrootem a je to soubor, takže by
-		// ho stráž jinak přenechala serveru — ten ho spustí jako požadovaný
-		// skript, `return false` na nejvyšší úrovni ho ukončí a z požadavku je
-		// prázdná dvoustovka. Porovnává se rozhodnutá cesta, ne řetězec z URI,
-		// aby na tom /./index.php nebo /assets/../index.php nic nezměnily.
+		// The router against itself: index.php is under the docroot and is a
+		// file, so the guard would otherwise hand it to the server — which
+		// would run it as the requested script, `return false` at the top
+		// level would end it, and the request would come back an empty 200.
+		// The resolved path is compared, not the URI string, so /./index.php
+		// or /assets/../index.php change nothing about it.
 		if ($fileReal === $rootReal . \DIRECTORY_SEPARATOR . 'index.php') {
 			return false;
 		}
 
-		// Oddělovač na konci prefixu je nutný: bez něj by /../wwwjine/x
-		// prošlo, protože ".../wwwjine/x" začíná na ".../www".
+		// The separator at the end of the prefix is necessary: without it,
+		// /../wwwother/x would pass, because ".../wwwother/x" starts with
+		// ".../www".
 		return \is_file($fileReal)
 			&& \str_starts_with($fileReal, $rootReal . \DIRECTORY_SEPARATOR);
 	}

@@ -10,22 +10,22 @@ use Nette\Forms\Form;
 
 
 /**
- * Formulář s bootstrapími třídami.
+ * A form with Bootstrap classes.
  *
- * Šablony vykreslují políčka ručně přes {input jmeno}, takže bootstrapí
- * recept přes $renderer->wrappers by se neuplatnil. onRender ano — tag
- * {form} ho spouští přes fireRenderEvents().
+ * Templates render fields by hand via {input name}, so the Bootstrap
+ * approach through $renderer->wrappers wouldn't apply. onRender does — the
+ * {form} tag triggers it via fireRenderEvents().
  */
 final class FormFactory
 {
-	/** @var array<string, string> typ prvku → třída */
+	/** @var array<string, string> control type → class */
 	private const Classes = [
 		'text' => 'form-control',
 		'textarea' => 'form-control',
 		'select' => 'form-select',
 		'checkbox' => 'form-check-input',
-		// Přepínače („Povolené selhání") jsou v obou prezentérech; bez tohohle
-		// řádku zůstávaly uprostřed bootstrapí stránky bez jediné třídy.
+		// Radios ("Allowed failure") appear on both presenters; without this
+		// line they stayed classless in the middle of a Bootstrap page.
 		'radio' => 'form-check-input',
 		'button' => 'btn btn-primary',
 	];
@@ -55,9 +55,9 @@ final class FormFactory
 
 			$el = $control->getControlPrototype();
 
-			// Jen tam, kde žádná třída není. Díky tomu si mazací tlačítko
-			// může říct o btn-danger při vzniku a továrna mu to nepřepíše —
-			// a opakované vykreslení třídu nezdvojí.
+			// Only where there's no class yet. This lets a delete button ask
+			// for btn-danger when created without the factory overwriting
+			// it — and repeated rendering doesn't duplicate the class.
 			if ($el->getAttribute('class') !== null) {
 				continue;
 			}

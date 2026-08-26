@@ -18,42 +18,42 @@ FileSystem::createDir($dir);
 
 $store = new WorkflowStore($dir);
 
-// Cesta se skládá na jednom místě, a je to tohle.
+// The path is assembled in one place, and it's this one.
 Assert::same($dir . '/card-dev.json', $store->path('card-dev'));
 
-// Uložení založí soubor, který jde hned přečíst zpátky.
+// Saving creates a file that can be read straight back.
 $store->save(new Workflow(
 	name: 'w',
 	steps: [new SetStep(key: 'a', value: Template::parse('1'))],
-	description: 'Popis',
+	description: 'Description',
 ));
 
 Assert::true(\is_file($dir . '/w.json'));
 
 $loaded = (new WorkflowParser)->parseFile($dir . '/w.json');
 Assert::same('w', $loaded->name);
-Assert::same('Popis', $loaded->description);
+Assert::same('Description', $loaded->description);
 Assert::count(1, $loaded->steps);
 
-// Uložení podruhé přepíše.
+// Saving a second time overwrites.
 $store->save(new Workflow(name: 'w'));
 Assert::same([], (new WorkflowParser)->parseFile($dir . '/w.json')->steps);
 
-// Chybějící adresář je jiná situace než prázdný.
-Assert::exception(fn() => new WorkflowStore($dir . '/neni'), ParseException::class);
+// A missing directory is a different situation than an empty one.
+Assert::exception(fn() => new WorkflowStore($dir . '/gone'), ParseException::class);
 
-// --- exists a delete ---
+// --- exists and delete ---
 
 Assert::true($store->exists('w'));
-Assert::false($store->exists('neni'));
+Assert::false($store->exists('gone'));
 
 $store->delete('w');
 
 Assert::false(\is_file($dir . '/w.json'));
 Assert::false($store->exists('w'));
 
-// Smazání neexistujícího je chyba, ne ticho — jinak by GUI hlásilo úspěch
-// nad něčím, co se nestalo.
-Assert::exception(fn() => $store->delete('neni'), ParseException::class);
+// Deleting a nonexistent one is an error, not silence — otherwise the GUI
+// would report success over something that didn't happen.
+Assert::exception(fn() => $store->delete('gone'), ParseException::class);
 
 FileSystem::delete(TEMP_DIR);

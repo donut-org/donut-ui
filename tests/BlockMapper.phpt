@@ -14,12 +14,12 @@ require __DIR__ . '/bootstrap.php';
 
 $mapper = new BlockMapper;
 
-// --- round-trip nad referenční zátěží ---
+// --- round-trip over the reference load ---
 //
-// Patnáct skutečných kamenů projde Block → values → Block. Kdyby mapper
-// zahodil timeout, default u vstupu nebo allow_failure, tohle to chytí.
-// Porovnává se přes serialize(): typově přesné a odolné vůči hloubce,
-// stejně jako v round-tripu serializéru.
+// Fifteen real blocks go through Block → values → Block. If the mapper
+// dropped timeout, an input's default, or allow_failure, this would catch
+// it. Compared via serialize(): type-exact and depth-proof, same as in the
+// serializer's round-trip.
 
 $parser = new BlockParser;
 $blocks = \glob(__DIR__ . '/../../docs/workflows/donut/blocks/*.json');
@@ -32,17 +32,17 @@ foreach ($blocks === false ? [] : $blocks as $path) {
 	Assert::same(
 		\serialize($original),
 		\serialize($again),
-		'round-trip kamene ' . \basename($path),
+		'round-trip of block ' . \basename($path),
 	);
 }
 
-// --- díry v indexech se srovnají ---
+// --- holes in the indexes get sorted out ---
 //
-// JS řádky nikdy nepřečísluje: přidá index o jedna vyšší než maximum
-// a smazání nechá díru. Srovnání je úkol mapperu.
+// JS never renumbers rows: it adds an index one higher than the maximum,
+// and deleting leaves a hole. Sorting them out is the mapper's job.
 
 $withGap = $mapper->toBlock([
-	'name' => 'dira',
+	'name' => 'gap',
 	'description' => '',
 	'command' => 'curl',
 	'args' => [
@@ -69,23 +69,24 @@ Assert::same(
 );
 Assert::same(['url'], \array_keys($withGap->inputs));
 
-// --- pořadí klíčů se srovná, i když v POSTu přijdou obráceně ---
+// --- key order gets sorted out, even when POST sends it reversed ---
 //
-// Pořadí klíčů z POSTu není zaručené; ksort() je jediné, co drží pořadí
-// argumentů a vstupů. Test na díry výše má klíče zadané už vzestupně,
-// takže bez tohohle případu by vynechání ksort() nic neshodilo.
+// The order of keys from POST isn't guaranteed; ksort() is the only thing
+// holding the order of arguments and inputs together. The gap test above
+// already has its keys given in ascending order, so without this case,
+// dropping ksort() wouldn't fail anything.
 
 $swapped = $mapper->toBlock([
-	'name' => 'prehozene',
+	'name' => 'swapped',
 	'description' => '',
 	'command' => 'echo',
 	'args' => [
-		1 => [1 => 'druhy-b', 0 => 'druhy-a'],
-		0 => [1 => 'prvni-b', 0 => 'prvni-a'],
+		1 => [1 => 'second-b', 0 => 'second-a'],
+		0 => [1 => 'first-b', 0 => 'first-a'],
 	],
 	'inputs' => [
-		1 => ['name' => 'zet', 'required' => true, 'default' => '', 'description' => ''],
-		0 => ['name' => 'alfa', 'required' => true, 'default' => '', 'description' => ''],
+		1 => ['name' => 'zulu', 'required' => true, 'default' => '', 'description' => ''],
+		0 => ['name' => 'alpha', 'required' => true, 'default' => '', 'description' => ''],
 	],
 	'hasStdin' => false,
 	'stdinRequired' => false,
@@ -96,28 +97,28 @@ $swapped = $mapper->toBlock([
 ]);
 
 Assert::same(
-	[['prvni-a', 'prvni-b'], ['druhy-a', 'druhy-b']],
+	[['first-a', 'first-b'], ['second-a', 'second-b']],
 	\array_map(
 		fn(array $g): array => \array_map(fn(Template $t): string => $t->getSource(), $g),
 		$swapped->args,
 	),
 );
-Assert::same(['alfa', 'zet'], \array_keys($swapped->inputs));
+Assert::same(['alpha', 'zulu'], \array_keys($swapped->inputs));
 
-// --- prázdné řádky a prázdné skupiny vypadnou ---
+// --- empty rows and empty groups drop out ---
 
 $withEmpties = $mapper->toBlock([
-	'name' => 'prazdne',
+	'name' => 'empty',
 	'description' => '',
 	'command' => 'echo',
 	'args' => [
-		0 => [0 => 'ahoj', 1 => ''],
+		0 => [0 => 'hello', 1 => ''],
 		1 => [0 => '', 1 => ''],
-		2 => [0 => 'svete'],
+		2 => [0 => 'world'],
 	],
 	'inputs' => [
-		0 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nikdo'],
-		1 => ['name' => 'kdo', 'required' => true, 'default' => '', 'description' => ''],
+		0 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nobody'],
+		1 => ['name' => 'who', 'required' => true, 'default' => '', 'description' => ''],
 	],
 	'hasStdin' => false,
 	'stdinRequired' => false,
@@ -127,41 +128,41 @@ $withEmpties = $mapper->toBlock([
 	'allowFailureCodes' => '',
 ]);
 
-// Skupina 1 byla celá prázdná — zmizela, nezůstala po ní prázdná skupina.
+// Group 1 was entirely empty — it disappeared, leaving no empty group behind.
 Assert::count(2, $withEmpties->args);
-Assert::same('ahoj', $withEmpties->args[0][0]->getSource());
+Assert::same('hello', $withEmpties->args[0][0]->getSource());
 Assert::count(1, $withEmpties->args[0]);
-Assert::same('svete', $withEmpties->args[1][0]->getSource());
+Assert::same('world', $withEmpties->args[1][0]->getSource());
 
-// Řádek vstupu bez jména se zahodí i s vyplněným popisem.
-Assert::same(['kdo'], \array_keys($withEmpties->inputs));
+// An input row without a name is dropped even with a description filled in.
+Assert::same(['who'], \array_keys($withEmpties->inputs));
 
-// --- '' znamená nevyplněno, ne prázdný řetězec ---
-// Sekce 6 specifikace formátu: nevyplněno a "" je totéž.
+// --- '' means unfilled, not an empty string ---
+// Format spec section 6: unfilled and "" are the same thing.
 
 Assert::null($withEmpties->description);
 Assert::null($withEmpties->timeout);
-Assert::null($withEmpties->inputs['kdo']->default);
-Assert::null($withEmpties->inputs['kdo']->description);
+Assert::null($withEmpties->inputs['who']->default);
+Assert::null($withEmpties->inputs['who']->description);
 
-// --- stdin se objeví a zmizí podle zaškrtávátka ---
+// --- stdin appears and disappears with the checkbox ---
 
 $base = [
 	'name' => 'x', 'description' => '', 'command' => 'cat',
 	'args' => [], 'inputs' => [],
-	'hasStdin' => true, 'stdinRequired' => false, 'stdinDescription' => 'Tělo',
+	'hasStdin' => true, 'stdinRequired' => false, 'stdinDescription' => 'Body',
 	'timeout' => '', 'allowFailure' => 'none', 'allowFailureCodes' => '',
 ];
 
 $withStdin = $mapper->toBlock($base);
 Assert::type(StdinSpec::class, $withStdin->stdin);
 Assert::false($withStdin->stdin->required);
-Assert::same('Tělo', $withStdin->stdin->description);
+Assert::same('Body', $withStdin->stdin->description);
 
-// Nezaškrtnuté = objekt není, i když popis zůstal vyplněný ve formuláři.
+// Unchecked = no object, even if the description stayed filled in the form.
 Assert::null($mapper->toBlock(['hasStdin' => false] + $base)->stdin);
 
-// --- allow_failure má tři stavy ---
+// --- allow_failure has three states ---
 
 Assert::false($mapper->toBlock($base)->allowFailure);
 Assert::true($mapper->toBlock(['allowFailure' => 'any'] + $base)->allowFailure);
@@ -170,48 +171,48 @@ Assert::same(
 	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '0, 1'] + $base)->allowFailure,
 );
 
-// Nečíselný kód se ignoruje — formulář ho odmítne dřív, mapper nesmí spadnout.
+// A non-numeric code is ignored — the form rejects it earlier, the mapper must not fail.
 Assert::same(
 	[2],
 	$mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => '2, x, '] + $base)->allowFailure,
 );
 
-// Prázdný seznam u 'list' spadne zpátky na false — pole [] by parser odmítl.
+// An empty list under 'list' falls back to false — the parser would reject [].
 Assert::false($mapper->toBlock(['allowFailure' => 'list', 'allowFailureCodes' => ''] + $base)->allowFailure);
 
-// --- timeout se převede na int ---
+// --- timeout converts to int ---
 
 Assert::same(30, $mapper->toBlock(['timeout' => '30'] + $base)->timeout);
 
-// --- toValues() dává tvar, který formulář očekává ---
+// --- toValues() gives the shape the form expects ---
 
 $values = $mapper->toValues(new Block(
-	name: 'plny',
+	name: 'full',
 	command: 'curl',
 	args: [[Template::parse('-sS'), Template::parse('--fail')]],
-	inputs: ['url' => new Input(name: 'url', required: false, default: '/tmp/x', description: 'Adresa')],
-	stdin: new StdinSpec(required: true, description: 'Tělo'),
+	inputs: ['url' => new Input(name: 'url', required: false, default: '/tmp/x', description: 'Address')],
+	stdin: new StdinSpec(required: true, description: 'Body'),
 	timeout: 30,
 	allowFailure: [0, 1],
-	description: 'Popis',
+	description: 'Description',
 ));
 
-Assert::same('plny', $values['name']);
-Assert::same('Popis', $values['description']);
+Assert::same('full', $values['name']);
+Assert::same('Description', $values['description']);
 Assert::same([['-sS', '--fail']], $values['args']);
 Assert::same(
-	[['name' => 'url', 'required' => false, 'default' => '/tmp/x', 'description' => 'Adresa']],
+	[['name' => 'url', 'required' => false, 'default' => '/tmp/x', 'description' => 'Address']],
 	$values['inputs'],
 );
 Assert::true($values['hasStdin']);
 Assert::true($values['stdinRequired']);
-Assert::same('Tělo', $values['stdinDescription']);
+Assert::same('Body', $values['stdinDescription']);
 Assert::same('30', $values['timeout']);
 Assert::same('list', $values['allowFailure']);
 Assert::same('0, 1', $values['allowFailureCodes']);
 
-// Nevyplněná pole vyjdou jako '', ne jako null — formulář chce řetězce.
-$bare = $mapper->toValues(new Block(name: 'holy', command: 'echo', args: []));
+// Unfilled fields come out as '', not as null — the form wants strings.
+$bare = $mapper->toValues(new Block(name: 'bare', command: 'echo', args: []));
 Assert::same('', $bare['description']);
 Assert::same('', $bare['timeout']);
 Assert::false($bare['hasStdin']);

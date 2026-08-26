@@ -10,11 +10,12 @@ use Donut\Format\Step;
 
 
 /**
- * Kolik kroků zmizí spolu s daným krokem, kdyby se smazal.
+ * How many steps would disappear along with a given step, were it deleted.
  *
- * Používá ho potvrzení mazání v steps.latte — bez rekurze by u vnořeného
- * podstromu (if/foreach v then/else/steps) hlásilo jen přímé potomky
- * a číslo by bylo menší, než co se skutečně smaže.
+ * Used by the delete confirmation in steps.latte — without recursion, a
+ * nested subtree (if/foreach under then/else/steps) would only report its
+ * direct children, and the number would be smaller than what actually gets
+ * deleted.
  */
 final class StepCount
 {
@@ -33,15 +34,11 @@ final class StepCount
 
 
 	/**
-	 * Český tvar „N vnořený krok / vnořené kroky / vnořených kroků".
+	 * English plural: "N nested step" / "N nested steps".
 	 */
 	public static function label(int $n): string
 	{
-		$word = match (true) {
-			$n === 1 => 'vnořený krok',
-			$n >= 2 && $n <= 4 => 'vnořené kroky',
-			default => 'vnořených kroků',
-		};
+		$word = $n === 1 ? 'nested step' : 'nested steps';
 
 		return "{$n} {$word}";
 	}

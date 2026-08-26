@@ -11,15 +11,16 @@ use Donut\Format\Workflow;
 
 
 /**
- * Strukturální operace nad stromem kroků, adresované přes StepPath.
+ * Structural operations over the step tree, addressed via StepPath.
  *
- * Workflow i všechny třídy kroků jsou readonly, takže se strom nemění na
- * místě — každá operace ho přestaví a vrátí nový Workflow. Díky tomu je
- * celá třída čistá funkce a jde otestovat invarianty nad skutečnou zátěží.
+ * Both Workflow and every step class are readonly, so the tree never mutates
+ * in place — every operation rebuilds it and returns a new Workflow. That
+ * makes the whole class a pure function, and its invariants can be tested
+ * against a real payload.
  *
- * Cesta pojmenovává pozici, ne jen existující krok: insert() vloží na dané
- * místo a ostatní posune, takže remove() a insert() zpátky na tutéž cestu
- * vrátí původní strom.
+ * A path names a position, not just an existing step: insert() inserts at
+ * the given place and shifts the rest, so remove() followed by insert() back
+ * at the same path returns the original tree.
  */
 final class StepTree
 {
@@ -29,16 +30,16 @@ final class StepTree
 	public static function get(Workflow $workflow, StepPath $at): Step
 	{
 		$segments = $at->segments();
-		// apply() (replace/insert/remove/…) vždycky srovnává přes
-		// array_values() — Workflow::$steps je array<int, Step>, ne
-		// list<Step>, takže bez tohohle by get() na díře v klíčích ukazovalo
-		// na jiný krok, než na jaký sahá zbytek třídy.
+		// apply() (replace/insert/remove/…) always normalizes via
+		// array_values() — Workflow::$steps is array<int, Step>, not
+		// list<Step>, so without this, get() would point to a different
+		// step than the rest of the class on a hole in the keys.
 		$steps = \array_values($workflow->steps);
 		$last = \count($segments) - 1;
 
 		foreach ($segments as $k => [, $index]) {
 			if (!isset($steps[$index])) {
-				throw new \OutOfRangeException("Krok \"{$at}\" neexistuje.");
+				throw new \OutOfRangeException("Step \"{$at}\" does not exist.");
 			}
 
 			if ($k === $last) {
@@ -48,7 +49,7 @@ final class StepTree
 			$steps = self::childrenOf($steps[$index], $segments[$k + 1][0], $at);
 		}
 
-		throw new \OutOfRangeException("\"{$at}\" neukazuje na žádný krok.");
+		throw new \OutOfRangeException("\"{$at}\" does not point to any step.");
 	}
 
 
@@ -59,7 +60,7 @@ final class StepTree
 	{
 		return self::apply($workflow, $at, function (array $steps, int $i) use ($step, $at): array {
 			if (!isset($steps[$i])) {
-				throw new \OutOfRangeException("Krok \"{$at}\" neexistuje.");
+				throw new \OutOfRangeException("Step \"{$at}\" does not exist.");
 			}
 
 			$steps[$i] = $step;
@@ -75,10 +76,11 @@ final class StepTree
 	public static function insert(Workflow $workflow, StepPath $at, Step $step): Workflow
 	{
 		return self::apply($workflow, $at, function (array $steps, int $i) use ($step, $at): array {
-			// Vložit za poslední prvek je v pořádku — tak funguje „+ krok"
-			// na konci seznamu. Dál už ne, tam by vznikla díra.
+			// Inserting after the last element is fine — that's how "+ step"
+			// works at the end of the list. Any further, and it would open a
+			// hole.
 			if ($i > \count($steps)) {
-				throw new \OutOfRangeException("Pozice \"{$at}\" je mimo seznam kroků.");
+				throw new \OutOfRangeException("Position \"{$at}\" is outside the step list.");
 			}
 
 			return \array_merge(\array_slice($steps, 0, $i), [$step], \array_slice($steps, $i));
@@ -87,7 +89,7 @@ final class StepTree
 
 
 	/**
-	 * Smaže krok i s celým podstromem, pokud nějaký má.
+	 * Deletes a step along with its whole subtree, if it has one.
 	 *
 	 * @throws \OutOfRangeException
 	 */
@@ -95,7 +97,7 @@ final class StepTree
 	{
 		return self::apply($workflow, $at, function (array $steps, int $i) use ($at): array {
 			if (!isset($steps[$i])) {
-				throw new \OutOfRangeException("Krok \"{$at}\" neexistuje.");
+				throw new \OutOfRangeException("Step \"{$at}\" does not exist.");
 			}
 
 			unset($steps[$i]);
@@ -127,13 +129,14 @@ final class StepTree
 	{
 		return self::apply($workflow, $at, function (array $steps, int $i) use ($delta, $at): array {
 			if (!isset($steps[$i])) {
-				throw new \OutOfRangeException("Krok \"{$at}\" neexistuje.");
+				throw new \OutOfRangeException("Step \"{$at}\" does not exist.");
 			}
 
 			$j = $i + $delta;
 
-			// Na kraji seznamu se nestane nic. Šablona tam šipku
-			// nevykresluje; tohle je pojistka pro ručně poslaný POST.
+			// Nothing happens at the edge of the list. The template doesn't
+			// render an arrow there; this is a safeguard for a hand-crafted
+			// POST.
 			if (!isset($steps[$j])) {
 				return $steps;
 			}
@@ -155,7 +158,7 @@ final class StepTree
 		$segments = $at->segments();
 
 		if ($segments === []) {
-			throw new \OutOfRangeException("\"{$at}\" neukazuje na žádný krok.");
+			throw new \OutOfRangeException("\"{$at}\" does not point to any step.");
 		}
 
 		return new Workflow(
@@ -182,7 +185,7 @@ final class StepTree
 		}
 
 		if (!isset($steps[$index])) {
-			throw new \OutOfRangeException("Krok \"{$at}\" neexistuje.");
+			throw new \OutOfRangeException("Step \"{$at}\" does not exist.");
 		}
 
 		$property = $segments[1][0];
@@ -221,7 +224,7 @@ final class StepTree
 		}
 
 		throw new \OutOfRangeException(
-			"Cesta \"{$at}\" sestupuje do \"{$property}\", které krok " . $step::class . ' nemá.'
+			"Path \"{$at}\" descends into \"{$property}\", which step " . $step::class . ' does not have.'
 		);
 	}
 
@@ -244,7 +247,7 @@ final class StepTree
 		}
 
 		throw new \OutOfRangeException(
-			"Cesta \"{$at}\" sestupuje do \"{$property}\", které krok " . $step::class . ' nemá.'
+			"Path \"{$at}\" descends into \"{$property}\", which step " . $step::class . ' does not have.'
 		);
 	}
 }

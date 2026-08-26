@@ -15,57 +15,57 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// Kameny schované ve všech třech úrovních vnoření: přímo v steps,
-// ve větvi then, ve větvi else a uvnitř foreach.
-$w1 = new Workflow(name: 'prvni', steps: [
+// Blocks hidden at all three nesting levels: directly in steps,
+// in the then branch, in the else branch, and inside a foreach.
+$w1 = new Workflow(name: 'first', steps: [
 	new RunStep(block: 'echo'),
 	new IfStep(
 		condition: new Condition(left: Template::parse('{%a%}'), op: 'not_empty'),
 		then: [new RunStep(block: 'jq')],
 		else: [new ForeachStep(
-			over: Template::parse('{%seznam%}'),
-			as: 'radek',
+			over: Template::parse('{%list%}'),
+			as: 'row',
 			steps: [new RunStep(block: 'curl-get')],
 		)],
 	),
 	new SetStep(key: 'x', value: Template::parse('1')),
 ]);
 
-$w2 = new Workflow(name: 'druhe', steps: [
+$w2 = new Workflow(name: 'second', steps: [
 	new RunStep(block: 'echo'),
 	new RunStep(block: 'echo'),
 ]);
 
-$usage = BlockUsage::of(['prvni' => $w1, 'druhe' => $w2]);
+$usage = BlockUsage::of(['first' => $w1, 'second' => $w2]);
 
-// Kámen v obou workflow je uvedený jednou za každé, ne za každý krok.
-Assert::same(['druhe', 'prvni'], $usage['echo']);
+// A block used in both workflows is listed once per workflow, not once per step.
+Assert::same(['first', 'second'], $usage['echo']);
 
-// Kámen ve vnořené větvi se najde.
-Assert::same(['prvni'], $usage['jq']);
-Assert::same(['prvni'], $usage['curl-get']);
+// A block in a nested branch is found.
+Assert::same(['first'], $usage['jq']);
+Assert::same(['first'], $usage['curl-get']);
 
-// Vnější mapa je seřazená podle jména kamene, ne podle pořadí objevení.
+// The outer map is sorted by block name, not by order of appearance.
 Assert::same(['curl-get', 'echo', 'jq'], \array_keys($usage));
 
-// Nepoužitý kámen v mapě vůbec není.
+// An unused block isn't in the map at all.
 Assert::false(\array_key_exists('fail', $usage));
 
-// Prázdný vstup dá prázdnou mapu, ne chybu.
+// An empty input gives an empty map, not an error.
 Assert::same([], BlockUsage::of([]));
 
-// Workflow bez jediného kroku run taky.
+// A workflow without a single run step too.
 Assert::same([], BlockUsage::of(['x' => new Workflow(name: 'x')]));
 
-// Jméno kamene i workflow smí být čistě číselné (žádný formát to
-// nezakazuje) — PHP by takový klíč pole tiše převedlo na int. Hodnoty
-// uvnitř vnitřního seznamu musí zůstat stringy i pro tenhle vstup.
+// A block name and a workflow name may both be purely numeric (no format
+// rule forbids it) — PHP would silently convert such an array key to int.
+// Values inside the inner list must stay strings even for this input.
 $numbers = BlockUsage::of(['123' => new Workflow(name: '123', steps: [new RunStep(block: '456')])]);
 Assert::same(['123'], $numbers['456']);
 
-// Neznámý typ kroku musí háze — tahle mapa je kontrola před mazáním kamenů
-// a tichý propad by mazání pustil kámen, který nějaké workflow pořád
-// používá (viz komentář u walk()).
+// An unknown step type must throw — this map is the check before deleting
+// blocks, and a silent fall-through would let deletion through a block that
+// some workflow still uses (see the comment on walk()).
 Assert::exception(
 	fn() => BlockUsage::of(['x' => new Workflow(name: 'x', steps: [new class implements Step {}])]),
 	LogicException::class,

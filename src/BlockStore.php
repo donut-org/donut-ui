@@ -13,14 +13,16 @@ use Nette\Utils\FileSystem;
 
 
 /**
- * Kameny na disku: čtení, zápis, mazání.
+ * Blocks on disk: reading, writing, deleting.
  *
- * Jediné místo, které ví, že kámen jménem "curl-get" bydlí
- * v <adresář>/curl-get.json. Zapisovač v donutu cestu vědomě neodvozuje ze
- * jména, jen ověřuje, že spolu sedí — složit ji musí někdo, a je to tohle.
+ * The one place that knows the block named "curl-get" lives at
+ * <directory>/curl-get.json. The writer in donut deliberately doesn't
+ * derive the path from the name, only checks the two agree — assembling
+ * it is someone's job, and it's this one.
  *
- * Repository se po každém zápisu zahodí: GUI nemá cache a při každém
- * requestu čte znovu, takže by drželo neaktuální seznam souborů.
+ * The repository is discarded after every write: the GUI has no cache and
+ * re-reads on every request, so a stale one would hold an outdated file
+ * list.
  */
 final class BlockStore
 {
@@ -30,7 +32,7 @@ final class BlockStore
 
 
 	/**
-	 * @throws ParseException když adresář neexistuje
+	 * @throws ParseException when the directory doesn't exist
 	 */
 	public function __construct(
 		private readonly string $directory,
@@ -39,7 +41,7 @@ final class BlockStore
 
 		if (!\is_dir($directory)) {
 			throw new ParseException(
-				"Adresář s kameny '{$directory}' neexistuje. " . MissingDir::hint($directory)
+				"Blocks directory '{$directory}' does not exist. " . MissingDir::hint($directory)
 			);
 		}
 	}
@@ -74,10 +76,10 @@ final class BlockStore
 
 
 	/**
-	 * Vadný soubor nesmí schovat ostatní — stejné pravidlo jako
-	 * u `donut --list` a WorkflowRepository::loadAll().
+	 * A broken file must not hide the rest — same rule as `donut --list`
+	 * and WorkflowRepository::loadAll().
 	 *
-	 * @return array<string, Block|string> jméno => kámen, nebo hláška o chybě
+	 * @return array<string, Block|string> name => block, or the error message
 	 */
 	public function loadAll(): array
 	{
@@ -104,12 +106,12 @@ final class BlockStore
 
 
 	/**
-	 * @throws ParseException když kámen neexistuje
+	 * @throws ParseException when the block doesn't exist
 	 */
 	public function delete(string $name): void
 	{
 		if (!$this->exists($name)) {
-			throw new ParseException("Kámen \"{$name}\" neexistuje. Hledal jsem v: {$this->directory}");
+			throw new ParseException("Block \"{$name}\" does not exist. Searched in: {$this->directory}");
 		}
 
 		FileSystem::delete($this->path($name));

@@ -11,30 +11,30 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 
 $result = new Result;
-$result->add(Problem::error('w.json:steps[0]', 'první'));
-$result->add(Problem::warning('w.json:steps[0]', 'druhý'));
-$result->add(Problem::error('w.json:steps[1].then[0]', 've větvi'));
-$result->add(Problem::warning('w.json', 'k celému workflow'));
+$result->add(Problem::error('w.json:steps[0]', 'first'));
+$result->add(Problem::warning('w.json:steps[0]', 'second'));
+$result->add(Problem::error('w.json:steps[1].then[0]', 'in the branch'));
+$result->add(Problem::warning('w.json', 'for the whole workflow'));
 
 $map = ProblemMap::fromResult($result);
 
-// Dva problémy u téhož kroku se oba vrátí, v pořadí, v jakém přišly.
+// Two problems at the same step are both returned, in the order they came in.
 $atZero = $map->at(StepPath::root('w')->index(0));
 Assert::count(2, $atZero);
-Assert::same('první', $atZero[0]->message);
-Assert::same('druhý', $atZero[1]->message);
+Assert::same('first', $atZero[0]->message);
+Assert::same('second', $atZero[1]->message);
 
-// Cesta se dá předat i jako řetězec.
+// A path can also be passed as a string.
 Assert::count(2, $map->at('w.json:steps[0]'));
 
-// Vnořený krok dostane svůj problém a nedostane cizí.
+// A nested step gets its own problem and not someone else's.
 $atThen = $map->at(StepPath::root('w')->index(1)->child('then')->index(0));
 Assert::count(1, $atThen);
-Assert::same('ve větvi', $atThen[0]->message);
+Assert::same('in the branch', $atThen[0]->message);
 
-// Krok, který problém nemá, dostane prázdné pole, ne null.
+// A step with no problem gets an empty array, not null.
 Assert::same([], $map->at(StepPath::root('w')->index(9)));
 
-// Problém k celému workflow se nesmí připlést k žádnému kroku.
+// A problem for the whole workflow must not get mixed up with any step.
 Assert::count(1, $map->at('w.json'));
-Assert::same('k celému workflow', $map->at('w.json')[0]->message);
+Assert::same('for the whole workflow', $map->at('w.json')[0]->message);

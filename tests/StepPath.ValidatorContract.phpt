@@ -11,11 +11,12 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// Spojovací test smlouvy (I2): StepPath a Donut\Validator\Validator skládají
-// tvar cesty ke kroku nezávisle na sobě, dřív to spojovaly jen dva stringové
-// literály ve dvou nesouvisejících testech — donutím a tomhle tady. Když se
-// rozejdou, tenhle test spadne; StepPath.phpt a
-// tests/Donut/Validator.location.phpt samy o sobě to nepoznají.
+// A contract test connecting the two (I2): StepPath and
+// Donut\Validator\Validator assemble the step path shape independently of
+// each other; before this, only two string literals in two unrelated
+// tests — donut's and this one — connected them. If they drift apart, this
+// test fails; StepPath.phpt and tests/Donut/Validator.location.phpt
+// wouldn't notice on their own.
 
 $dir = TEMP_DIR . '/blocks';
 FileSystem::createDir($dir);
@@ -25,9 +26,9 @@ $validator = new Validator($blocks);
 
 $name = 'w';
 
-// Fixtura s if, else i foreach — proměří všechny tvary, které StepPath umí
-// složit, naráz. Neplatná jména klíčů (pomlčka) dají problém přesně
-// u kroku, který ho způsobil.
+// A fixture with if, else and foreach — exercises every shape StepPath can
+// assemble in one go. Invalid key names (a hyphen) produce a problem at
+// exactly the step that caused it.
 $workflow = $parser->parseArray([
 	'name' => $name,
 	'inputs' => ['t' => []],
@@ -42,7 +43,7 @@ $workflow = $parser->parseArray([
 		[
 			'type' => 'foreach',
 			'over' => '{%t%}',
-			'as' => 'radek',
+			'as' => 'row',
 			'steps' => [['type' => 'set', 'key' => 'G-H', 'value' => 'x']],
 		],
 	],
@@ -58,10 +59,10 @@ Assert::contains((string) StepPath::root($name)->index(1)->child('then')->index(
 Assert::contains((string) StepPath::root($name)->index(1)->child('else')->index(0), $locations);
 Assert::contains((string) StepPath::root($name)->index(2)->child('steps')->index(0), $locations);
 
-// Fixtura pro problém, který nepatří žádnému kroku — nepoužitý vstup.
+// A fixture for a problem that doesn't belong to any step — an unused input.
 $workflowLevel = $parser->parseArray([
 	'name' => $name,
-	'inputs' => ['nepouzity' => []],
+	'inputs' => ['unused' => []],
 	'steps' => [],
 ], "{$name}.json");
 

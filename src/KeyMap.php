@@ -12,22 +12,23 @@ use Donut\Format\Workflow;
 
 
 /**
- * Kde který klíč vzniká a kdo ho čte.
+ * Where each key originates and who reads it.
  *
- * Odvozuje se z naparsovaného stromu, ne z validátoru — Template::getKeys()
- * je veřejná a víc než to potřeba není. Podmíněnost zápisu je vidět z cesty:
- * co obsahuje .then, .else nebo .steps, je uvnitř větve.
+ * Derived from the parsed tree, not from the validator — Template::getKeys()
+ * is public and nothing more is needed. Whether a write is conditional shows
+ * in the path: anything under .then, .else or .steps is inside a branch.
  *
- * Je to ale druhý průchod stromem vedle toho validátorova, takže by se ty dva
- * mohly rozejít — kdyby v donutu přibyl typ kroku nebo nové místo pro šablonu,
- * klíč by odsud tiše zmizel. Hlídá to KeyMap.ValidatorContract.phpt.
+ * But it's a second walk over the tree alongside the validator's, so the two
+ * could drift apart — if donut gained a new step type or a new place for a
+ * template, a key would silently vanish from here. KeyMap.ValidatorContract.phpt
+ * guards against that.
  */
 final class KeyMap
 {
 	/**
-	 * @param array<string, list<string>> $writesByKey  klíč => cesty
+	 * @param array<string, list<string>> $writesByKey  key => paths
 	 * @param array<string, list<string>> $readsByKey
-	 * @param array<string, list<string>> $writesByPath cesta => klíče
+	 * @param array<string, list<string>> $writesByPath path => keys
 	 * @param array<string, list<string>> $readsByPath
 	 */
 	private function __construct(
@@ -55,41 +56,41 @@ final class KeyMap
 	}
 
 
-	/** @return list<string> jména klíčů, abecedně */
+	/** @return list<string> key names, alphabetically */
 	public function writesAt(StepPath|string $path): array
 	{
 		return $this->writesByPath[(string) $path] ?? [];
 	}
 
 
-	/** @return list<string> jména klíčů, abecedně */
+	/** @return list<string> key names, alphabetically */
 	public function readsAt(StepPath|string $path): array
 	{
 		return $this->readsByPath[(string) $path] ?? [];
 	}
 
 
-	/** @return list<string> cesty, v pořadí výskytu ve workflow */
+	/** @return list<string> paths, in order of occurrence in the workflow */
 	public function writeSitesOf(string $key): array
 	{
 		return $this->writesByKey[$key] ?? [];
 	}
 
 
-	/** @return list<string> cesty, v pořadí výskytu ve workflow */
+	/** @return list<string> paths, in order of occurrence in the workflow */
 	public function readSitesOf(string $key): array
 	{
 		return $this->readsByKey[$key] ?? [];
 	}
 
 
-	/** @return list<string> všechna jména klíčů, abecedně */
+	/** @return list<string> all key names, alphabetically */
 	public function keys(): array
 	{
-		// array_keys() konvertuje klíče pole složené jen z číslic na int —
-		// "456" jako jméno klíče je platné (Template::isKeyName()), takže
-		// bez strval() by se sem dostal int a classAt() by proti němu
-		// porovnávala string striktně a nikdy neuspěla.
+		// array_keys() converts array keys made up of digits only to int —
+		// "456" is a valid key name (Template::isKeyName()), so without
+		// strval() an int would land here and classAt() would compare it
+		// against a string strictly and never match.
 		$keys = \array_map(\strval(...), \array_keys($this->writesByKey + $this->readsByKey));
 		\sort($keys);
 
@@ -98,8 +99,8 @@ final class KeyMap
 
 
 	/**
-	 * Třída pro zvýraznění kroku. Krok může týž klíč číst i zapisovat
-	 * (`set x = {%x%}`), pak dostane obojí.
+	 * The class for highlighting a step. A step may both read and write the
+	 * same key (`set x = {%x%}`), then it gets both.
 	 */
 	public function classAt(StepPath|string $path, ?string $key): string
 	{
@@ -132,18 +133,18 @@ final class KeyMap
 			$here = $path->index($i);
 			$at = (string) $here;
 
-			// Jeden krok umí touž cestu ke stejnému klíči přidat víckrát —
-			// dva vstupy kamene čtoucí stejný klíč, nebo dva kanály out
-			// mířící do stejného klíče. Template::getKeys() dedupuje jen
-			// uvnitř jedné šablony, ne napříč šablonami/kanály jednoho
-			// kroku, takže bez těchhle sad by writeSitesOf()/readSitesOf()
-			// vrátily tutéž cestu vícekrát.
+			// A single step can add the same path for the same key more than
+			// once — two block inputs reading the same key, or two out
+			// channels pointing at the same key. Template::getKeys() only
+			// dedupes within one template, not across a step's templates or
+			// channels, so without these sets writeSitesOf()/readSitesOf()
+			// would return the same path more than once.
 			$writesHere = [];
 			$readsHere = [];
 
 			if ($step instanceof RunStep) {
-				// $step->in je klíčované jménem vstupu kamene; klíče mapy
-				// jsou až v šablonách, které jsou jeho hodnotami.
+				// $step->in is keyed by the block input name; the map's keys
+				// only come from the templates that are its values.
 				foreach ($step->in as $template) {
 					foreach ($template->getKeys() as $key) {
 						self::record($reads, $readsHere, $key, $at);
@@ -185,18 +186,18 @@ final class KeyMap
 				self::walk($step->steps, $here->child('steps'), $writes, $reads);
 
 			} else {
-				// Nový typ kroku by tichým if/elseif řetězcem propadl beze
-				// zmínky — místo toho, aby chyběl jen klíč z jeho těla,
-				// spadne na tomhle na každém workflow, které ho použije.
-				throw new \LogicException('neznámý typ kroku ' . $step::class);
+				// A new step type would silently fall through the if/elseif
+				// chain unnoticed — instead of just missing the key from its
+				// body, this throws on every workflow that uses it.
+				throw new \LogicException('unknown step type ' . $step::class);
 			}
 		}
 	}
 
 
 	/**
-	 * Zapíše cestu ke klíči, nejvýš jednou na krok — $seenHere je sada
-	 * klíčů, které tenhle krok do $target už zapsal.
+	 * Records a key's path, at most once per step — $seenHere is the set of
+	 * keys this step has already written to $target.
 	 *
 	 * @param array<string, list<string>> $target
 	 * @param array<string, true>         $seenHere
@@ -214,7 +215,7 @@ final class KeyMap
 
 	/**
 	 * @param  array<string, list<string>> $byKey
-	 * @return array<string, list<string>> cesta => klíče, abecedně a bez duplicit
+	 * @return array<string, list<string>> path => keys, alphabetically and deduplicated
 	 */
 	private static function invert(array $byKey): array
 	{
@@ -228,8 +229,8 @@ final class KeyMap
 
 		return \array_map(
 			function (array $keys): array {
-				// Stejný důvod jako v keys() — klíč pole $keys je pod
-				// numerickým jménem klíče int, strval() ho vrátí na string.
+				// Same reason as in keys() — under a numeric key name, the
+				// $keys array key is int, strval() turns it back to string.
 				$names = \array_map(\strval(...), \array_keys($keys));
 				\sort($names);
 

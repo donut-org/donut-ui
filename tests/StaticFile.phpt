@@ -12,47 +12,50 @@ $root = TEMP_DIR . '/www';
 FileSystem::createDir($root . '/assets');
 FileSystem::write($root . '/assets/bootstrap.min.css', 'body{}');
 FileSystem::write($root . '/index.php', '<?php');
-FileSystem::write(TEMP_DIR . '/tajne.txt', 'TAJEMSTVI');
+FileSystem::write(TEMP_DIR . '/secret.txt', 'SECRET');
 
-// existující soubor pod docrootem se má nechat serveru
+// an existing file under the docroot should be left to the server
 Assert::true(StaticFile::shouldServe($root, '/assets/bootstrap.min.css'));
 Assert::true(StaticFile::shouldServe($root, '/assets/bootstrap.min.css?v=1'));
 
-// router sám sobě se nevydává. Soubor existuje a leží pod docrootem, ale
-// přenechat ho serveru znamená prázdnou dvoustovku: server ho spustí jako
-// požadovaný skript a `return false` na nejvyšší úrovni ho ukončí bez výstupu.
-// Rozhoduje se podle rozhodnuté cesty, ne podle řetězce z URI.
+// the router doesn't hand itself off. The file exists and lies under the
+// docroot, but handing it to the server would mean an empty 200: the server
+// would run it as the requested script and `return false` at the top level
+// would end it with no output. This is decided by the resolved path, not
+// the URI string.
 Assert::false(StaticFile::shouldServe($root, '/index.php'));
 Assert::false(StaticFile::shouldServe($root, '/./index.php'));
 Assert::false(StaticFile::shouldServe($root, '/assets/../index.php'));
 
-// jiný .php pod docrootem router neřeší — vydává se jako každý soubor
-FileSystem::write($root . '/jiny.php', '<?php');
-Assert::true(StaticFile::shouldServe($root, '/jiny.php'));
+// another .php under the docroot isn't the router's concern — it's served like any file
+FileSystem::write($root . '/other.php', '<?php');
+Assert::true(StaticFile::shouldServe($root, '/other.php'));
 
-// neexistující soubor patří aplikaci
+// a nonexistent file belongs to the application
 Assert::false(StaticFile::shouldServe($root, '/'));
 Assert::false(StaticFile::shouldServe($root, '/?presenter=Workflow&action=edit'));
-Assert::false(StaticFile::shouldServe($root, '/assets/neni.css'));
+Assert::false(StaticFile::shouldServe($root, '/assets/gone.css'));
 
-// adresář není soubor
+// a directory isn't a file
 Assert::false(StaticFile::shouldServe($root, '/assets'));
 
-// průchod cestou ven z docrootu. Bez téhle kontroly vrací vestavěný server
-// prázdnou dvoustovku: soubor existuje, router mu ho pustí, server ho pak
-// odmítne vydat. Obsah neunikne, ale odpověď 200 s prázdným tělem je nesmysl.
-Assert::false(StaticFile::shouldServe($root, '/../tajne.txt'));
-Assert::false(StaticFile::shouldServe($root, '/assets/../../tajne.txt'));
-Assert::false(StaticFile::shouldServe($root, '/..%2ftajne.txt'));
+// a path traversal out of the docroot. Without this check, the built-in
+// server returns an empty 200: the file exists, the router lets it through,
+// the server then refuses to serve it. The content doesn't leak, but a 200
+// response with an empty body makes no sense.
+Assert::false(StaticFile::shouldServe($root, '/../secret.txt'));
+Assert::false(StaticFile::shouldServe($root, '/assets/../../secret.txt'));
+Assert::false(StaticFile::shouldServe($root, '/..%2fsecret.txt'));
 Assert::false(StaticFile::shouldServe($root, '/etc/passwd'));
 
-// nulový byte v cestě. realpath() na něm hází ValueError, a stráž běží před
-// Bootstrap::boot(), takže by z něj byla holá pětistovka místo chybové stránky.
+// a null byte in the path. realpath() throws a ValueError on it, and this
+// guard runs before Bootstrap::boot(), so it would be a bare 500 instead of
+// an error page.
 Assert::false(StaticFile::shouldServe($root, '/assets/x%00.css'));
 Assert::false(StaticFile::shouldServe($root, '/assets/bootstrap.min.css%00.txt'));
 Assert::false(StaticFile::shouldServe($root, "/assets/x\0.css"));
 
-// prefix docrootu se musí porovnávat i s oddělovačem — sousední adresář se
-// stejným začátkem jména nesmí projít
-FileSystem::write(TEMP_DIR . '/wwwjine/soubor.txt', 'x');
-Assert::false(StaticFile::shouldServe($root, '/../wwwjine/soubor.txt'));
+// the docroot prefix must be compared including the separator — a sibling
+// directory with the same starting name must not pass
+FileSystem::write(TEMP_DIR . '/wwwother/file.txt', 'x');
+Assert::false(StaticFile::shouldServe($root, '/../wwwother/file.txt'));

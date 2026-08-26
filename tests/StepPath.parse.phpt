@@ -8,7 +8,7 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- parse a zpátky dá tentýž řetězec ---
+// --- parse and back gives the same string ---
 
 foreach ([
 	'card-dev.json:steps[0]',
@@ -28,42 +28,43 @@ Assert::same(
 
 Assert::same([['steps', 0]], StepPath::parse('card-dev.json:steps[0]')->segments());
 
-// --- jméno workflow ---
+// --- workflow name ---
 
 Assert::same('card-dev', StepPath::parse('card-dev.json:steps[7].then[0]')->workflowName());
 Assert::same('card-dev', StepPath::workflow('card-dev')->workflowName());
 
-// Cesta na celé workflow nemá žádný krok.
+// A path to the whole workflow has no step.
 Assert::same([], StepPath::workflow('card-dev')->segments());
 
-// --- co cestou ke kroku není ---
+// --- what isn't a step path ---
 
 foreach ([
-	'card-dev.json',              // celé workflow, ne krok
-	'card-dev.json:steps',        // seznam, ne krok
-	'card-dev.json:steps[7].then', // taky seznam
+	'card-dev.json',              // the whole workflow, not a step
+	'card-dev.json:steps',        // a list, not a step
+	'card-dev.json:steps[7].then', // also a list
 	'card-dev.json:steps[]',
 	'card-dev.json:steps[a]',
-	'card-dev.json:kroky[0]',
+	'card-dev.json:notsteps[0]',
 	'steps[0]',
 	'',
 	'card-dev.json:steps[0];rm -rf /',
-	"card-dev.json:steps[0]\n", // $ v PCRE povolí koncový \n, chceme \z
-	' card-dev.json:steps[0]',  // obklopující mezera by se dostala do jména
-	"card\ndev.json:steps[0]",  // [^:] samo o sobě povolí i \n uprostřed jména
+	"card-dev.json:steps[0]\n", // $ in PCRE allows a trailing \n, we want \z
+	' card-dev.json:steps[0]',  // surrounding whitespace would end up in the name
+	"card\ndev.json:steps[0]",  // [^:] alone allows \n in the middle of the name too
 ] as $bad) {
 	Assert::exception(
 		fn() => StepPath::parse($bad),
 		InvalidArgumentException::class,
-		"\"{$bad}\" není cesta ke kroku.",
+		"\"{$bad}\" is not a step path.",
 	);
 }
 
-// --- cesty, které skládá šablona, musí jít rozebrat ---
+// --- paths assembled by the template must be parseable ---
 //
-// Pojistka proti tomu, že by se skládání a rozebírání rozešlo: projdi strom
-// všech čtyř skutečných workflow, slož cestu tak, jak to dělá steps.latte,
-// a ověř, že ji parse() přijme a segments() vrátí totéž, z čeho vznikla.
+// A safeguard against assembling and parsing drifting apart: walk the tree
+// of all four real workflows, assemble a path the way steps.latte does, and
+// verify that parse() accepts it and segments() returns exactly what it was
+// built from.
 
 $parser = new WorkflowParser;
 $files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
@@ -96,4 +97,4 @@ foreach ($files === false ? [] : $files as $file) {
 	$walk($workflow->steps, StepPath::root($workflow->name), [['steps', 0]]);
 }
 
-Assert::same(96, $checked, 'referenční zátěž má 96 kroků');
+Assert::same(96, $checked, 'the reference load has 96 steps');

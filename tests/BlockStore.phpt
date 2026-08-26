@@ -16,54 +16,54 @@ FileSystem::createDir($dir);
 
 $store = new BlockStore($dir);
 
-// Cesta se skládá na jednom místě, a je to tohle.
+// The path is assembled in one place, and it's this one.
 Assert::same($dir . '/curl-get.json', $store->path('curl-get'));
 
-// Prázdný adresář není chyba — do prázdného projektu se musí dát psát.
+// An empty directory isn't an error — an empty project must be writable.
 Assert::same([], $store->names());
 Assert::false($store->exists('echo'));
 
-// Uložení založí soubor, který jde hned přečíst zpátky.
+// Saving creates a file that can be read straight back.
 $store->save(new Block(
 	name: 'echo',
 	command: 'echo',
 	args: [[Template::parse('{%text%}')]],
-	description: 'Vypíše text',
+	description: 'Prints text',
 ));
 
 Assert::true(\is_file($dir . '/echo.json'));
 Assert::true($store->exists('echo'));
 Assert::same(['echo'], $store->names());
-Assert::same('Vypíše text', $store->get('echo')->description);
+Assert::same('Prints text', $store->get('echo')->description);
 
-// Uložení podruhé přepíše.
+// Saving a second time overwrites.
 $store->save(new Block(name: 'echo', command: 'printf', args: []));
 Assert::same('printf', $store->get('echo')->command);
 
-// Neexistující kámen.
+// A nonexistent block.
 Assert::exception(fn() => $store->get('nope'), ParseException::class);
 
-// Smazání odstraní soubor.
+// Deleting removes the file.
 $store->delete('echo');
 Assert::false(\is_file($dir . '/echo.json'));
 Assert::false($store->exists('echo'));
 
-// Smazání neexistujícího je chyba, ne ticho — jinak by GUI hlásilo úspěch
-// nad něčím, co se nestalo.
+// Deleting a nonexistent one is an error, not silence — otherwise the GUI
+// would report success over something that didn't happen.
 Assert::exception(fn() => $store->delete('nope'), ParseException::class);
 
-// Vadný soubor nezastíní ostatní — stejné pravidlo jako u `donut --list`.
-FileSystem::write($dir . '/dobry.json', json_encode(['name' => 'dobry', 'command' => 'ls', 'args' => []]));
-FileSystem::write($dir . '/vadny.json', '{ neplatny json');
+// A broken file doesn't hide the rest — same rule as `donut --list`.
+FileSystem::write($dir . '/good.json', json_encode(['name' => 'good', 'command' => 'ls', 'args' => []]));
+FileSystem::write($dir . '/bad.json', '{ invalid json');
 
 $store = new BlockStore($dir);
 $loaded = $store->loadAll();
 
-Assert::same(['dobry', 'vadny'], array_keys($loaded));
-Assert::type(Block::class, $loaded['dobry']);
-Assert::type('string', $loaded['vadny']);
+Assert::same(['bad', 'good'], array_keys($loaded));
+Assert::type(Block::class, $loaded['good']);
+Assert::type('string', $loaded['bad']);
 
-// Chybějící adresář je jiná situace než prázdný.
-Assert::exception(fn() => new BlockStore($dir . '/neni'), ParseException::class);
+// A missing directory is a different situation than an empty one.
+Assert::exception(fn() => new BlockStore($dir . '/gone'), ParseException::class);
 
 FileSystem::delete(TEMP_DIR);

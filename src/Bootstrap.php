@@ -16,9 +16,9 @@ final class Bootstrap
 		$configurator = new Configurator;
 		$configurator->setDebugMode(true);
 
-		// Debug mode vypíná Application::$catchExceptions — nette pak spoléhá
-		// na to, že neošetřenou výjimku ukáže Tracy. Bez enableTracy() by
-		// každá neošetřená výjimka skončila jako prázdná stránka.
+		// Debug mode disables Application::$catchExceptions — Nette then
+		// relies on Tracy to display an uncaught exception. Without
+		// enableTracy(), every uncaught exception would end up a blank page.
 		$configurator->enableTracy();
 
 		$configurator->setTempDirectory($root . '/temp');

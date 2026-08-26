@@ -6,25 +6,26 @@ namespace Donut\Gui;
 
 
 /**
- * Kolik řádků má opakující se kontejner formuláře a s jakými indexy.
+ * How many rows a repeating form container has, and with which indexes.
  *
- * `null` znamená, že tenhle POST kontejneru vůbec nepatří — řádky se pak
- * vezmou z načteného objektu, plus jeden prázdný navíc, aby měl uživatel
- * kam psát i bez JS. Pole, byť prázdné, znamená, že POST kontejneru patří —
- * indexy se odvodí z došlých dat, protože JS řádky nikdy nepřečísluje a
- * v číslování tak můžou být díry. Nezbyl-li po filtru na číslice ani jeden
- * řádek, vrátí se jeden prázdný: prázdný seznam by byl slepá ulička, JS
- * klonuje poslední řádek a kontejner bez řádků by se už nedal rozšířit.
+ * `null` means this POST doesn't belong to the container at all — the rows
+ * are then taken from the loaded object, plus one extra empty one so the
+ * user has somewhere to write even without JS. An array, even an empty one,
+ * means the POST does belong to the container — indexes are derived from
+ * the incoming data, because JS never renumbers rows and the numbering can
+ * therefore have holes. If no row survives the digit filter, one empty row
+ * is returned: an empty list would be a dead end, JS clones the last row,
+ * and a container with no rows could no longer be extended.
  *
- * Jestli POST patří zrovna tomuhle formuláři, rozhoduje volající — jen on
- * zná jméno svého signálu. Formulář sestavený z cizího POSTu by se vykreslil
- * prázdný, i když objekt za ním prázdný není.
+ * Whether the POST belongs to this particular form is the caller's call —
+ * only it knows its own signal's name. A form built from someone else's
+ * POST would render empty even though the object behind it isn't.
  */
 final class RowShape
 {
 	/**
-	 * @param  mixed $post     podpole POSTu pro tenhle kontejner, nebo null
-	 * @param  int   $existing kolik řádků má načtený objekt
+	 * @param  mixed $post     the POST subarray for this container, or null
+	 * @param  int   $existing how many rows the loaded object has
 	 * @return array<int, int>
 	 */
 	public static function of(mixed $post, int $existing): array
@@ -33,7 +34,7 @@ final class RowShape
 			$keys = [];
 
 			foreach (\array_keys($post) as $key) {
-				// Jméno komponenty v Nette musí odpovídat [a-zA-Z0-9_]+.
+				// A component name in Nette must match [a-zA-Z0-9_]+.
 				if (\ctype_digit((string) $key)) {
 					$keys[] = (int) $key;
 				}
@@ -41,9 +42,9 @@ final class RowShape
 
 			\sort($keys);
 
-			// Kontejner, ze kterého nepřišel ani jeden řádek, dostane jeden
-			// prázdný. Prázdný seznam by byl slepá ulička: JS klonuje poslední
-			// řádek, takže kontejner bez řádků už nejde rozšířit.
+			// A container with not a single row arriving gets one empty
+			// one. An empty list would be a dead end: JS clones the last
+			// row, so a container with no rows could no longer be extended.
 			return $keys === [] ? [0] : $keys;
 		}
 

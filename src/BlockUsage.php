@@ -13,28 +13,29 @@ use Donut\Format\Workflow;
 
 
 /**
- * Kdo který kámen používá.
+ * Which workflows use which block.
  *
- * Průchod stromem kroků kopíruje KeyMap::walk() — vnořené steps mají
- * if (then i else) a foreach. Kámen, který v mapě není, nepoužívá nikdo.
+ * The walk over the step tree mirrors KeyMap::walk() — nested steps are
+ * if (both then and else) and foreach. A block absent from the map is
+ * used by no one.
  *
- * Mazání kamenů čte tuhle mapu jako kontrolu, tak nesmí tiše podhodnotit
- * použití — na rozdíl od KeyMap to tu není druhý průchod vedle validátoru,
- * ale přesně to, na čem stojí ochrana proti smazání kamene, co workflow
- * pořád používá.
+ * Block deletion reads this map as its check, so it must not silently
+ * undercount usage — unlike KeyMap, this isn't a second pass alongside
+ * the validator, it's exactly what the protection against deleting a
+ * still-used block rests on.
  */
 final class BlockUsage
 {
 	/**
-	 * @param  array<string, Workflow> $workflows jméno workflow => workflow
-	 * @return array<string, list<string>> jméno kamene => jména workflow
+	 * @param  array<string, Workflow> $workflows workflow name => workflow
+	 * @return array<string, list<string>> block name => workflow names
 	 *
-	 * Jméno kamene smí být stejně tak čistě číselné. Vnitřní seznam s tím
-	 * počítá (viz níže), ale vnější klíč pole ne — to je vlastnost PHP polí,
-	 * ne tohohle kódu: klíč "123" PHP vždycky tiše převede na int a žádný
-	 * (string) cast před zápisem to nezmění. Vyhledání `$usage['123']`
-	 * funguje správně (PHP převede stejně i dotaz), jen `array_keys($usage)`
-	 * by takový kámen vrátil jako int.
+	 * A block name may just as well be purely numeric. The inner list
+	 * accounts for that (see below), but the outer array key doesn't — that's
+	 * a property of PHP arrays, not this code: PHP always silently converts
+	 * a "123" key to int, and no (string) cast before writing changes that.
+	 * Looking up `$usage['123']` works correctly (PHP converts the query the
+	 * same way), only `array_keys($usage)` would return such a block as int.
 	 */
 	public static function of(array $workflows): array
 	{
@@ -42,22 +43,22 @@ final class BlockUsage
 		$usage = [];
 
 		foreach ($workflows as $name => $workflow) {
-			// Klíčem je jméno workflow, ne index — kámen použitý ve dvou
-			// krocích téhož workflow se má uvést jednou.
+			// The key is the workflow name, not the index — a block used in
+			// two steps of the same workflow should be listed once.
 			self::walk($workflow->steps, (string) $name, $usage);
 		}
 
 		$result = [];
 
 		foreach ($usage as $block => $names) {
-			// Jméno workflow smí být čistě číselné (žádný formát to
-			// nezakazuje) — array_keys() by pak vrátilo int místo stringu.
-			// Stejný důvod jako v KeyMap::keys()/invert().
+			// A workflow name may be purely numeric (no format rule forbids
+			// it) — array_keys() would then return int instead of string.
+			// Same reason as in KeyMap::keys()/invert().
 			$names = \array_map(\strval(...), \array_keys($names));
 
-			// Seřadit i vnitřní seznam: bez toho by pořadí určilo pořadí
-			// souborů v adresáři a výpis „používá: …" by se měnil bez
-			// zjevného důvodu.
+			// Sort the inner list too: without this, order would follow the
+			// directory's file order and the "used by: …" listing would
+			// change for no apparent reason.
 			\sort($names);
 			$result[$block] = $names;
 		}
@@ -86,15 +87,15 @@ final class BlockUsage
 				self::walk($step->steps, $workflow, $usage);
 
 			} elseif ($step instanceof SetStep) {
-				// SetStep na žádný kámen neodkazuje.
+				// SetStep doesn't reference any block.
 
 			} else {
-				// Nový typ kroku by tichým if/elseif řetězcem propadl beze
-				// zmínky — tahle mapa je kontrola před mazáním kamenů, takže
-				// by tichý propad znamenal, že se smaže kámen, který nějaké
-				// workflow pořád používá. KeyMap::walk() háže ze stejného
-				// důvodu.
-				throw new \LogicException('neznámý typ kroku ' . $step::class);
+				// A new step type would silently fall through the if/elseif
+				// chain unnoticed — this map is the check before deleting
+				// blocks, so a silent fall-through would mean deleting a
+				// block that some workflow still uses. KeyMap::walk() throws
+				// for the same reason.
+				throw new \LogicException('unknown step type ' . $step::class);
 			}
 		}
 	}

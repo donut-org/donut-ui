@@ -102,7 +102,7 @@ Assert::count(2, $steps());
 // Neplatná cesta se musí uživateli ohlásit, ne jen tiše nic neudělat — než se
 // strom kroků stal komponentou, tuhle hlášku nekontroloval žádný test.
 Assert::contains('alert-danger', $html);
-Assert::contains('Krok "w.json:steps[99]" neexistuje.', $html);
+Assert::contains('Step "w.json:steps[99]" does not exist.', $html);
 
 [, $html] = runWorkflowPresenterIn(
 	$project,
@@ -111,7 +111,7 @@ Assert::contains('Krok "w.json:steps[99]" neexistuje.', $html);
 );
 
 Assert::contains('alert-danger', $html);
-Assert::contains('"nesmysl" není cesta ke kroku.', $html);
+Assert::contains('"nesmysl" is not a step path.', $html);
 
 // --- cesta z jiného workflow se odmítne, ne aplikuje jako pozice v tomhle ---
 
@@ -160,7 +160,7 @@ $write([
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
 
 Assert::contains(
-	"onclick=\"return confirm(&apos;Smazat i 1 vnořený krok?&apos;)\"",
+	"onclick=\"return confirm(&apos;Smazat i 1 nested step?&apos;)\"",
 	$html,
 	'krok s podstromem musí nabídnout potvrzení mazání',
 );

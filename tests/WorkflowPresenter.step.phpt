@@ -185,7 +185,7 @@ Assert::count(1, $foreach->steps, 'zfalšovaný type nesmí smazat podstrom');
 	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[99]',
 ]);
 
-Assert::contains('neexistuje', $html);
+Assert::contains('does not exist', $html);
 
 // --- neplatné workflow se uloží i tak: validace neblokuje ---
 //

@@ -10,11 +10,11 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- round-trip nad všemi vstupy referenční zátěže ---
+// --- round-trip over all inputs in the reference load ---
 //
-// 57 vstupů: 36 u kamenů, 21 u workflow. Je to bohatší zátěž, než jakou
-// mělo toInputs() uvnitř BlockMapperu k dispozici — teď zahrnuje i vstupy
-// workflow.
+// 57 inputs: 36 in blocks, 21 in workflows. This is a richer load than what
+// toInputs() had available inside BlockMapper — now it covers workflow
+// inputs too.
 
 $checked = 0;
 
@@ -43,50 +43,50 @@ foreach ($workflows === false ? [] : $workflows as $file) {
 	$roundTrip((new WorkflowParser)->parseFile($file)->inputs);
 }
 
-Assert::same(57, $checked, 'referenční zátěž má 57 vstupů');
+Assert::same(57, $checked, 'the reference load has 57 inputs');
 
-// --- díry v indexech se srovnají, pořadí drží ksort ---
+// --- holes in the indexes get sorted out, ksort holds the order ---
 //
-// JS řádky nikdy nepřečísluje a pořadí klíčů z POSTu není zaručené.
+// JS never renumbers rows, and the order of keys from POST isn't guaranteed.
 
 $reversed = InputMapper::toInputs([
-	3 => ['name' => 'zet', 'required' => true, 'default' => '', 'description' => ''],
-	0 => ['name' => 'alfa', 'required' => true, 'default' => '', 'description' => ''],
+	3 => ['name' => 'zulu', 'required' => true, 'default' => '', 'description' => ''],
+	0 => ['name' => 'alpha', 'required' => true, 'default' => '', 'description' => ''],
 ]);
 
-Assert::same(['alfa', 'zet'], \array_keys($reversed));
+Assert::same(['alpha', 'zulu'], \array_keys($reversed));
 
-// --- řádek bez jména je nedopsaný řádek, ne vstup ---
+// --- a row without a name is an unfinished row, not an input ---
 
-$sPrazdnym = InputMapper::toInputs([
-	0 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nikdo'],
-	1 => ['name' => 'kdo', 'required' => true, 'default' => '', 'description' => ''],
+$withEmpty = InputMapper::toInputs([
+	0 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nobody'],
+	1 => ['name' => 'who', 'required' => true, 'default' => '', 'description' => ''],
 ]);
 
-Assert::same(['kdo'], \array_keys($sPrazdnym));
+Assert::same(['who'], \array_keys($withEmpty));
 
-// --- '' znamená nevyplněno ---
+// --- '' means unfilled ---
 
-Assert::null($sPrazdnym['kdo']->default);
-Assert::null($sPrazdnym['kdo']->description);
+Assert::null($withEmpty['who']->default);
+Assert::null($withEmpty['who']->description);
 
-// --- required se čte jako bool; nezaškrtnuté políčko se v POSTu neobjeví ---
+// --- required is read as bool; an unchecked checkbox doesn't appear in POST ---
 
-$bez = InputMapper::toInputs([0 => ['name' => 'a']]);
-Assert::false($bez['a']->required);
+$without = InputMapper::toInputs([0 => ['name' => 'a']]);
+Assert::false($without['a']->required);
 
-// --- toValues dává tvar, který formulář očekává ---
+// --- toValues gives the shape the form expects ---
 
 Assert::same(
 	[
-		['name' => 'url', 'required' => true, 'default' => '', 'description' => 'Adresa'],
+		['name' => 'url', 'required' => true, 'default' => '', 'description' => 'Address'],
 		['name' => 'flag', 'required' => false, 'default' => 'x', 'description' => ''],
 	],
 	InputMapper::toValues([
-		'url' => new Input(name: 'url', description: 'Adresa'),
+		'url' => new Input(name: 'url', description: 'Address'),
 		'flag' => new Input(name: 'flag', required: false, default: 'x'),
 	]),
 );
 
-// Prázdná mapa dá prázdné pole, ne řádek s prázdnými hodnotami.
+// An empty map gives an empty array, not a row with empty values.
 Assert::same([], InputMapper::toValues([]));

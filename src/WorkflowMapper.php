@@ -8,23 +8,24 @@ use Donut\Format\Workflow;
 
 
 /**
- * Hlavička workflow ↔ hodnoty formuláře. Jméno, popis, vstupy.
+ * Workflow header ↔ form values. Name, description, inputs.
  *
- * **Kroky se nepřevádějí ani jedním směrem.** Formulář hlavičky je needituje,
- * takže toWorkflow() je bere z původního workflow — jinak by úprava popisu
- * smazala celý strom kroků. Je to táž past, kterou u kroku řeší
- * StepMapper::keepChildren(), jen ničivější.
+ * **Steps are not converted in either direction.** The header form doesn't
+ * edit them, so toWorkflow() takes them from the original workflow —
+ * otherwise editing the description would delete the whole step tree. It's
+ * the same trap that StepMapper::keepChildren() handles for a step, just
+ * more destructive.
  */
 final class WorkflowMapper
 {
 	/**
 	 * @param array<string, mixed> $values
-	 * @param Workflow|null        $original při úpravě; při zakládání null
+	 * @param Workflow|null        $original when editing; null when creating
 	 */
 	public static function toWorkflow(array $values, ?Workflow $original = null): Workflow
 	{
-		// $original?->steps ?? [] hlásí PHPStanu (level max) falešně
-		// nullsafe.neverNull — rozdělení do proměnné to obchází.
+		// $original?->steps ?? [] falsely reports nullsafe.neverNull to
+		// PHPStan (level max) — splitting into a variable works around it.
 		$steps = $original?->steps;
 
 		return new Workflow(

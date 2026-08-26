@@ -13,25 +13,25 @@ $parser = new WorkflowParser;
 
 $workflow = $parser->parseArray([
 	'name' => 'w',
-	'inputs' => ['vstup' => []],
+	'inputs' => ['input' => []],
 	'steps' => [
-		['type' => 'set', 'key' => 'zeSetu', 'value' => '{%vstup%}'],
+		['type' => 'set', 'key' => 'fromSet', 'value' => '{%input%}'],
 		[
 			'type' => 'run', 'block' => 'echo',
-			'in' => ['text' => '{%zeSetu%} a {%vstup%}'],
-			'out' => ['result' => 'zVystupu', 'exit_code' => 'kod'],
+			'in' => ['text' => '{%fromSet%} and {%input%}'],
+			'out' => ['result' => 'fromOutput', 'exit_code' => 'code'],
 		],
 		[
 			'type' => 'if',
-			'condition' => ['left' => '{%kod%}', 'op' => 'eq', 'right' => '{%vstup%}'],
-			'then' => [['type' => 'set', 'key' => 'vetev', 'value' => '{%zVystupu%}']],
-			'else' => [['type' => 'set', 'key' => 'vetev', 'value' => 'nic']],
+			'condition' => ['left' => '{%code%}', 'op' => 'eq', 'right' => '{%input%}'],
+			'then' => [['type' => 'set', 'key' => 'branch', 'value' => '{%fromOutput%}']],
+			'else' => [['type' => 'set', 'key' => 'branch', 'value' => 'none']],
 		],
 		[
 			'type' => 'foreach',
-			'over' => '{%zVystupu%}',
-			'as' => 'radek',
-			'steps' => [['type' => 'set', 'key' => 'vTele', 'value' => '{%radek%}']],
+			'over' => '{%fromOutput%}',
+			'as' => 'row',
+			'steps' => [['type' => 'set', 'key' => 'inBody', 'value' => '{%row%}']],
 		],
 	],
 ], 'w.json');
@@ -39,91 +39,91 @@ $workflow = $parser->parseArray([
 $map = KeyMap::of($workflow);
 $root = StepPath::root('w');
 
-// --- co dělá konkrétní krok ---
+// --- what a specific step does ---
 
-Assert::same(['zeSetu'], $map->writesAt($root->index(0)));
-Assert::same(['vstup'], $map->readsAt($root->index(0)));
+Assert::same(['fromSet'], $map->writesAt($root->index(0)));
+Assert::same(['input'], $map->readsAt($root->index(0)));
 
-// out má dva kanály → dva zapsané klíče, abecedně
-Assert::same(['kod', 'zVystupu'], $map->writesAt($root->index(1)));
-// jedna šablona, dva klíče
-Assert::same(['vstup', 'zeSetu'], $map->readsAt($root->index(1)));
+// out has two channels → two written keys, alphabetically
+Assert::same(['code', 'fromOutput'], $map->writesAt($root->index(1)));
+// one template, two keys
+Assert::same(['fromSet', 'input'], $map->readsAt($root->index(1)));
 
-// if čte v left i right a sám nic nezapisuje
-Assert::same(['kod', 'vstup'], $map->readsAt($root->index(2)));
+// if reads in both left and right and writes nothing itself
+Assert::same(['code', 'input'], $map->readsAt($root->index(2)));
 Assert::same([], $map->writesAt($root->index(2)));
 
-// foreach zapisuje svoje `as`
-Assert::same(['radek'], $map->writesAt($root->index(3)));
-Assert::same(['zVystupu'], $map->readsAt($root->index(3)));
+// foreach writes its `as`
+Assert::same(['row'], $map->writesAt($root->index(3)));
+Assert::same(['fromOutput'], $map->readsAt($root->index(3)));
 
-// krok, který s klíči nedělá nic, dá prázdná pole, ne null
+// a step that does nothing with keys gives empty arrays, not null
 Assert::same([], $map->writesAt($root->index(9)));
 Assert::same([], $map->readsAt($root->index(9)));
 
-// --- vnořené kroky ---
+// --- nested steps ---
 
-Assert::same(['vetev'], $map->writesAt($root->index(2)->child('then')->index(0)));
-Assert::same(['zVystupu'], $map->readsAt($root->index(2)->child('then')->index(0)));
-Assert::same(['vetev'], $map->writesAt($root->index(2)->child('else')->index(0)));
+Assert::same(['branch'], $map->writesAt($root->index(2)->child('then')->index(0)));
+Assert::same(['fromOutput'], $map->readsAt($root->index(2)->child('then')->index(0)));
+Assert::same(['branch'], $map->writesAt($root->index(2)->child('else')->index(0)));
 Assert::same([], $map->readsAt($root->index(2)->child('else')->index(0)));
-Assert::same(['vTele'], $map->writesAt($root->index(3)->child('steps')->index(0)));
+Assert::same(['inBody'], $map->writesAt($root->index(3)->child('steps')->index(0)));
 
-// --- kde všude klíč je ---
+// --- everywhere a key appears ---
 
-// vetev se zapisuje v obou větvích
+// branch is written in both branches
 Assert::same(
 	[
 		(string) $root->index(2)->child('then')->index(0),
 		(string) $root->index(2)->child('else')->index(0),
 	],
-	$map->writeSitesOf('vetev'),
+	$map->writeSitesOf('branch'),
 );
 
 Assert::same(
 	[(string) $root->index(0), (string) $root->index(1), (string) $root->index(2)],
-	$map->readSitesOf('vstup'),
+	$map->readSitesOf('input'),
 );
 
-// vstup nikdo nezapisuje — je to vstup workflow
-Assert::same([], $map->writeSitesOf('vstup'));
+// nobody writes input — it's a workflow input
+Assert::same([], $map->writeSitesOf('input'));
 
-// klíč, který ve workflow není
-Assert::same([], $map->writeSitesOf('neznamy'));
-Assert::same([], $map->readSitesOf('neznamy'));
+// a key that isn't in the workflow
+Assert::same([], $map->writeSitesOf('unknown'));
+Assert::same([], $map->readSitesOf('unknown'));
 
-// --- seznam klíčů ---
+// --- key list ---
 
 Assert::same(
-	['kod', 'radek', 'vTele', 'vetev', 'vstup', 'zVystupu', 'zeSetu'],
+	['branch', 'code', 'fromOutput', 'fromSet', 'inBody', 'input', 'row'],
 	$map->keys(),
 );
 
-// --- třída pro zvýraznění ---
+// --- highlight class ---
 
 Assert::same('', $map->classAt($root->index(0), null));
-Assert::same('write', $map->classAt($root->index(0), 'zeSetu'));
-Assert::same('read', $map->classAt($root->index(0), 'vstup'));
-Assert::same('', $map->classAt($root->index(0), 'kod'));
+Assert::same('write', $map->classAt($root->index(0), 'fromSet'));
+Assert::same('read', $map->classAt($root->index(0), 'input'));
+Assert::same('', $map->classAt($root->index(0), 'code'));
 
-// krok, který týž klíč čte i zapisuje, dostane obojí
-$ctePise = KeyMap::of($parser->parseArray([
+// a step that both reads and writes the same key gets both
+$readsWrites = KeyMap::of($parser->parseArray([
 	'name' => 'w',
 	'inputs' => ['x' => []],
 	'steps' => [['type' => 'set', 'key' => 'x', 'value' => '{%x%}']],
 ], 'w.json'));
 
-Assert::same('write read', $ctePise->classAt(StepPath::root('w')->index(0), 'x'));
+Assert::same('write read', $readsWrites->classAt(StepPath::root('w')->index(0), 'x'));
 
-// cesta jde předat i jako řetězec
-Assert::same(['zeSetu'], $map->writesAt((string) $root->index(0)));
-Assert::same(['vstup'], $map->readsAt((string) $root->index(0)));
-Assert::same('write', $map->classAt((string) $root->index(0), 'zeSetu'));
+// a path can also be passed as a string
+Assert::same(['fromSet'], $map->writesAt((string) $root->index(0)));
+Assert::same(['input'], $map->readsAt((string) $root->index(0)));
+Assert::same('write', $map->classAt((string) $root->index(0), 'fromSet'));
 
-// --- týž klíč vícekrát v jednom kroku ---
+// --- the same key more than once in one step ---
 
-// dva vstupy kamene čtou tentýž klíč — krok je v seznamu jen jednou
-$dupCteni = KeyMap::of($parser->parseArray([
+// two block inputs read the same key — the step is in the list only once
+$dupRead = KeyMap::of($parser->parseArray([
 	'name' => 'w',
 	'inputs' => ['x' => []],
 	'steps' => [
@@ -135,10 +135,10 @@ $dupCteni = KeyMap::of($parser->parseArray([
 	],
 ], 'w.json'));
 
-Assert::same([(string) StepPath::root('w')->index(0)], $dupCteni->readSitesOf('x'));
+Assert::same([(string) StepPath::root('w')->index(0)], $dupRead->readSitesOf('x'));
 
-// dva kanály out mapují na tentýž klíč — krok je v seznamu jen jednou
-$dupZapis = KeyMap::of($parser->parseArray([
+// two out channels map to the same key — the step is in the list only once
+$dupWrite = KeyMap::of($parser->parseArray([
 	'name' => 'w',
 	'inputs' => [],
 	'steps' => [
@@ -150,18 +150,19 @@ $dupZapis = KeyMap::of($parser->parseArray([
 	],
 ], 'w.json'));
 
-Assert::same([(string) StepPath::root('w')->index(0)], $dupZapis->writeSitesOf('y'));
+Assert::same([(string) StepPath::root('w')->index(0)], $dupWrite->writeSitesOf('y'));
 
-// --- klíč složený jen z číslic (I2) ---
+// --- a key made up of digits only (I2) ---
 
-// array_keys() by "456" tiše zkonvertovalo na int — writesAt()/keys() musí
-// vracet string, jinak classAt() proti stringu z URL nikdy neuspěje.
-$cislo = KeyMap::of($parser->parseArray([
+// array_keys() would silently convert "456" to int — writesAt()/keys() must
+// return a string, otherwise classAt() would never match against a string
+// from the URL.
+$number = KeyMap::of($parser->parseArray([
 	'name' => 'w',
 	'inputs' => [],
 	'steps' => [['type' => 'set', 'key' => '456', 'value' => 'x']],
 ], 'w.json'));
 
-Assert::same(['456'], $cislo->writesAt(StepPath::root('w')->index(0)));
-Assert::same('write', $cislo->classAt(StepPath::root('w')->index(0), '456'));
-Assert::same(['456'], $cislo->keys());
+Assert::same(['456'], $number->writesAt(StepPath::root('w')->index(0)));
+Assert::same('write', $number->classAt(StepPath::root('w')->index(0), '456'));
+Assert::same(['456'], $number->keys());

@@ -12,13 +12,15 @@ use Nette\Utils\FileSystem;
 
 
 /**
- * Zápis workflow na disk.
+ * Writing workflows to disk.
  *
- * Jediné místo, které ví, že workflow jménem "card-dev" bydlí
- * v <adresář>/card-dev.json. Zapisovač v donutu cestu vědomě neodvozuje ze
- * jména, jen ověřuje, že spolu sedí — složit ji musí někdo, a je to tohle.
+ * The one place that knows the workflow named "card-dev" lives at
+ * <directory>/card-dev.json. The writer in donut deliberately doesn't
+ * derive the path from the name, only checks the two agree — assembling
+ * it is someone's job, and it's this one.
  *
- * Čtení tady není: umí ho WorkflowRepository, který prezentér už používá.
+ * There's no reading here: WorkflowRepository does that, and the presenter
+ * already uses it.
  */
 final class WorkflowStore
 {
@@ -26,14 +28,14 @@ final class WorkflowStore
 
 
 	/**
-	 * @throws ParseException když adresář neexistuje
+	 * @throws ParseException when the directory doesn't exist
 	 */
 	public function __construct(
 		private readonly string $directory,
 	) {
 		if (!\is_dir($directory)) {
 			throw new ParseException(
-				"Adresář s workflow '{$directory}' neexistuje. " . MissingDir::hint($directory)
+				"Workflows directory '{$directory}' does not exist. " . MissingDir::hint($directory)
 			);
 		}
 
@@ -48,7 +50,7 @@ final class WorkflowStore
 
 
 	/**
-	 * @throws \Donut\Writer\WriteException když soubor nejde zapsat
+	 * @throws \Donut\Writer\WriteException when the file can't be written
 	 */
 	public function save(Workflow $workflow): void
 	{
@@ -63,12 +65,12 @@ final class WorkflowStore
 
 
 	/**
-	 * @throws ParseException když workflow neexistuje
+	 * @throws ParseException when the workflow doesn't exist
 	 */
 	public function delete(string $name): void
 	{
 		if (!$this->exists($name)) {
-			throw new ParseException("Workflow \"{$name}\" neexistuje. Hledal jsem v: {$this->directory}");
+			throw new ParseException("Workflow \"{$name}\" does not exist. Searched in: {$this->directory}");
 		}
 
 		FileSystem::delete($this->path($name));

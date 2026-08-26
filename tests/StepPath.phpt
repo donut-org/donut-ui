@@ -7,8 +7,8 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// Tvary musí odpovídat tomu, co skládá Validator::checkSteps() — připnuto
-// v donutu testem tests/Donut/Validator.location.phpt.
+// Shapes must match what Validator::checkSteps() assembles — pinned in
+// donut by the test tests/Donut/Validator.location.phpt.
 
 Assert::same('card-dev.json:steps', (string) StepPath::root('card-dev'));
 
@@ -32,11 +32,11 @@ Assert::same(
 	(string) StepPath::root('card-dev')->index(2)->child('steps')->index(0)
 );
 
-// Problém bez kroku, patřící celému workflow.
+// A problem without a step, belonging to the whole workflow.
 Assert::same('card-dev.json', (string) StepPath::workflow('card-dev'));
 
-// Původní objekt se nemění — šablona prochází strom a jednu cestu větví
-// do víc dětí.
+// The original object doesn't change — the template walks the tree and
+// branches one path into several children.
 $base = StepPath::root('w')->index(1);
 $then = $base->child('then')->index(0);
 

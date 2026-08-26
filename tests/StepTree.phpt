@@ -42,11 +42,11 @@ $allPaths = function (Workflow $workflow): array {
 	return $paths;
 };
 
-// --- invarianty nad celou referenční zátěží ---
+// --- invariants over the whole reference load ---
 //
-// Ruční případy by pokryly pár tvarů; tohle pokryje 96 kroků do hloubky 3
-// naráz. Kdyby se get() a replace() rozešly o jeden index nebo si spletly
-// větev, spadne to hned na prvním workflow.
+// Hand-picked cases would cover a handful of shapes; this covers 96 steps
+// to depth 3 at once. If get() and replace() drifted apart by one index or
+// confused a branch, it would fail on the very first workflow.
 
 $checked = 0;
 
@@ -57,14 +57,14 @@ foreach ($files === false ? [] : $files as $file) {
 	foreach ($allPaths($workflow) as $at) {
 		$checked++;
 
-		// get + replace míří na tentýž uzel
+		// get + replace target the same node
 		Assert::same(
 			$before,
 			\serialize(StepTree::replace($workflow, $at, StepTree::get($workflow, $at))),
-			"replace(get) na {$at}",
+			"replace(get) at {$at}",
 		);
 
-		// remove a insert zpátky vrátí původní strom
+		// remove followed by insert back returns the original tree
 		Assert::same(
 			$before,
 			\serialize(StepTree::insert(
@@ -72,29 +72,31 @@ foreach ($files === false ? [] : $files as $file) {
 				$at,
 				StepTree::get($workflow, $at),
 			)),
-			"remove+insert na {$at}",
+			"remove+insert at {$at}",
 		);
 
-		// moveUp a moveDown jsou involuce — swap dvakrát na stejné pozici
-		// vrátí původní strom. (Kombinace moveDown+moveUp na stejné cestě
-		// to nezaručuje: cesta míří na pozici, ne na krok, takže druhý swap
-		// už míří na jiného souseda, než odkud první swap krok odsunul.)
+		// moveUp and moveDown are involutions — swapping twice at the same
+		// position returns the original tree. (Combining moveDown+moveUp on
+		// the same path doesn't guarantee this: the path targets a
+		// position, not a step, so the second swap already targets a
+		// different neighbor than the one the first swap moved the step
+		// away from.)
 		Assert::same(
 			$before,
 			\serialize(StepTree::moveDown(StepTree::moveDown($workflow, $at), $at)),
-			"moveDown dvakrát na {$at}",
+			"moveDown twice at {$at}",
 		);
 		Assert::same(
 			$before,
 			\serialize(StepTree::moveUp(StepTree::moveUp($workflow, $at), $at)),
-			"moveUp dvakrát na {$at}",
+			"moveUp twice at {$at}",
 		);
 	}
 }
 
-Assert::same(96, $checked, 'referenční zátěž má 96 kroků');
+Assert::same(96, $checked, 'the reference load has 96 steps');
 
-// --- konkrétní chování na malém stromě ---
+// --- specific behavior on a small tree ---
 
 $set = fn(string $key): SetStep => new SetStep(key: $key, value: Template::parse('x'));
 
@@ -114,86 +116,86 @@ $keys = function (Workflow $w): array {
 	);
 };
 
-// moveUp prohodí se sousedem
+// moveUp swaps with its neighbor
 Assert::same(['if', 'a', 'b'], $keys(StepTree::moveUp($workflow, StepPath::parse('w.json:steps[1]'))));
 
-// na kraji je to no-op, ne chyba — šablona šipku nevykreslí, ale ručně
-// poslaný POST nesmí spadnout
+// at the edge it's a no-op, not an error — the template doesn't render the
+// arrow, but a hand-crafted POST must not fail
 Assert::same(['a', 'if', 'b'], $keys(StepTree::moveUp($workflow, StepPath::parse('w.json:steps[0]'))));
 Assert::same(['a', 'if', 'b'], $keys(StepTree::moveDown($workflow, StepPath::parse('w.json:steps[2]'))));
 
-// insert doprostřed posune ostatní
+// insert into the middle shifts the rest
 Assert::same(
-	['a', 'novy', 'if', 'b'],
-	$keys(StepTree::insert($workflow, StepPath::parse('w.json:steps[1]'), $set('novy'))),
+	['a', 'new', 'if', 'b'],
+	$keys(StepTree::insert($workflow, StepPath::parse('w.json:steps[1]'), $set('new'))),
 );
 
-// insert na konec
+// insert at the end
 Assert::same(
-	['a', 'if', 'b', 'novy'],
-	$keys(StepTree::insert($workflow, StepPath::parse('w.json:steps[3]'), $set('novy'))),
+	['a', 'if', 'b', 'new'],
+	$keys(StepTree::insert($workflow, StepPath::parse('w.json:steps[3]'), $set('new'))),
 );
 
-// remove uzavře díru
+// remove closes the hole
 Assert::same(['a', 'b'], $keys(StepTree::remove($workflow, StepPath::parse('w.json:steps[1]'))));
 
-// smazání if vezme celou větev s sebou
+// deleting an if takes the whole branch with it
 Assert::count(2, StepTree::remove($workflow, StepPath::parse('w.json:steps[1]'))->steps);
 
-// --- práce uvnitř větve ---
+// --- working inside a branch ---
 
-$vetev = StepTree::insert($workflow, StepPath::parse('w.json:steps[1].then[0]'), $set('t0'));
-$if = $vetev->steps[1];
+$branched = StepTree::insert($workflow, StepPath::parse('w.json:steps[1].then[0]'), $set('t0'));
+$if = $branched->steps[1];
 Assert::type(IfStep::class, $if);
 Assert::same(['t0', 't1', 't2'], \array_map(fn($s): string => $s->key, $if->then));
 
-// prázdná větev else — vložení do ní je jediná cesta, jak ji naplnit
+// an empty else branch — inserting into it is the only way to fill it
 $doElse = StepTree::insert($workflow, StepPath::parse('w.json:steps[1].else[0]'), $set('e0'));
 Assert::same(['e0'], \array_map(fn($s): string => $s->key, $doElse->steps[1]->else));
 
-// --- neplatné cesty ---
+// --- invalid paths ---
 
 Assert::exception(
 	fn() => StepTree::get($workflow, StepPath::parse('w.json:steps[9]')),
 	OutOfRangeException::class,
 );
 
-// sestup do větve u kroku, který ji nemá
+// descending into a branch on a step that doesn't have one
 Assert::exception(
 	fn() => StepTree::get($workflow, StepPath::parse('w.json:steps[0].then[0]')),
 	OutOfRangeException::class,
 );
 
-// insert za konec seznamu je v pořádku, dál už ne
+// insert right after the end of the list is fine, any further isn't
 Assert::exception(
 	fn() => StepTree::insert($workflow, StepPath::parse('w.json:steps[4]'), $set('x')),
 	OutOfRangeException::class,
 );
 
-// --- get() a apply() (replace/insert/remove/…) musí souhlasit i na díře v klíčích ---
+// --- get() and apply() (replace/insert/remove/…) must agree even on a hole in the keys ---
 //
-// Workflow::$steps je typované jako array<int, Step>, ne list<Step> — díra
-// v klíčích je typově v pořádku. apply() si pole vždycky srovná přes
-// array_values(), get() to dřív nedělalo a indexoval by přímo do děravého
-// pole — stejný index by tak mířil na jiný krok podle toho, kterou operací
-// se na něj sáhlo.
+// Workflow::$steps is typed as array<int, Step>, not list<Step> — a hole in
+// the keys is fine by the type. apply() always normalizes the array via
+// array_values(), get() used to not do that and would index straight into
+// the sparse array — the same index would then target a different step
+// depending on which operation touched it.
 
-$sDirou = new Workflow(name: 'w', steps: [1 => $set('a'), 3 => $set('b')]);
+$withHole = new Workflow(name: 'w', steps: [1 => $set('a'), 3 => $set('b')]);
 
-Assert::same('a', StepTree::get($sDirou, StepPath::parse('w.json:steps[0]'))->key);
-Assert::same('b', StepTree::get($sDirou, StepPath::parse('w.json:steps[1]'))->key);
+Assert::same('a', StepTree::get($withHole, StepPath::parse('w.json:steps[0]'))->key);
+Assert::same('b', StepTree::get($withHole, StepPath::parse('w.json:steps[1]'))->key);
 
-// --- hlavička workflow zůstane netknutá ---
+// --- the workflow header stays untouched ---
 
-$sHlavickou = new Workflow(
+$withHeader = new Workflow(
 	name: 'w',
 	inputs: ['a' => new Donut\Format\Input(name: 'a')],
 	steps: [$set('a')],
-	description: 'Popis',
+	description: 'Description',
 );
 
-$po = StepTree::remove($sHlavickou, StepPath::parse('w.json:steps[0]'));
-Assert::same('w', $po->name);
-Assert::same('Popis', $po->description);
-Assert::same(['a'], \array_keys($po->inputs));
-Assert::same([], $po->steps);
+$after = StepTree::remove($withHeader, StepPath::parse('w.json:steps[0]'));
+Assert::same('w', $after->name);
+Assert::same('Description', $after->description);
+Assert::same(['a'], \array_keys($after->inputs));
+Assert::same([], $after->steps);

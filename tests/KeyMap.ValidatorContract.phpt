@@ -11,14 +11,16 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// Spojovací test smlouvy: KeyMap a Donut\Validator\Validator počítají tytéž
-// množiny klíčů dvěma nezávislými průchody stromem. KeyMap.phpt ani donutí
-// testy samy o sobě rozchod nepoznají — tenhle ano.
+// A contract test connecting the two: KeyMap and Donut\Validator\Validator
+// compute the same key sets via two independent walks of the tree.
+// Neither KeyMap.phpt nor donut's own tests would notice a drift on their
+// own — this one does.
 //
-// Jede nad referenční zátěží, protože ta má všechny čtyři typy kroků, obě
-// větve if i foreach, a hlídá ji přijímací test donutu na 0 chyb a 0 varování.
-// docs/workflows/donut/ je tu testovací data, ne kód — pravidlo „GUI nesmí
-// sáhnout mimo sebe" mluví o gui/src, ne o fixturách v testech.
+// Runs over the reference load, because it has all four step types, both
+// if branches, and a foreach, and donut's acceptance test guards it at 0
+// errors and 0 warnings. docs/workflows/donut/ is test data here, not code —
+// the rule "the GUI must not reach outside itself" is about gui/src, not
+// about fixtures in tests.
 
 $root = __DIR__ . '/../../docs/workflows/donut';
 
@@ -26,72 +28,72 @@ $blocks = new BlockRepository($root . '/blocks');
 $parser = new WorkflowParser;
 $validator = new Validator($blocks);
 
-// glob() vrací list<string>|false — false jen když je vzor sám nevalidní,
-// což se tady nemůže stát, ale PHPStan (level: max) to neví.
+// glob() returns list<string>|false — false only when the pattern itself is
+// invalid, which can't happen here, but PHPStan (level: max) doesn't know that.
 $files = \glob($root . '/workflows/*.json');
-Assert::true(\is_array($files), 'glob() nad referenční zátěží nesmí selhat');
+Assert::true(\is_array($files), 'glob() over the reference load must not fail');
 $files = \is_array($files) ? $files : [];
 
-Assert::count(4, $files, 'referenční zátěž má čtyři workflow');
+Assert::count(4, $files, 'the reference load has four workflows');
 
 foreach ($files as $file) {
 	$workflow = $parser->parseFile($file);
 	$result = $validator->validate($workflow);
 	$map = KeyMap::of($workflow);
 
-	// Porovnat zvlášť zapsané a přečtené klíče — unifikace by skryla
-	// klíče zaznamenané v špatném směru
+	// Compare written and read keys separately — a union would hide a key
+	// recorded in the wrong direction
 	$guiWritten = \array_values(\array_filter($map->keys(), fn($k) => $map->writeSitesOf($k) !== []));
 	$guiRead = \array_values(\array_filter($map->keys(), fn($k) => $map->readSitesOf($k) !== []));
 
 	Assert::same(
 		$result->getWrittenKeys(),
 		$guiWritten,
-		"zapsané klíče v {$workflow->name} se musí shodovat s validátorem",
+		"written keys in {$workflow->name} must match the validator",
 	);
 
 	Assert::same(
 		$result->getReadKeys(),
 		$guiRead,
-		"přečtené klíče v {$workflow->name} se musí shodovat s validátorem",
+		"read keys in {$workflow->name} must match the validator",
 	);
 }
 
-// Vlastní fixtura vedle referenční zátěže: v žádném ze čtyř referenčních
-// workflow neexistuje klíč, který by se vyskytoval jen uvnitř then, jen
-// uvnitř else, nebo jen v těle foreach — takže zahození celého podstromu ve
-// walk() nechá porovnání nahoře zelené (chybí na obou stranách stejně
-// nic, protože Validator ty klíče najde a KeyMap by je celé mlčky
-// nezaznamenal). Tahle fixtura má v každé z těch tří větví klíč, který se
-// nikde jinde neobjevuje, takže rozchod je vidět.
+// A fixture of our own, alongside the reference load: none of the four
+// reference workflows has a key that occurs only inside then, only inside
+// else, or only in a foreach body — so discarding a whole subtree in
+// walk() would leave the comparison above green (both sides would equally
+// miss nothing, because the Validator finds those keys and KeyMap would
+// silently not record them at all). This fixture has, in each of those
+// three branches, a key that appears nowhere else, so a drift is visible.
 $dir = TEMP_DIR . '/keymap-validator-contract';
 FileSystem::createDir($dir);
-$vetveBlocks = new BlockRepository($dir);
-$vetveWorkflow = $parser->parseArray([
+$branchBlocks = new BlockRepository($dir);
+$branchWorkflow = $parser->parseArray([
 	'name' => 'w',
 	'inputs' => ['t' => []],
 	'steps' => [
 		[
 			'type' => 'if',
 			'condition' => ['left' => '{%t%}', 'op' => 'not_empty'],
-			'then' => [['type' => 'set', 'key' => 'jenVThen', 'value' => 'x']],
-			'else' => [['type' => 'set', 'key' => 'jenVElse', 'value' => 'x']],
+			'then' => [['type' => 'set', 'key' => 'onlyInThen', 'value' => 'x']],
+			'else' => [['type' => 'set', 'key' => 'onlyInElse', 'value' => 'x']],
 		],
 		[
 			'type' => 'foreach',
 			'over' => '{%t%}',
-			'as' => 'radek',
-			'steps' => [['type' => 'set', 'key' => 'jenVForeach', 'value' => '{%radek%}']],
+			'as' => 'row',
+			'steps' => [['type' => 'set', 'key' => 'onlyInForeach', 'value' => '{%row%}']],
 		],
 	],
 ], 'w.json');
 
-$vetveResult = (new Validator($vetveBlocks))->validate($vetveWorkflow);
-$vetveMap = KeyMap::of($vetveWorkflow);
+$branchResult = (new Validator($branchBlocks))->validate($branchWorkflow);
+$branchMap = KeyMap::of($branchWorkflow);
 
-$vetveGuiWritten = \array_values(\array_filter($vetveMap->keys(), fn($k) => $vetveMap->writeSitesOf($k) !== []));
-$vetveGuiRead = \array_values(\array_filter($vetveMap->keys(), fn($k) => $vetveMap->readSitesOf($k) !== []));
+$branchGuiWritten = \array_values(\array_filter($branchMap->keys(), fn($k) => $branchMap->writeSitesOf($k) !== []));
+$branchGuiRead = \array_values(\array_filter($branchMap->keys(), fn($k) => $branchMap->readSitesOf($k) !== []));
 
-Assert::same(['jenVElse', 'jenVForeach', 'jenVThen', 'radek'], $vetveGuiWritten);
-Assert::same($vetveResult->getWrittenKeys(), $vetveGuiWritten);
-Assert::same($vetveResult->getReadKeys(), $vetveGuiRead);
+Assert::same(['onlyInElse', 'onlyInForeach', 'onlyInThen', 'row'], $branchGuiWritten);
+Assert::same($branchResult->getWrittenKeys(), $branchGuiWritten);
+Assert::same($branchResult->getReadKeys(), $branchGuiRead);

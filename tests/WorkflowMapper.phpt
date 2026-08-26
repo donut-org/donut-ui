@@ -12,10 +12,10 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- round-trip nad referenční zátěží, na hlavičce a vstupech ---
+// --- round-trip over the reference load, on the header and inputs ---
 //
-// Kroky formulář needituje, takže se do porovnání neberou — toWorkflow()
-// je dostane z původního workflow.
+// The form doesn't edit steps, so they aren't taken into the comparison —
+// toWorkflow() gets them from the original workflow.
 
 $files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $files === false ? [] : $files);
@@ -29,66 +29,66 @@ foreach ($files === false ? [] : $files as $file) {
 	Assert::same(\serialize($original->inputs), \serialize($again->inputs), \basename($file));
 }
 
-// --- kroky se převezmou z původního workflow, ne z hodnot ---
+// --- steps are taken from the original workflow, not from the values ---
 //
-// Tohle je ta past: bez $original by úprava hlavičky smazala celý strom.
+// This is the trap: without $original, editing the header would delete the whole tree.
 
-$sKroky = new Workflow(
+$withSteps = new Workflow(
 	name: 'w',
 	steps: [new SetStep(key: 'a', value: Template::parse('1'))],
-	description: 'Původní popis',
+	description: 'Original description',
 );
 
-$poUprave = WorkflowMapper::toWorkflow(
-	['name' => 'w', 'description' => 'Nový popis', 'inputs' => []],
-	$sKroky,
+$afterEdit = WorkflowMapper::toWorkflow(
+	['name' => 'w', 'description' => 'New description', 'inputs' => []],
+	$withSteps,
 );
 
-Assert::same('Nový popis', $poUprave->description);
-Assert::count(1, $poUprave->steps, 'kroky se úpravou hlavičky nesmí ztratit');
-Assert::same('a', $poUprave->steps[0]->key);
+Assert::same('New description', $afterEdit->description);
+Assert::count(1, $afterEdit->steps, 'steps must not be lost when editing the header');
+Assert::same('a', $afterEdit->steps[0]->key);
 
-// --- bez původního workflow (zakládání) vzniká prázdné ---
+// --- without an original workflow (creating), an empty one is built ---
 
-$nove = WorkflowMapper::toWorkflow(['name' => 'nove', 'description' => '', 'inputs' => []]);
+$new = WorkflowMapper::toWorkflow(['name' => 'new', 'description' => '', 'inputs' => []]);
 
-Assert::same('nove', $nove->name);
-Assert::null($nove->description);
-Assert::same([], $nove->steps);
-Assert::same([], $nove->inputs);
+Assert::same('new', $new->name);
+Assert::null($new->description);
+Assert::same([], $new->steps);
+Assert::same([], $new->inputs);
 
-// --- vstupy jdou přes InputMapper: díry a prázdné řádky ---
+// --- inputs go through InputMapper: holes and empty rows ---
 
-$sVstupy = WorkflowMapper::toWorkflow([
+$withInputs = WorkflowMapper::toWorkflow([
 	'name' => 'w',
 	'description' => '',
 	'inputs' => [
-		3 => ['name' => 'zet', 'required' => true, 'default' => '', 'description' => ''],
-		0 => ['name' => 'alfa', 'required' => false, 'default' => 'x', 'description' => 'Áčko'],
-		1 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nikdo'],
+		3 => ['name' => 'zulu', 'required' => true, 'default' => '', 'description' => ''],
+		0 => ['name' => 'alpha', 'required' => false, 'default' => 'x', 'description' => 'A note'],
+		1 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nobody'],
 	],
 ]);
 
-Assert::same(['alfa', 'zet'], \array_keys($sVstupy->inputs));
-Assert::false($sVstupy->inputs['alfa']->required);
-Assert::same('x', $sVstupy->inputs['alfa']->default);
+Assert::same(['alpha', 'zulu'], \array_keys($withInputs->inputs));
+Assert::false($withInputs->inputs['alpha']->required);
+Assert::same('x', $withInputs->inputs['alpha']->default);
 
-// --- toValues dává tvar, který formulář očekává ---
+// --- toValues gives the shape the form expects ---
 
 $values = WorkflowMapper::toValues(new Workflow(
-	name: 'plne',
-	inputs: ['a' => new Input(name: 'a', description: 'Áčko')],
+	name: 'full',
+	inputs: ['a' => new Input(name: 'a', description: 'A note')],
 	steps: [new SetStep(key: 'x', value: Template::parse('1'))],
-	description: 'Popis',
+	description: 'Description',
 ));
 
-Assert::same('plne', $values['name']);
-Assert::same('Popis', $values['description']);
+Assert::same('full', $values['name']);
+Assert::same('Description', $values['description']);
 Assert::same(
-	[['name' => 'a', 'required' => true, 'default' => '', 'description' => 'Áčko']],
+	[['name' => 'a', 'required' => true, 'default' => '', 'description' => 'A note']],
 	$values['inputs'],
 );
-Assert::false(\array_key_exists('steps', $values), 'kroky do formuláře nepatří');
+Assert::false(\array_key_exists('steps', $values), 'steps don\'t belong in the form');
 
-// Nevyplněný popis vyjde jako '', ne jako null — formulář chce řetězce.
-Assert::same('', WorkflowMapper::toValues(new Workflow(name: 'holy'))['description']);
+// An unfilled description comes out as '', not as null — the form wants strings.
+Assert::same('', WorkflowMapper::toValues(new Workflow(name: 'bare'))['description']);

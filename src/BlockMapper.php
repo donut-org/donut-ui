@@ -10,13 +10,13 @@ use Donut\Template;
 
 
 /**
- * Hodnoty formuláře ↔ Block. Čistá konverze, nezná Nette ani HTTP.
+ * Form values ↔ Block. A pure conversion, knows nothing of Nette or HTTP.
  *
- * Indexy v args a inputs můžou mít díry — JS řádky nikdy nepřečísluje, jen
- * je přidává a ubírá, takže po smazání prostředního řádku zůstane v číslování
- * mezera. Srovnání je tady.
+ * Indexes in args and inputs can have holes — JS never renumbers rows, it
+ * only adds and removes them, so deleting a middle row leaves a gap in the
+ * numbering. The sorting happens here.
  *
- * Prázdný řetězec znamená nevyplněno, ne "" — sekce 6 specifikace formátu.
+ * An empty string means unfilled, not "" — section 6 of the format spec.
  */
 final class BlockMapper
 {
@@ -93,8 +93,8 @@ final class BlockMapper
 
 		$groups = [];
 
-		// ksort, protože pořadí klíčů z POSTu není zaručené a na pořadí
-		// argumentů záleží.
+		// ksort, because the order of keys from POST isn't guaranteed and
+		// argument order matters.
 		\ksort($raw);
 
 		foreach ($raw as $group) {
@@ -113,7 +113,7 @@ final class BlockMapper
 				}
 			}
 
-			// Skupina, ve které nezbyl argument, do souboru nepatří.
+			// A group with no argument left doesn't belong in the file.
 			if ($args !== []) {
 				$groups[] = $args;
 			}
@@ -149,7 +149,7 @@ final class BlockMapper
 			}
 		}
 
-		// Prázdný výčet by parser odmítl — je to totéž jako "nepovoluj nic".
+		// The parser would reject an empty list — it's the same as "allow nothing".
 		return $codes === [] ? false : $codes;
 	}
 
@@ -162,8 +162,8 @@ final class BlockMapper
 	}
 
 
-	// PHPStan: mixed z formuláře se nedá bezpečně přetypovat na string.
-	// Formulář posílá skaláry; cokoliv jiného bereme jako nevyplněné.
+	// PHPStan: mixed from the form can't be safely cast to string.
+	// The form sends scalars; anything else is treated as unfilled.
 	private static function toStr(mixed $value): string
 	{
 		return \is_scalar($value) ? (string) $value : '';

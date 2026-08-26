@@ -6,15 +6,15 @@ namespace Donut\Gui;
 
 
 /**
- * Hodnota z formuláře na řetězec.
+ * A form value to a string.
  *
- * Nette vrací z `getValues('array')` mixed — pole, null i objekty. Mapperům
- * jde vždycky o totéž: ořezaný řetězec, a prázdný řetězec brát jako „nic".
- * Bylo to dvakrát bajt po bajtu opsané (WorkflowMapper, InputMapper), tak je
- * to tady jednou.
+ * Nette's `getValues('array')` returns mixed — arrays, null, even objects.
+ * The mappers always want the same thing: a trimmed string, with an empty
+ * string treated as "nothing". It was copied byte for byte twice
+ * (WorkflowMapper, InputMapper), so here it is once.
  *
- * BlockMapper má vlastní instanční toStr()/orNull() — jiné rozhraní, a
- * editace kamene je jiný projekt.
+ * BlockMapper has its own instance toStr()/orNull() — a different
+ * interface, and block editing is a separate project.
  */
 final class Text
 {

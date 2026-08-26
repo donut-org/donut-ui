@@ -9,10 +9,10 @@ use Donut\Validator\Result;
 
 
 /**
- * Problémy z jedné validace, indexované podle cesty ke kroku.
+ * Problems from a single validation, indexed by step path.
  *
- * Problém, který nepatří žádnému kroku, má cestu bez dvojtečky (jen
- * `card-dev.json`) a vytáhne se stejným způsobem.
+ * A problem that doesn't belong to any step has a path without a colon
+ * (just `card-dev.json`) and is looked up the same way.
  */
 final class ProblemMap
 {
@@ -38,7 +38,7 @@ final class ProblemMap
 
 
 	/**
-	 * @return list<Problem> v pořadí, v jakém je validátor ohlásil
+	 * @return list<Problem> in the order the validator reported them
 	 */
 	public function at(StepPath|string $where): array
 	{

@@ -8,18 +8,19 @@ use Donut\Format\Input;
 
 
 /**
- * Vstupy ↔ hodnoty formuláře.
+ * Inputs ↔ form values.
  *
- * Vstupy kamene a vstupy workflow mají tentýž tvar, takže převod má jedno
- * místo — stejný důvod, proč v donutu existuje InputWriter pro serializér.
+ * Block inputs and workflow inputs have the same shape, so the conversion
+ * lives in one place — the same reason donut has InputWriter for the
+ * serializer.
  *
- * Indexy řádků můžou mít díry a jejich pořadí z POSTu není zaručené: JS
- * řádky nikdy nepřečísluje. Srovnání je tady.
+ * Row indexes can have holes, and their order from POST isn't guaranteed:
+ * JS never renumbers rows. The sorting happens here.
  */
 final class InputMapper
 {
 	/**
-	 * @param  mixed $raw řádky z formuláře
+	 * @param  mixed $raw rows from the form
 	 * @return array<string, Input>
 	 */
 	public static function toInputs(mixed $raw): array
@@ -38,7 +39,7 @@ final class InputMapper
 
 			$name = Text::of($row['name'] ?? '');
 
-			// Řádek bez jména je nedopsaný řádek, ne vstup.
+			// A row without a name is an unfinished row, not an input.
 			if ($name === '') {
 				continue;
 			}

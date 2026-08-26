@@ -12,22 +12,24 @@ use Donut\Validator\Problem;
 
 
 /**
- * Šablona pro Workflow:detail — kroky workflow s problémy od validátoru.
+ * Template for Workflow:detail — the workflow's steps with problems from the
+ * validator.
  *
- * $error a $workflow jsou na sobě nezávislé. Workflow načíst nešlo, jen když
- * $workflow zůstane null — a jen tehdy jsou null i všechny ostatní proměnné.
- * Chybějící nebo vadné kameny naopak nastaví $error a zároveň vyplní všechno
- * ostatní: hlavička i strom kroků se vykreslí, chybí jen nálezy validátoru.
- * Proto se detail.latte ptá na $workflow === null, ne na $error.
+ * $error and $workflow are independent of each other. The workflow failed to
+ * load only when $workflow stays null — and only then are all the other
+ * variables null too. Missing or broken blocks instead set $error and still
+ * fill in everything else: the header and the step tree render, only the
+ * validator's findings are missing. That's why detail.latte asks about
+ * $workflow === null, not about $error.
  */
 final class WorkflowDetailTemplate extends LayoutTemplate
 {
 	public ?string $error = null;
 
 	/**
-	 * Jméno z adresy. Drobečky ho potřebují i tehdy, když se soubor
-	 * nenaparsoval a $workflow zůstane null — zrovna tam je jméno souboru
-	 * to jediné, podle čeho uživatel pozná, co se nepovedlo otevřít.
+	 * Name from the address. The breadcrumbs need it even when the file
+	 * failed to parse and $workflow stays null — right there the file name
+	 * is the only thing that tells the user what failed to open.
 	 */
 	public string $name = '';
 
@@ -37,10 +39,10 @@ final class WorkflowDetailTemplate extends LayoutTemplate
 
 	public ?KeyMap $keys = null;
 
-	/** Jméno klíče z adresy; null = nic není vybrané. */
+	/** Key name from the address; null = nothing selected. */
 	public ?string $selectedKey = null;
 
-	/** false = $selectedKey ve workflow není, klik nic nezvýrazní. */
+	/** false = $selectedKey isn't in the workflow, the click highlights nothing. */
 	public bool $selectedKeyExists = true;
 
 	/** @var list<Problem> */

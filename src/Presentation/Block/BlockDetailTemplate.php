@@ -12,11 +12,11 @@ final class BlockDetailTemplate extends LayoutTemplate
 {
 	public ?string $name = null;
 
-	/** Null znamená, že se soubor nenaparsoval — pak je vyplněný $error. */
+	/** Null means the file failed to parse — then $error is set. */
 	public ?Block $block = null;
 
 	public ?string $error = null;
 
-	/** @var list<string> jména workflow, která kámen volají */
+	/** @var list<string> names of workflows that call the block */
 	public array $usedBy = [];
 }

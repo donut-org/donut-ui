@@ -13,62 +13,63 @@ $dir = TEMP_DIR . '/projekt';
 FileSystem::createDir($dir . '/workflows');
 FileSystem::write($dir . '/workflows/w.json', \json_encode([
 	'name' => 'w',
-	'inputs' => ['repo' => ['required' => true, 'description' => 'Repozitář']],
+	'inputs' => ['repo' => ['required' => true, 'description' => 'Repository']],
 	'steps' => [],
 ]));
 
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
 
-// hlavička je to, co uživateli říká, co do kterého políčka patří
+// the header is what tells the user what belongs in which field
 Assert::contains('<th scope=col>Jméno</th>', $html);
 Assert::contains('<th scope=col>Povinný</th>', $html);
 Assert::contains('<th scope=col>Výchozí</th>', $html);
 Assert::contains('<th scope=col>Popis</th>', $html);
 
-// značkování, na které sahá rows.js
+// markup that rows.js reaches into
 Assert::contains('<tbody id=inputs>', $html);
 Assert::match('~<tr class=js-row>~', $html);
 Assert::contains('js-del-row', $html);
 Assert::contains('data-add=inputs', $html);
 
-// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
-// jen "tlačítko ×"
+// the delete button has an accessible name too — without aria-label a
+// screen reader would just hear "button ×"
 Assert::contains('js-del-row" aria-label="Smazat řádek"', $html);
 
-// stará třída .row je pryč — kolidovala by s Bootstrap gridem
+// the old .row class is gone — it would collide with the Bootstrap grid
 Assert::notMatch('~<div class=row[ >]~', $html);
 
-// hlavička pojmenovává buňku, ne políčko v ní — odečítač obrazovky potřebuje
-// aria-label. Hlavičky přitom zůstávají (aserce na ně jsou výš).
-Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Jméno"~', $html);
-Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Povinný"~', $html);
-Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Výchozí"~', $html);
-Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Popis"~', $html);
+// the header names the cell, not the field inside it — a screen reader
+// needs the aria-label. The headers stay as they are (assertions on them
+// are above).
+Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Name"~', $html);
+Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Required"~', $html);
+Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Default"~', $html);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Description"~', $html);
 
-// v úzkém okně se tabulka posouvá, sloupce se nemačkají
+// on a narrow window the table scrolls, the columns don't get squeezed
 Assert::contains('<div class=table-responsive>', $html);
 
-// hodnoty ze souboru v tabulce zůstávají
+// values from the file stay in the table
 Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="repo"~', $html);
-Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Repozitář"~', $html);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Repository"~', $html);
 
-// nápověda pod tabulkou
+// help text under the table
 Assert::contains('--jmeno=hodnota', $html);
 Assert::contains('když ji volající nepředá', $html);
 
 
-// --- stránka kroku: tabulky in a out -----------------------------------
+// --- the step page: the in and out tables -----------------------------
 
-$krok = TEMP_DIR . '/krok';
-FileSystem::createDir($krok . '/blocks');
-FileSystem::createDir($krok . '/workflows');
-FileSystem::write($krok . '/blocks/jq.json', \json_encode([
+$step = TEMP_DIR . '/step';
+FileSystem::createDir($step . '/blocks');
+FileSystem::createDir($step . '/workflows');
+FileSystem::write($step . '/blocks/jq.json', \json_encode([
 	'name' => 'jq',
 	'command' => 'jq',
 	'inputs' => ['filter' => ['required' => true]],
 	'stdin' => ['required' => true],
 ]));
-FileSystem::write($krok . '/workflows/w.json', \json_encode([
+FileSystem::write($step . '/workflows/w.json', \json_encode([
 	'name' => 'w',
 	'steps' => [[
 		'type' => 'run',
@@ -78,7 +79,7 @@ FileSystem::write($krok . '/workflows/w.json', \json_encode([
 	]],
 ]));
 
-[, $stepHtml] = runWorkflowPresenterIn($krok, [
+[, $stepHtml] = runWorkflowPresenterIn($step, [
 	'action' => 'step',
 	'name' => 'w',
 	'at' => 'w.json:steps[0]',
@@ -88,7 +89,7 @@ Assert::contains('<th scope=col>Vstup kamene</th>', $stepHtml);
 Assert::contains('<th scope=col>Co z kamene</th>', $stepHtml);
 Assert::contains('<th scope=col>Pod jakým klíčem do mapy</th>', $stepHtml);
 
-// literál {%klíč%} v hlavičce — Latte ho umí vypsat jen přes {='…'}
+// the literal {%klíč%} in the header — Latte can only output it via {='…'}
 Assert::contains('&#123;%klíč%}', $stepHtml);
 
 Assert::contains('<tbody id=in>', $stepHtml);
@@ -97,107 +98,111 @@ Assert::contains('data-add=in', $stepHtml);
 Assert::contains('data-add=out', $stepHtml);
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 
-// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
-// jen "tlačítko ×"; obě tabulky mají po dvou řádcích (vyplněný + prázdný
-// navíc), tedy dohromady čtyři mazací tlačítka
+// the delete button has an accessible name too — without aria-label a
+// screen reader would just hear "button ×"; both tables have two rows each
+// (the filled one plus an extra empty one), so four delete buttons total
 Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Smazat řádek"'));
 
-// políčka obou tabulek mají přístupné jméno a obě tabulky se v úzkém okně
-// posouvají
-Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Vstup kamene"~', $stepHtml);
-Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="Hodnota"~', $stepHtml);
-Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="Co z kamene"~', $stepHtml);
-Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Pod jakým klíčem do mapy"~', $stepHtml);
+// the fields of both tables have an accessible name, and both tables
+// scroll on a narrow window
+Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Block input"~', $stepHtml);
+Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="Value"~', $stepHtml);
+Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="What from the block"~', $stepHtml);
+Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Under which key in the map"~', $stepHtml);
 Assert::same(2, \substr_count($stepHtml, '<div class=table-responsive>'));
 
-// hodnoty kroku v tabulkách zůstávají
+// the step's values stay in the tables
 Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $stepHtml);
 Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $stepHtml);
 
 
-// --- stránka kamene: tabulka vstupů ------------------------------------
-// Task 6 měnil tři šablony, ne dvě. Bez tohohle bloku projde sadou i úplné
-// rozbití značkování v Block/edit.latte.
+// --- the block page: the inputs table -----------------------------------
+// Task 6 changed three templates, not two. Without this block, the suite
+// would pass even with the markup in Block/edit.latte completely broken.
 
-$kamen = TEMP_DIR . '/kamen';
-FileSystem::createDir($kamen . '/blocks');
-FileSystem::write($kamen . '/blocks/k.json', \json_encode([
+$block = TEMP_DIR . '/block';
+FileSystem::createDir($block . '/blocks');
+FileSystem::write($block . '/blocks/k.json', \json_encode([
 	'name' => 'k',
 	'command' => 'echo',
 	'args' => [['-n']],
-	'inputs' => ['text' => ['required' => true, 'description' => 'Co vypsat']],
+	'inputs' => ['text' => ['required' => true, 'description' => 'What to print']],
 ]));
 
-[, $blockHtml] = runBlockPresenterIn($kamen, ['action' => 'edit', 'name' => 'k']);
+[, $blockHtml] = runBlockPresenterIn($block, ['action' => 'edit', 'name' => 'k']);
 
-// hlavička je to, co uživateli říká, co do kterého políčka patří
+// the header is what tells the user what belongs in which field
 Assert::contains('<th scope=col>Jméno</th>', $blockHtml);
 Assert::contains('<th scope=col>Povinný</th>', $blockHtml);
 Assert::contains('<th scope=col>Výchozí</th>', $blockHtml);
 Assert::contains('<th scope=col>Popis</th>', $blockHtml);
 
-// značkování, na které sahá rows.js
+// markup that rows.js reaches into
 Assert::contains('<tbody id=inputs>', $blockHtml);
 Assert::match('~<tr class=js-row>~', $blockHtml);
 Assert::contains('js-del-row', $blockHtml);
 Assert::contains('data-add=inputs', $blockHtml);
 
-// mazací tlačítko má přístupné jméno taky — bez aria-label by čtečka slyšela
-// jen "tlačítko ×"
+// the delete button has an accessible name too — without aria-label a
+// screen reader would just hear "button ×"
 Assert::contains('js-del-row" aria-label="Smazat řádek"', $blockHtml);
 
-// stará třída .row je pryč — kolidovala by s Bootstrap gridem
+// the old .row class is gone — it would collide with the Bootstrap grid
 Assert::notMatch('~<div class=row[ >]~', $blockHtml);
 
-// políčka mají přístupné jméno a tabulka se v úzkém okně posouvá
-Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Jméno"~', $blockHtml);
-Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Povinný"~', $blockHtml);
-Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Výchozí"~', $blockHtml);
-Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Popis"~', $blockHtml);
+// the fields have an accessible name, and the table scrolls on a narrow window
+Assert::match('~name="inputs\[0\]\[name\]"[^>]*aria-label="Name"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[required\]"[^>]*aria-label="Required"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[default\]"[^>]*aria-label="Default"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*aria-label="Description"~', $blockHtml);
 Assert::contains('<div class=table-responsive>', $blockHtml);
 
-// hodnoty ze souboru v tabulce zůstávají
+// values from the file stay in the table
 Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="text"~', $blockHtml);
-Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Co vypsat"~', $blockHtml);
+Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="What to print"~', $blockHtml);
 
-// nápověda pod tabulkou
+// help text under the table
 Assert::contains('--jmeno=hodnota', $blockHtml);
 Assert::contains('když ji volající nepředá', $blockHtml);
 
-// argumenty jedné skupiny stojí vedle sebe a skupina je vidět jako celek;
-// bez w-auto by z nich form-control udělal svislý sloupec přes celou šířku
+// arguments of one group stand next to each other and the group is visible
+// as a whole; without w-auto, form-control would turn them into a vertical
+// column spanning the full width
 Assert::match('~<div class="arg-group[^"]*\bd-flex\b[^"]*"~', $blockHtml);
 Assert::match('~<div class="arg-group[^"]*\bborder\b[^"]*"~', $blockHtml);
 Assert::match('~name="args\[0\]\[0\]"[^>]*class="form-control w-auto"~', $blockHtml);
 
 
-// --- formuláře jdou z FormFactory --------------------------------------
-// FormFactory.phpt testuje továrnu izolovaně a o skutečných stránkách netvrdí
-// nic. Bez těchhle aserci projde sadou návrat všech pěti formulářů na new Form.
+// --- forms come from FormFactory ----------------------------------------
+// FormFactory.phpt tests the factory in isolation and asserts nothing about
+// the real pages. Without these assertions, the suite would pass even if all
+// five forms reverted to plain new Form.
 
-// WorkflowPresenter: hlavička (text, checkbox, submit)
+// WorkflowPresenter: header (text, checkbox, submit)
 Assert::contains('class="form-control"', $html);
 Assert::contains('class="form-check-input"', $html);
 Assert::contains('class="btn btn-primary"', $html);
 
-// WorkflowPresenter: krok (navíc rozbalovací seznam)
+// WorkflowPresenter: step (plus a dropdown)
 Assert::contains('class="form-control"', $stepHtml);
 Assert::contains('class="form-select"', $stepHtml);
 Assert::contains('class="btn btn-primary"', $stepHtml);
 
-// BlockPresenter: kámen
+// BlockPresenter: block
 Assert::contains('class="form-control"', $blockHtml);
 Assert::contains('class="form-check-input"', $blockHtml);
 Assert::contains('class="btn btn-primary"', $blockHtml);
 
-// přepínače („Povolené selhání") jsou na obou stránkách a třídu mít musí —
-// bez ní vypadají uprostřed bootstrapí stránky jako nedodělek
+// the radios ("Allowed failure") are on both pages and must have the
+// class — without it they look unfinished in the middle of an otherwise
+// Bootstrap page
 Assert::notMatch('~<input type="radio"(?![^>]*form-check-input)~', $blockHtml);
 Assert::notMatch('~<input type="radio"(?![^>]*form-check-input)~', $stepHtml);
 Assert::contains('<input type="radio"', $blockHtml);
 Assert::contains('<input type="radio"', $stepHtml);
 
-// vlastní třída se z prototypu nepřepíše — mazací tlačítko si o btn-danger
-// řeklo při vzniku a továrna mu ji nechává
+// a custom class doesn't get overwritten from the prototype — the delete
+// button asked for btn-danger when it was created, and the factory leaves
+// it alone
 Assert::contains('btn btn-danger', $html);
 Assert::contains('btn btn-danger', $blockHtml);

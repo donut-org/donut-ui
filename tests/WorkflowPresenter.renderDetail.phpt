@@ -72,7 +72,7 @@ Assert::contains('blocks', $presenter->template->error);
 
 // N2: stránka se vykreslí celá, ale bez jediného nálezu validátoru — musí
 // být poznat, že se nevalidovalo, ne že je všechno v pořádku.
-Assert::contains('Validace neproběhla', $presenter->template->error);
+Assert::contains('Validation did not run', $presenter->template->error);
 
 // N3: detail workflow je po založení první místo, kam se čerstvý uživatel
 // dostane. Bez návodu je prázdný projekt slepá ulička — přehled kamenů ho má,
@@ -99,7 +99,7 @@ Assert::type('string', $presenter->template->error);
 // Result neznamená „nic k hlášení", ale „nevalidovalo se". Kdykoli je v
 // blocks/ rozbitý JSON, mizí i skutečné nálezy (třeba „kámen neexistuje") —
 // stránka to musí přiznat, jinak vypadá zvalidovaně.
-Assert::contains('Validace neproběhla', $presenter->template->error);
+Assert::contains('Validation did not run', $presenter->template->error);
 
 // Adresář blocks/ tady existuje, takže rada `mkdir blocks` by byla nesmysl.
 Assert::notContains('mkdir', $presenter->template->error);

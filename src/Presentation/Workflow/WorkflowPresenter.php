@@ -32,8 +32,8 @@ use Nette\IOException;
 
 
 /**
- * Workflow se čtou z profilu, stejně jako u CLI. Nic se necachuje — soubor
- * se čte při každém requestu.
+ * Workflows are read from the profile, same as the CLI. Nothing is cached —
+ * the file is read on every request.
  */
 final class WorkflowPresenter extends Presenter
 {
@@ -89,10 +89,10 @@ final class WorkflowPresenter extends Presenter
 		$template = $this->template;
 		$template->error = null;
 
-		// $name je z query stringu. WorkflowRepository::get() ho hledá jako
-		// klíč v seznamu skutečně existujících souborů, takže lomítka samy
-		// o sobě nikam neukradou — basename() je navíc, aby to platilo, i
-		// kdyby se cesta k souboru někdy zase skládala ručně.
+		// $name comes from the query string. WorkflowRepository::get() looks it
+		// up as a key in the list of files that actually exist, so slashes
+		// alone can't steal anywhere — basename() is extra, to keep that true
+		// even if the file path is ever assembled by hand again.
 		$name = \basename($name);
 		$template->name = $name;
 
@@ -110,24 +110,27 @@ final class WorkflowPresenter extends Presenter
 			$result = (new Validator($blocks))->validate($workflow);
 
 		} catch (ParseException $e) {
-			// Chybějící nebo vadné kameny nejsou důvod schovat celý detail —
-			// totéž pravidlo jako v blockNames(). Bez validátoru se hlásí jen
-			// samotná chyba, ale hlavička, odkaz na obálku i strom kroků
-			// zůstanou; jinak by čerstvý projekt bez blocks/ měl workflow,
-			// se kterým už nejde nic dělat.
+			// Missing or broken blocks aren't a reason to hide the whole detail —
+			// same rule as in blockNames(). Without the validator only the
+			// error itself is reported, but the header, the link to the
+			// envelope and the step tree stay; otherwise a fresh project
+			// without blocks/ would have a workflow that nothing more can be
+			// done with.
 			//
-			// Prázdný Result přitom neznamená „nic k hlášení", ale „nevalidovalo
-			// se" — výjimka může přijít i zevnitř validace, z rozbitého souboru
-			// kamene, a pak jsou pryč i skutečné nálezy (třeba „kámen
-			// neexistuje"). Bez téhle předsádky vypadá stránka zvalidovaně.
+			// An empty Result doesn't mean "nothing to report" here, but
+			// "didn't validate" — the exception can also come from inside
+			// validation, from a broken block file, and then the real
+			// findings (e.g. "block does not exist") are gone too. Without
+			// this guard the page looks validated.
 			$dir = $this->blockDir();
 
-			// Rada `mkdir -p` dává smysl jen u chybějícího adresáře, ne
-			// u rozbitého souboru kamene. Přehled kamenů ji má; detail je po
-			// založení workflow to místo, kam se čerstvý uživatel dostane dřív.
+			// The `mkdir -p` hint only makes sense for a missing directory, not
+			// for a broken block file. The block overview has it; the detail
+			// is where a fresh user arrives first, right after creating a
+			// workflow.
 			$hint = \is_dir($dir) ? '' : ' ' . MissingDir::hint($dir);
 
-			$template->error = 'Validace neproběhla: ' . $e->getMessage() . $hint;
+			$template->error = 'Validation did not run: ' . $e->getMessage() . $hint;
 			$result = new Result;
 		}
 
@@ -139,7 +142,8 @@ final class WorkflowPresenter extends Presenter
 
 		$template->keys = KeyMap::of($workflow);
 
-		// Prázdný řetězec z adresy znamená „nic nevybráno", ne klíč jménem "".
+		// An empty string from the address means "nothing selected", not a
+		// key named "".
 		$template->selectedKey = ($key ?? '') === '' ? null : $key;
 		$template->selectedKeyExists = $template->selectedKey === null
 			|| \in_array($template->selectedKey, $template->keys->keys(), true);
@@ -152,8 +156,8 @@ final class WorkflowPresenter extends Presenter
 
 		return new StepTreeControl(
 			$this->workflowDir(),
-			// basename() stejně jako v renderDetail(): jméno je z query
-			// stringu a tohle je jediné místo, kde ho komponenta dostane.
+			// basename() same as in renderDetail(): the name is from the query
+			// string, and this is the only place the component gets it.
 			\basename(\is_string($raw) ? $raw : ''),
 		);
 	}
@@ -168,20 +172,21 @@ final class WorkflowPresenter extends Presenter
 			$this->stepAt = StepPath::parse($at);
 
 			if ($this->stepAt->workflowName() !== $name) {
-				throw new \InvalidArgumentException("Cesta \"{$at}\" nepatří workflow \"{$name}\".");
+				throw new \InvalidArgumentException("Path \"{$at}\" does not belong to workflow \"{$name}\".");
 			}
 
 			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
 
 			if ($type === null || $type === '') {
-				// Úprava existujícího kroku.
+				// Editing an existing step.
 				$this->editedStep = StepTree::get($workflow, $this->stepAt);
 				$editedType = StepMapper::toValues($this->editedStep)['type'];
 				$this->stepType = \is_string($editedType) ? $editedType : '';
 
 			} else {
-				// Nový krok — zatím nikde neuložený, jen typ a cílová pozice.
+				// A new step — not saved anywhere yet, just the type and target
+				// position.
 				$this->stepType = $type;
 			}
 
@@ -197,16 +202,17 @@ final class WorkflowPresenter extends Presenter
 		$template = $this->template;
 		$template->name = $name;
 		$template->at = $at;
-		// Typ z adresy se nečte znovu — actionStep() ho už vyřešil, a u úpravy
-		// existujícího kroku ho odvodil z kroku samotného, ne z adresy.
+		// The type from the address isn't read again — actionStep() already
+		// resolved it, and for editing an existing step derived it from the
+		// step itself, not from the address.
 		$template->type = $this->stepType;
 		$template->blocks = $this->blockNames();
 	}
 
 
 	/**
-	 * Jména kamenů do rozbalovacího seznamu. Chybějící adresář kamenů není
-	 * důvod stránku shodit — seznam prostě zůstane prázdný.
+	 * Block names for the dropdown list. A missing blocks directory isn't
+	 * a reason to crash the page — the list simply stays empty.
 	 *
 	 * @return array<string, string>
 	 */
@@ -227,11 +233,11 @@ final class WorkflowPresenter extends Presenter
 	{
 		$form = FormFactory::create();
 		$form->addHidden('type')->setDefaultValue($this->stepType);
-		$form->addText('name', 'Název kroku');
+		$form->addText('name', 'Step name');
 
 		if ($this->stepType === 'run') {
-			$form->addSelect('block', 'Kámen', $this->blockNames())
-				->setRequired('Vyber kámen.');
+			$form->addSelect('block', 'Block', $this->blockNames())
+				->setRequired('Choose a block.');
 
 			$shape = $this->rowShape();
 
@@ -239,14 +245,15 @@ final class WorkflowPresenter extends Presenter
 
 			foreach ($shape['in'] as $i) {
 				$row = $in->addContainer((string) $i);
-				// aria-label místo popisku: co do sloupce patří, říká hlavička
-				// tabulky, jenže <th> pojmenovává buňku, ne <input> uvnitř ní —
-				// odečítač obrazovky by jinak četl jen „textbox". Sedí to
-				// i k tomu, kde v tomhle GUI popisky bydlí (u addText()).
-				// Checkbox si musí říct takhle: {input, 'aria-label' => …}
-				// vloží atribut na obalující <label>, kde se ztratí.
-				$row->addText('key')->setHtmlAttribute('aria-label', 'Vstup kamene');
-				$row->addText('value')->setHtmlAttribute('aria-label', 'Hodnota');
+				// aria-label instead of a caption: the table header says what
+				// belongs in the column, but <th> names the cell, not the
+				// <input> inside it — a screen reader would otherwise just read
+				// "textbox". This also matches where labels live in this GUI
+				// (at addText()). A checkbox needs it set this way: {input,
+				// 'aria-label' => …} puts the attribute on the wrapping
+				// <label>, where it gets lost.
+				$row->addText('key')->setHtmlAttribute('aria-label', 'Block input');
+				$row->addText('value')->setHtmlAttribute('aria-label', 'Value');
 			}
 
 			$out = $form->addContainer('out');
@@ -255,49 +262,49 @@ final class WorkflowPresenter extends Presenter
 				$row = $out->addContainer((string) $i);
 				$row->addSelect('channel', null, \array_combine(RunStep::Channels, RunStep::Channels))
 					->setPrompt('—')
-					->setHtmlAttribute('aria-label', 'Co z kamene');
-				$row->addText('value')->setHtmlAttribute('aria-label', 'Pod jakým klíčem do mapy');
+					->setHtmlAttribute('aria-label', 'What from the block');
+				$row->addText('value')->setHtmlAttribute('aria-label', 'Under which key in the map');
 			}
 
 			$form->addText('timeout', 'Timeout (s)')
 				->addCondition(Form::Filled)
-				->addRule(Form::Integer, 'Timeout musí být celé číslo.')
-				->addRule(Form::Min, 'Timeout musí být kladný.', 1);
+				->addRule(Form::Integer, 'Timeout must be an integer.')
+				->addRule(Form::Min, 'Timeout must be positive.', 1);
 
-			$form->addRadioList('allowFailure', 'Povolené selhání', [
-				'inherit' => 'převzít z kamene',
-				'none' => 'jen exit 0',
-				'any' => 'jakýkoliv exit kód',
-				'list' => 'jen tyhle kódy:',
+			$form->addRadioList('allowFailure', 'Allowed failure', [
+				'inherit' => 'inherit from the block',
+				'none' => 'exit 0 only',
+				'any' => 'any exit code',
+				'list' => 'only these codes:',
 			])->setDefaultValue('inherit');
 
 			$form->addText('allowFailureCodes')
 				->addCondition(Form::Filled)
-				->addRule(Form::Pattern, 'Kódy zadej jako čísla oddělená čárkou, třeba 0, 1.', '[0-9]+(\s*,\s*[0-9]+)*');
+				->addRule(Form::Pattern, 'Enter codes as numbers separated by commas, for example 0, 1.', '[0-9]+(\s*,\s*[0-9]+)*');
 
 		} elseif ($this->stepType === 'set') {
-			$form->addText('key', 'Klíč')->setRequired('Klíč je povinný.');
-			$form->addText('value', 'Hodnota');
+			$form->addText('key', 'Key')->setRequired('Key is required.');
+			$form->addText('value', 'Value');
 
 		} elseif ($this->stepType === 'if') {
-			$form->addText('left', 'Vlevo');
-			$form->addSelect('op', 'Operátor', \array_combine(Condition::Operators, Condition::Operators))
-				->setRequired('Vyber operátor.');
-			$form->addText('right', 'Vpravo');
+			$form->addText('left', 'Left');
+			$form->addSelect('op', 'Operator', \array_combine(Condition::Operators, Condition::Operators))
+				->setRequired('Choose an operator.');
+			$form->addText('right', 'Right');
 
 		} elseif ($this->stepType === 'foreach') {
-			$form->addText('over', 'Přes co')->setRequired('Vyplň, přes co se iteruje.');
-			$form->addText('as', 'Pod jakým jménem')->setRequired('Vyplň jméno položky.');
+			$form->addText('over', 'Over what')->setRequired('Fill in what to iterate over.');
+			$form->addText('as', 'Under which name')->setRequired('Fill in the item name.');
 		}
 
-		$form->addSubmit('save', 'Uložit');
+		$form->addSubmit('save', 'Save');
 		$form->onSuccess[] = $this->stepFormSucceeded(...);
 
-		// Táž otázka jako v rowShape(), a proto tentýž mechanismus: ne „je to
-		// POST?", ale „patří ten POST tomuhle formuláři?". Na step.latte je
-		// dnes formulář jediný, takže cizí signál sem nedorazí — ale jeden
-		// idiom na jednu otázku ve všech třech formulářích je to, co drží
-		// GET se signálem v adrese mimo hru.
+		// Same question as in rowShape(), and so the same mechanism: not
+		// "is this a POST?", but "does this POST belong to this form?". Today
+		// step.latte has only one form, so a foreign signal can't arrive here —
+		// but one idiom for one question across all three forms is what keeps
+		// a GET with the signal in the address out of play.
 		if ($this->editedStep !== null && !$this->isFormPost('stepForm-submit')) {
 			$form->setDefaults(StepMapper::toValues($this->editedStep));
 		}
@@ -311,9 +318,9 @@ final class WorkflowPresenter extends Presenter
 	 */
 	private function rowShape(): array
 	{
-		// Jiný signál nenese in/out vůbec — bez téhle podmínky by se formulář
-		// sestavil s nula řádky a stránka by ukázala prázdný krok, který ve
-		// skutečnosti prázdný není.
+		// A different signal carries no in/out at all — without this
+		// condition the form would be built with zero rows and the page would
+		// show an empty step that in fact isn't empty.
 		$post = $this->isFormPost('stepForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: null;
@@ -331,15 +338,16 @@ final class WorkflowPresenter extends Presenter
 
 
 	/**
-	 * Patří došlý POST formuláři daného signálu? Na stránce úpravy jsou
-	 * formuláře dva a data toho druhého (deleteWorkflowForm) o hlavičce
-	 * neříkají nic — jedna odpověď pro tvar formuláře i pro jeho výchozí
-	 * hodnoty.
+	 * Does the incoming POST belong to the form of the given signal? The edit
+	 * page has two forms, and the other one's (deleteWorkflowForm) data says
+	 * nothing about the header — one answer for both the form's shape and
+	 * its default values.
 	 *
-	 * Na HTTP metodu se ptát musíme: signál `do=headerForm-submit` se dá mít
-	 * v adrese i na GETu (ručně složená adresa, záložka, historie), a tam
-	 * getPost() vrátí prázdné pole. Bez téhle podmínky by se formulář
-	 * vykreslil prázdný a „Uložit" by zapsalo prázdný popis a žádné vstupy.
+	 * We have to ask about the HTTP method: the signal `do=headerForm-submit`
+	 * can also be in the address on a GET (a hand-built address, a bookmark,
+	 * history), and there getPost() returns an empty array. Without this
+	 * condition the form would render empty and "Save" would write an empty
+	 * description and no inputs.
 	 */
 	private function isFormPost(string $signal): bool
 	{
@@ -356,22 +364,24 @@ final class WorkflowPresenter extends Presenter
 		$name = \is_string($rawName) ? $rawName : '';
 
 		try {
-			// Typ rozhoduje server, ne skrytý input z POSTu — formulář byl
-			// sestavený podle $this->stepType a POST se stejným typem musí
-			// souhlasit; jinak (foreach → set apod.) by keepChildren() níž
-			// neměl na čem rozhodnout a podstrom by tiše zmizel.
+			// The server decides the type, not the hidden input from the POST —
+			// the form was built according to $this->stepType and the POST
+			// must match the same type; otherwise (foreach → set etc.)
+			// keepChildren() below would have nothing to decide on and the
+			// subtree would silently vanish.
 			$step = StepMapper::toStep(['type' => $this->stepType] + $values);
 			$at = $this->stepAt;
 
 			if ($at === null) {
-				throw new \InvalidArgumentException('Chybí cesta ke kroku.');
+				throw new \InvalidArgumentException('Step path is missing.');
 			}
 
 			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
 
-			// Úprava if nebo foreach nesmí zahodit jejich větve — formulář
-			// je needituje, takže se přenesou z původního kroku.
+			// Editing an if or foreach must not discard their branches — the
+			// form doesn't edit them, so they carry over from the original
+			// step.
 			if ($this->editedStep !== null) {
 				$step = StepMapper::keepChildren($this->editedStep, $step);
 				$workflow = StepTree::replace($workflow, $at, $step);
@@ -382,9 +392,10 @@ final class WorkflowPresenter extends Presenter
 
 			(new WorkflowStore($this->workflowDir()))->save($workflow);
 
-		// IOException tu nemá kdo vyhodit: čtení jde přes JsonSource, které
-		// hlásí ParseException, a WorkflowWriter::writeFile() si svoji
-		// IOException zabaluje do WriteException.
+		// There's nothing to throw an IOException here: reading goes through
+		// JsonSource, which reports ParseException, and
+		// WorkflowWriter::writeFile() wraps its own IOException in a
+		// WriteException.
 		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException $e) {
 			$form->addError($e->getMessage());
 
@@ -425,21 +436,22 @@ final class WorkflowPresenter extends Presenter
 	{
 		$form = FormFactory::create();
 
-		$nameInput = $form->addText('name', 'Jméno')
-			->setRequired('Jméno je povinné.')
-			->addRule(Form::Pattern, 'Jméno smí obsahovat jen písmena, číslice, pomlčku a podtržítko.', '[A-Za-z0-9_-]+');
+		$nameInput = $form->addText('name', 'Name')
+			->setRequired('Name is required.')
+			->addRule(Form::Pattern, 'Name may contain only letters, digits, a hyphen and an underscore.', '[A-Za-z0-9_-]+');
 
 		if ($this->editedWorkflow !== null) {
-			// Přejmenování GUI neumí — workflow se spouští jménem z cronu
-			// a z CLI. Pořadí je závazné: setDisabled() maže hodnotu, takže
-			// musí předcházet setDefaultValue(), a bez setOmitted(false) by
-			// se zakázané pole z getValues() tiše vynechalo.
+			// The GUI can't rename — workflows are run by name from cron and
+			// from the CLI. The order is binding: setDisabled() clears the
+			// value, so it must precede setDefaultValue(), and without
+			// setOmitted(false) the disabled field would be silently omitted
+			// from getValues().
 			$nameInput->setDisabled()
 				->setDefaultValue($this->editedWorkflow->name)
 				->setOmitted(false);
 		}
 
-		$form->addText('description', 'Popis');
+		$form->addText('description', 'Description');
 
 		$post = $this->isFormPost('headerForm-submit')
 			? $this->getHttpRequest()->getPost()
@@ -447,28 +459,28 @@ final class WorkflowPresenter extends Presenter
 
 		$inputs = $form->addContainer('inputs');
 
-		// $this->editedWorkflow?->inputs ?? [] hlásí PHPStanu (level max)
-		// falešně nullsafe.neverNull — rozdělení do proměnné to obchází,
-		// stejně jako u WorkflowMapper::toWorkflow().
+		// $this->editedWorkflow?->inputs ?? [] falsely reports nullsafe.neverNull
+		// to PHPStan (level max) — splitting it into a variable works around
+		// that, same as in WorkflowMapper::toWorkflow().
 		$existingInputs = $this->editedWorkflow?->inputs;
 
 		foreach (RowShape::of(\is_array($post) ? ($post['inputs'] ?? null) : null, \count($existingInputs ?? [])) as $i) {
 			$row = $inputs->addContainer((string) $i);
-			// aria-label viz createComponentStepForm().
-			$row->addText('name')->setHtmlAttribute('aria-label', 'Jméno');
-			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Povinný');
-			$row->addText('default')->setHtmlAttribute('aria-label', 'Výchozí');
-			$row->addText('description')->setHtmlAttribute('aria-label', 'Popis');
+			// aria-label, see createComponentStepForm().
+			$row->addText('name')->setHtmlAttribute('aria-label', 'Name');
+			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Required');
+			$row->addText('default')->setHtmlAttribute('aria-label', 'Default');
+			$row->addText('description')->setHtmlAttribute('aria-label', 'Description');
 		}
 
-		$form->addSubmit('save', 'Uložit');
+		$form->addSubmit('save', 'Save');
 		$form->onSuccess[] = $this->headerFormSucceeded(...);
 
-		// Táž otázka jako u $post výš, a proto tentýž mechanismus: ne „je to
-		// POST?", ale „patří ten POST tomuhle formuláři?". Po cizím signálu
-		// (třeba neúspěšném mazání) je $post null a hodnoty se musí vzít
-		// z disku — jinak se formulář překreslí prázdný a „Uložit" zapíše
-		// prázdný popis a žádné vstupy.
+		// Same question as $post above, and so the same mechanism: not "is this
+		// a POST?", but "does this POST belong to this form?". After a
+		// foreign signal (e.g. a failed delete), $post is null and the values
+		// must be taken from disk — otherwise the form redraws empty and
+		// "Save" writes an empty description and no inputs.
 		if ($this->editedWorkflow !== null && $post === null) {
 			$form->setDefaults(WorkflowMapper::toValues($this->editedWorkflow));
 		}
@@ -487,10 +499,11 @@ final class WorkflowPresenter extends Presenter
 		try {
 			$store = new WorkflowStore($this->workflowDir());
 
-			// Zakládání nesmí přepsat workflow, které už existuje — writeFile()
-			// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
+			// Creating a workflow must not overwrite one that already exists —
+			// writeFile() overwrites without asking, and the user would lose
+			// the content without a single message.
 			if ($this->editedWorkflow === null && $store->exists($workflow->name)) {
-				$form->addError("Workflow \"{$workflow->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+				$form->addError("Workflow \"{$workflow->name}\" already exists. Edit it, or choose another name.");
 
 				return;
 			}
@@ -498,11 +511,11 @@ final class WorkflowPresenter extends Presenter
 			$store->save($workflow);
 
 		} catch (ParseException | WriteException $e) {
-			// WorkflowStore::__construct() hází ParseException, když adresář
-			// workflows neexistuje. WorkflowStore::save() volá
-			// WorkflowWriter::writeFile(), který interní IOException vždycky
-			// zabalí do WriteException — ven se žádná nedostane, takže tu
-			// není co chytat navíc.
+			// WorkflowStore::__construct() throws ParseException when the
+			// workflows directory doesn't exist. WorkflowStore::save() calls
+			// WorkflowWriter::writeFile(), which always wraps its internal
+			// IOException in a WriteException — none escapes, so there's
+			// nothing extra to catch here.
 			$form->addError($e->getMessage());
 
 			return;
@@ -516,7 +529,7 @@ final class WorkflowPresenter extends Presenter
 	{
 		$form = FormFactory::create();
 		$form->addHidden('name');
-		$form->addSubmit('save', 'Smazat')
+		$form->addSubmit('save', 'Delete')
 			->getControlPrototype()->setAttribute('class', 'btn btn-danger');
 		$form->onSuccess[] = $this->deleteWorkflowFormSucceeded(...);
 
@@ -529,14 +542,15 @@ final class WorkflowPresenter extends Presenter
 		/** @var array{name: string} $values */
 		$values = $form->getValues('array');
 
-		// Jméno jde ze skrytého pole, ne z $this->editedWorkflow — mazání
-		// nesmí záviset na tom, že se soubor podařilo naparsovat. Rozbité
-		// workflow je zrovna to, které uživatel smazat potřebuje nejvíc.
-		// basename() stejně jako jinde: jméno pochází z požadavku.
+		// The name comes from the hidden field, not from $this->editedWorkflow —
+		// deleting must not depend on the file having parsed successfully.
+		// A broken workflow is exactly the one the user needs to delete the
+		// most. basename() same as elsewhere: the name comes from the
+		// request.
 		$name = \basename($values['name']);
 
 		if ($name === '') {
-			$form->addError('Není co mazat.');
+			$form->addError('Nothing to delete.');
 
 			return;
 		}

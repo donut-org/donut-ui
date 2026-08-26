@@ -55,11 +55,12 @@ final class BlockPresenter extends Presenter
 			$repository = new BlockRepository($dir);
 
 		} catch (ParseException $e) {
-			// Jediná chyba, kterou sem BlockRepository pustí, je chybějící
-			// adresář — jinde v konstruktoru neselže, takže návod platí vždycky
-			// a na is_dir() se tu (na rozdíl od Workflow:detail) ptát nemusíme.
-			// Hláška je z donutu (sdílí ji s CLI), návod k ní patří sem — do
-			// prezenteru, stejně jako u Workflow:detail.
+			// The only error BlockRepository lets through here is a missing
+			// directory — it fails nowhere else in the constructor, so the hint
+			// always applies, and we don't need to ask is_dir() here (unlike
+			// Workflow:detail). The message comes from donut (shared with the
+			// CLI), the hint belongs here — in the presenter, same as for
+			// Workflow:detail.
 			$template->blocks = [];
 			$template->error = $e->getMessage() . ' ' . MissingDir::hint($dir);
 			$template->dir = $dir;
@@ -74,8 +75,8 @@ final class BlockPresenter extends Presenter
 				$blocks[$name] = $repository->get($name);
 
 			} catch (ParseException $e) {
-				// Vadný soubor nesmí schovat ostatní — stejné pravidlo jako
-				// u `donut --list`.
+				// A broken file must not hide the others — same rule as
+				// `donut --list`.
 				$blocks[$name] = $e->getMessage();
 			}
 		}
@@ -93,11 +94,11 @@ final class BlockPresenter extends Presenter
 			$this->detail = $this->store()->get($name);
 
 		} catch (ParseException $e) {
-			// Chybějící adresář i nenaparsovatelný soubor končí stejně:
-			// stránka se vykreslí s hláškou a s odkazem na editaci, protože
-			// rozbitý kámen je ten, u kterého je cesta k opravě potřeba
-			// nejvíc. Totéž pravidlo má Workflow:detail — odkaz „upravit
-			// hlavičku" je v detail.latte mimo {if $workflow !== null}.
+			// A missing directory and an unparseable file end the same way:
+			// the page renders with the message and a link to edit, because
+			// a broken block is the one where the way to fix it is needed
+			// the most. Workflow:detail has the same rule — the "edit
+			// header" link in detail.latte sits outside {if $workflow !== null}.
 			/** @var BlockDetailTemplate $template */
 			$template = $this->template;
 			$template->error = $e->getMessage();
@@ -148,12 +149,12 @@ final class BlockPresenter extends Presenter
 		$form = FormFactory::create();
 		$shape = $this->formShape();
 
-		$name = $form->addText('name', 'Jméno')
-			->setRequired('Jméno je povinné.')
-			->addRule(Form::Pattern, 'Jméno smí obsahovat jen písmena, číslice, pomlčku a podtržítko.', '[A-Za-z0-9_-]+');
+		$name = $form->addText('name', 'Name')
+			->setRequired('Name is required.')
+			->addRule(Form::Pattern, 'Name may contain only letters, digits, a hyphen and an underscore.', '[A-Za-z0-9_-]+');
 
-		$form->addText('description', 'Popis');
-		$form->addText('command', 'Příkaz')->setRequired('Příkaz je povinný.');
+		$form->addText('description', 'Description');
+		$form->addText('command', 'Command')->setRequired('Command is required.');
 
 		$args = $form->addContainer('args');
 
@@ -169,57 +170,59 @@ final class BlockPresenter extends Presenter
 
 		foreach ($shape['inputs'] as $i) {
 			$row = $inputs->addContainer((string) $i);
-			// aria-label místo popisku: co do sloupce patří, říká hlavička
-			// tabulky, jenže <th> pojmenovává buňku, ne <input> uvnitř ní —
-			// odečítač obrazovky by jinak četl jen „textbox". Doslova jako
-			// ve WorkflowPresenter::createComponentHeaderForm(); checkbox si
-			// o atribut musí říct takhle, ze šablony by skončil na obalujícím
-			// <label>, kde se ztratí.
-			$row->addText('name')->setHtmlAttribute('aria-label', 'Jméno');
-			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Povinný');
-			$row->addText('default')->setHtmlAttribute('aria-label', 'Výchozí');
-			$row->addText('description')->setHtmlAttribute('aria-label', 'Popis');
+			// aria-label instead of a caption: the table header says what
+			// belongs in the column, but <th> names the cell, not the <input>
+			// inside it — a screen reader would otherwise just read "textbox".
+			// Literally as in WorkflowPresenter::createComponentHeaderForm();
+			// a checkbox needs the attribute set this way, from the template
+			// it would end up on the wrapping <label>, where it gets lost.
+			$row->addText('name')->setHtmlAttribute('aria-label', 'Name');
+			$row->addCheckbox('required')->setHtmlAttribute('aria-label', 'Required');
+			$row->addText('default')->setHtmlAttribute('aria-label', 'Default');
+			$row->addText('description')->setHtmlAttribute('aria-label', 'Description');
 		}
 
-		$form->addCheckbox('hasStdin', 'Kámen čte stdin');
-		$form->addCheckbox('stdinRequired', 'stdin je povinný');
-		$form->addText('stdinDescription', 'Popis stdin');
+		$form->addCheckbox('hasStdin', 'Block reads stdin');
+		$form->addCheckbox('stdinRequired', 'stdin is required');
+		$form->addText('stdinDescription', 'stdin description');
 
 		$form->addText('timeout', 'Timeout (s)')
 			->addCondition(Form::Filled)
-			->addRule(Form::Integer, 'Timeout musí být celé číslo.')
-			->addRule(Form::Min, 'Timeout musí být kladný.', 1);
+			->addRule(Form::Integer, 'Timeout must be an integer.')
+			->addRule(Form::Min, 'Timeout must be positive.', 1);
 
-		$form->addRadioList('allowFailure', 'Povolené selhání', [
-			'none' => 'jen exit 0',
-			'any' => 'jakýkoliv exit kód',
-			'list' => 'jen tyhle kódy:',
+		$form->addRadioList('allowFailure', 'Allowed failure', [
+			'none' => 'exit 0 only',
+			'any' => 'any exit code',
+			'list' => 'only these codes:',
 		])->setDefaultValue('none');
 
 		$form->addText('allowFailureCodes')
 			->addCondition(Form::Filled)
-			->addRule(Form::Pattern, 'Kódy zadej jako čísla oddělená čárkou, třeba 0, 1.', '[0-9]+(\s*,\s*[0-9]+)*');
+			->addRule(Form::Pattern, 'Enter codes as numbers separated by commas, for example 0, 1.', '[0-9]+(\s*,\s*[0-9]+)*');
 
-		$form->addSubmit('save', 'Uložit');
+		$form->addSubmit('save', 'Save');
 		$form->onSuccess[] = $this->blockFormSucceeded(...);
 
 		if ($this->edited !== null) {
-			// Přejmenování je mimo návrh — spec: „Jméno je ve formuláři jen
-			// při zakládání." Pole zůstává vidět kvůli kontextu, ale je
-			// needitovatelné a jeho hodnota jde vždy z načteného kamene, ne
-			// z POSTu — setDisabled() ochrání i ručně poslaný požadavek
-			// s jiným jménem (jinak by šlo tímhle kanálem přepsat cizí kámen).
-			// Pořadí volání je důležité: setDisabled() volá interně
-			// setValue(null), takže setDefaultValue() musí přijít až po něm.
-			// setOmitted(false) je nutné taky — needitovatelné pole je bez
-			// něj z getValues() potichu vynechané (Nette default pro disabled
-			// kontrolky) a BlockMapper by dostal jméno '' místo skutečného.
+			// Renaming is out of scope — spec: "Name is only in the form when
+			// creating." The field stays visible for context, but it's
+			// non-editable and its value always comes from the loaded block, not
+			// from the POST — setDisabled() also protects against a manually
+			// sent request with a different name (otherwise this channel could
+			// overwrite someone else's block). Call order matters: setDisabled()
+			// calls setValue(null) internally, so setDefaultValue() must come
+			// after it. setOmitted(false) is needed too — without it, a
+			// non-editable field is silently omitted from getValues() (Nette's
+			// default for disabled controls) and BlockMapper would get the
+			// name '' instead of the real one.
 			$name->setDisabled()->setDefaultValue($this->edited->name)->setOmitted(false);
 
-			// Táž otázka jako ve formShape(), a proto tentýž mechanismus: ne
-			// „je to POST?", ale „patří ten POST tomuhle formuláři?". Po cizím
-			// signálu (třeba neúspěšném mazání) se hodnoty musí vzít z disku —
-			// jinak se formulář překreslí prázdný a „Uložit" ho tak zapíše.
+			// Same question as in formShape(), and so the same mechanism: not
+			// "is this a POST?", but "does this POST belong to this form?".
+			// After a foreign signal (e.g. a failed delete) the values must be
+			// taken from disk — otherwise the form redraws empty and "Save"
+			// writes it that way.
 			if (!$this->isFormPost('blockForm-submit')) {
 				$form->setDefaults((new BlockMapper)->toValues($this->edited));
 			}
@@ -239,19 +242,20 @@ final class BlockPresenter extends Presenter
 		try {
 			$store = $this->store();
 
-			// Zakládání nesmí přepsat kámen, který už existuje — writeFile()
-			// přepisuje bez ptaní a uživatel by o obsah přišel bez jediné hlášky.
-			// Editace na tohle narazit nemůže — jméno je při ní needitovatelné
-			// (viz createComponentBlockForm).
+			// Creating a block must not overwrite one that already exists —
+			// writeFile() overwrites without asking, and the user would lose
+			// the content without a single message. Editing can't run into
+			// this — the name is non-editable during it (see
+			// createComponentBlockForm).
 			if ($this->edited === null && $store->exists($block->name)) {
-				$form->addError("Kámen \"{$block->name}\" už existuje. Uprav ho, nebo zvol jiné jméno.");
+				$form->addError("Block \"{$block->name}\" already exists. Edit it, or choose another name.");
 
 				return;
 			}
 
 		} catch (ParseException $e) {
-			// BlockStore::__construct() hází ParseException, když adresář
-			// blocks neexistuje.
+			// BlockStore::__construct() throws ParseException when the blocks
+			// directory doesn't exist.
 			$form->addError($e->getMessage());
 
 			return;
@@ -264,9 +268,9 @@ final class BlockPresenter extends Presenter
 		$template->errors = self::messages($result->getErrors());
 		$template->warnings = self::messages($result->getWarnings());
 
-		// Chyba blokuje, varování ne.
+		// An error blocks, a warning doesn't.
 		if ($result->hasErrors()) {
-			$form->addError('Kámen se neuložil — oprav chyby níž.');
+			$form->addError('The block was not saved — fix the errors below.');
 
 			return;
 		}
@@ -298,7 +302,7 @@ final class BlockPresenter extends Presenter
 	{
 		$form = FormFactory::create();
 		$form->addHidden('name');
-		$form->addSubmit('delete', 'Smazat')
+		$form->addSubmit('delete', 'Delete')
 			->getControlPrototype()->setAttribute('class', 'btn btn-danger');
 		$form->onSuccess[] = $this->deleteFormSucceeded(...);
 
@@ -311,30 +315,32 @@ final class BlockPresenter extends Presenter
 		/** @var array{name: string} $values */
 		$values = $form->getValues('array');
 
-		// basename() stejně jako v deleteWorkflowFormSucceeded(): jméno pochází
-		// z požadavku. Samo o sobě nic neukradne — BlockStore::exists() se ptá
-		// do mapy klíčované basename($path, '.json'), takže jméno s lomítkem
-		// v ní nikdy nemůže být klíčem — ale ochrana má být vidět na obou
-		// polovinách GUI a nemá viset na vzdálené implementaci.
+		// basename() same as in deleteWorkflowFormSucceeded(): the name comes
+		// from the request. It can't steal anything by itself — BlockStore::exists()
+		// looks it up in a map keyed by basename($path, '.json'), so a name with
+		// a slash can never be a key in it — but the protection should be
+		// visible on both halves of the GUI and shouldn't depend on a distant
+		// implementation.
 		$name = \basename($values['name']);
 
-		// Stejný guard jako v deleteWorkflowFormSucceeded(): bez něj se prázdné
-		// jméno ohlásí jako „Kámen "" neexistuje", což o ničem nevypovídá.
+		// Same guard as in deleteWorkflowFormSucceeded(): without it, an empty
+		// name would be reported as 'Block "" does not exist.', which tells
+		// the user nothing.
 		if ($name === '') {
-			$form->addError('Není co mazat.');
+			$form->addError('Nothing to delete.');
 
 			return;
 		}
 
 		$usage = BlockUsage::of($this->loadWorkflows());
 
-		// Chyba blokuje, stejně jako u ukládání. Smazat kámen, na který se
-		// odkazuje workflow, není varování — je to rozbití něčeho, co běželo.
-		// Šablona tlačítko v takovém případě nevykreslí; tohle je druhá
-		// pojistka pro ručně poslaný POST.
+		// An error blocks, same as when saving. Deleting a block that a
+		// workflow references isn't a warning — it's breaking something that
+		// worked. The template won't render the button in that case; this is
+		// the second safeguard, for a manually sent POST.
 		if (isset($usage[$name])) {
 			$form->addError(
-				"Kámen \"{$name}\" nejde smazat — používá ho: " . \implode(', ', $usage[$name]) . '.'
+				"Block \"{$name}\" cannot be deleted — used by: " . \implode(', ', $usage[$name]) . '.'
 			);
 
 			return;
@@ -354,30 +360,30 @@ final class BlockPresenter extends Presenter
 
 
 	/**
-	 * Kolik řádků formulář má.
+	 * How many rows the form has.
 	 *
-	 * Při POSTu se odvodí z došlých dat — JS řádky nikdy nepřečísluje, takže
-	 * indexy můžou mít díry a kontejnery musí vzniknout přesně pro ty klíče,
-	 * které dorazily. Při GETu se vezmou z načteného kamene, plus jeden
-	 * prázdný řádek navíc, aby bylo kam psát.
+	 * On a POST it's derived from the incoming data — JS never renumbers rows,
+	 * so indexes can have gaps and containers must be created for exactly the
+	 * keys that arrived. On a GET they're taken from the loaded block, plus
+	 * one extra empty row so there's somewhere to write.
 	 *
-	 * Klíče z POSTu se filtrují na číslice: jméno komponenty v Nette musí
-	 * odpovídat [a-zA-Z0-9_]+ a nic jiného sem stejně nepatří.
+	 * Keys from the POST are filtered to digits: a Nette component name must
+	 * match [a-zA-Z0-9_]+ and nothing else belongs here anyway.
 	 *
 	 * @return array{args: array<int, array<int, int>>, inputs: array<int, int>}
 	 */
 	private function formShape(): array
 	{
-		// Jiný signál (třeba deleteForm-submit) nenese args/inputs vůbec —
-		// bez týhle podmínky by se blockForm sestavil s nula skupinami
-		// a nula řádky a stránka by při odmítnutém mazání ukázala prázdný
-		// obsah kamene, který ve skutečnosti pořád existuje.
+		// A different signal (e.g. deleteForm-submit) carries no args/inputs
+		// at all — without this condition, blockForm would be built with
+		// zero groups and zero rows, and after a rejected delete the page
+		// would show an empty block that in fact still exists.
 		$post = $this->isFormPost('blockForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: [];
 
-		// getPost() bez argumentu vrací pole, ale návratový typ má mixed —
-		// is_array() tu typ zúží pro PHPStan.
+		// getPost() without an argument returns an array, but its return type
+		// is mixed — is_array() narrows the type here for PHPStan.
 		if (\is_array($post) && $post !== []) {
 			return [
 				'args' => self::nestedIndexes($post['args'] ?? []),
@@ -396,7 +402,8 @@ final class BlockPresenter extends Presenter
 			$inputs = \array_keys(\array_values($this->edited->inputs));
 		}
 
-		// Jeden prázdný řádek navíc, aby měl uživatel kam psát i bez JS.
+		// One extra empty row so the user has somewhere to write even
+		// without JS.
 		$args[] = [0];
 		$inputs[] = \count($inputs);
 
@@ -405,17 +412,19 @@ final class BlockPresenter extends Presenter
 
 
 	/**
-	 * Patří došlý POST formuláři daného signálu? Na stránce editace jsou
-	 * formuláře dva a data toho druhého (deleteForm) o obsahu kamene neříkají
-	 * nic — jedna odpověď pro tvar formuláře i pro jeho výchozí hodnoty.
+	 * Does the incoming POST belong to the form of the given signal? The edit
+	 * page has two forms, and the other one's (deleteForm) data says nothing
+	 * about the block's content — one answer for both the form's shape and
+	 * its default values.
 	 *
-	 * Na HTTP metodu se ptát musíme: signál `do=blockForm-submit` se dá mít
-	 * v adrese i na GETu (ručně složená adresa, záložka, historie), a tam
-	 * getPost() vrátí prázdné pole. Bez téhle podmínky by se formulář
-	 * vykreslil prázdný a „Uložit" by tak kámen zapsalo.
+	 * We have to ask about the HTTP method: the signal `do=blockForm-submit`
+	 * can also be in the address on a GET (a hand-built address, a bookmark,
+	 * history), and there getPost() returns an empty array. Without this
+	 * condition the form would render empty and "Save" would write the block
+	 * that way.
 	 *
-	 * Tvar je schválně stejný jako u WorkflowPresenter::isFormPost() — jeden
-	 * idiom na jednu otázku v obou polovinách GUI.
+	 * The shape is deliberately the same as WorkflowPresenter::isFormPost() —
+	 * one idiom for one question on both halves of the GUI.
 	 */
 	private function isFormPost(string $signal): bool
 	{
@@ -483,15 +492,15 @@ final class BlockPresenter extends Presenter
 			$repository = new WorkflowRepository($this->profile->workflowsDir());
 
 			foreach ($repository->loadAll() as $name => $workflow) {
-				// Vadné workflow nesmí shodit stránku — o použití kamene
-				// neřekne nic, ale zbytek má fungovat.
+				// A broken workflow must not crash the page — it won't say
+				// anything about block usage, but the rest has to work.
 				if (!\is_string($workflow)) {
 					$workflows[$name] = $workflow;
 				}
 			}
 
 		} catch (ParseException) {
-			// Bez adresáře workflows se použití prostě nezobrazí.
+			// Without the workflows directory, usage simply won't show.
 		}
 
 		return $workflows;

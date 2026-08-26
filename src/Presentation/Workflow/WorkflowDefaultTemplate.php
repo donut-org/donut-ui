@@ -9,11 +9,11 @@ use Donut\Gui\Presentation\LayoutTemplate;
 
 
 /**
- * Šablona pro Workflow:default — seznam workflow z workflows/.
+ * Template for Workflow:default — list of workflows from workflows/.
  */
 final class WorkflowDefaultTemplate extends LayoutTemplate
 {
-	/** @var array<string, Workflow|string> jméno => workflow, nebo hláška o chybě */
+	/** @var array<string, Workflow|string> name => workflow, or an error message */
 	public array $workflows = [];
 
 	public ?string $error = null;

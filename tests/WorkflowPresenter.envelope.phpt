@@ -77,7 +77,7 @@ $before = FileSystem::read($project . '/workflows/w.json');
 );
 
 Assert::false($response instanceof RedirectResponse, 'přepis se nesmí tvářit jako úspěch');
-Assert::contains('existuje', $html);
+Assert::contains('already exists', $html);
 Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'původní soubor musí zůstat bajt po bajtu stejný');
 
 // --- úprava nesmí ztratit kroky ---

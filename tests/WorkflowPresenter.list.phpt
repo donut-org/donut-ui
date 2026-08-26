@@ -12,41 +12,41 @@ $dir = TEMP_DIR . '/projekt';
 FileSystem::createDir($dir . '/workflows');
 FileSystem::write($dir . '/workflows/sync.json', \json_encode([
 	'name' => 'sync',
-	'description' => 'Synchronizuje kartu',
+	'description' => 'Synchronizes the card',
 	'steps' => [],
 ]));
-FileSystem::write($dir . '/workflows/rozbite.json', 'toto neni json');
+FileSystem::write($dir . '/workflows/broken.json', '{not valid json');
 
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'default']);
 
-// hlavičky sloupců
+// column headers
 Assert::contains('<th scope=col>Jméno</th>', $html);
 Assert::contains('<th scope=col>Popis</th>', $html);
 
-// tabulka se na úzkém okně posouvá, nemačká
+// the table scrolls on a narrow window, it doesn't get squeezed
 Assert::contains('table-responsive', $html);
 
-// platné workflow: jméno je odkaz na detail, popis je vidět
+// a valid workflow: the name is a link to the detail, the description is visible
 Assert::match('~<a href="[^"]*action=detail[^"]*">sync</a>~', $html);
-Assert::contains('Synchronizuje kartu', $html);
+Assert::contains('Synchronizes the card', $html);
 
-// rozbité workflow: jméno není odkaz na detail, chyba je vidět
-Assert::notMatch('~<a href="[^"]*">rozbite</a>~', $html);
-Assert::contains('<strong>rozbite</strong>', $html);
+// a broken workflow: the name isn't a link to the detail, the error is visible
+Assert::notMatch('~<a href="[^"]*">broken</a>~', $html);
+Assert::contains('<strong>broken</strong>', $html);
 Assert::contains('class=text-danger', $html);
 
-// a hlavně: i rozbitý řádek má cestu k opravě a mazání
-Assert::match('~<a href="[^"]*name=rozbite[^"]*"[^>]*>upravit</a>~', $html);
+// and importantly: even a broken row has a way to fix and delete it
+Assert::match('~<a href="[^"]*name=broken[^"]*"[^>]*>upravit</a>~', $html);
 Assert::match('~<a href="[^"]*name=sync[^"]*"[^>]*>upravit</a>~', $html);
 
-// odkazy „upravit" se v seznamu odkazů odečítače obrazovky musí rozlišit
-Assert::contains('aria-label="Upravit workflow rozbite"', $html);
+// "upravit" (edit) links must be distinguishable to a screen reader
+Assert::contains('aria-label="Upravit workflow broken"', $html);
 Assert::contains('aria-label="Upravit workflow sync"', $html);
 
-// tlačítka mají bootstrapí třídy — jinak vypadají jako holé odkazy
-// uprostřed jinak nastylované stránky
+// buttons have Bootstrap classes — otherwise they look like bare links
+// in the middle of an otherwise styled page
 Assert::match('~<a[^>]*class="btn btn-primary"[^>]*>\\+ nové workflow</a>~', $html);
 Assert::match('~<a[^>]*class="btn btn-primary btn-sm"[^>]*>upravit</a>~', $html);
 
-// starý seznam je pryč
+// the old list is gone
 Assert::notContains('<ul>', $html);

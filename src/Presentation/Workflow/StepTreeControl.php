@@ -18,14 +18,15 @@ use Nette\Application\UI\Control;
 
 
 /**
- * Strom kroků workflow i s ovládáním.
+ * The workflow's step tree, with controls.
  *
- * Jako komponenta proto, že má vlastní šablonu, vlastní signály a vlastní
- * stav. Prezentéru tím zůstane seznam, detail a formuláře.
+ * As a component because it has its own template, its own signals and its
+ * own state. That leaves the presenter with the list, the detail and the
+ * forms.
  *
- * Jméno workflow a adresář dostává z konstruktoru, ne z adresy: signál běží
- * dřív než render, takže se na parametry akce spolehnout nedá, a jméno má
- * takhle jediné místo, kde se ověřuje.
+ * It gets the workflow name and directory from the constructor, not from the
+ * address: a signal runs before render, so the action's parameters can't be
+ * relied on, and this way the name has a single place where it's verified.
  */
 final class StepTreeControl extends Control
 {
@@ -81,16 +82,16 @@ final class StepTreeControl extends Control
 
 
 	/**
-	 * Vzít cestu z POSTu, načíst workflow, provést operaci, uložit, vrátit se
-	 * na přehled.
+	 * Take the path from the POST, load the workflow, perform the operation,
+	 * save, go back to the overview.
 	 *
-	 * Validace se **nespouští** — u workflow neblokuje, protože mezistavy
-	 * přerovnávání jsou skoro vždycky neplatné. Problémy se ukážou v přehledu,
-	 * kam se vzápětí vracíme.
+	 * Validation **doesn't run** — for a workflow it doesn't block, because
+	 * intermediate states of reordering are almost always invalid. Problems
+	 * show up in the overview, where we return right after.
 	 *
-	 * Při chybě se **nepřesměrovává**: redirect() hodí AbortException a chyba
-	 * by se nikam nedostala. Flash zprávy k dispozici nejsou (žádná session),
-	 * takže se nechá doběhnout render, který $error vykreslí.
+	 * On error it **doesn't redirect**: redirect() throws AbortException and
+	 * the error would get nowhere. Flash messages aren't available (no
+	 * session), so render is left to run through, and it renders $error.
 	 *
 	 * @param callable(Workflow, StepPath): Workflow $operation
 	 */
@@ -101,20 +102,22 @@ final class StepTreeControl extends Control
 		try {
 			$at = StepPath::parse(\is_string($raw) ? $raw : '');
 
-			// Cesta nese jméno workflow; kdyby nesouhlasilo s tím, nad kterým
-			// komponenta stojí, operace by sáhla do cizího souboru.
+			// The path carries the workflow name; if it didn't match the one
+			// the component stands on, the operation would reach into a
+			// foreign file.
 			if ($at->workflowName() !== $this->name) {
 				throw new \InvalidArgumentException(
-					"Cesta \"{$at}\" nepatří workflow \"{$this->name}\"."
+					"Path \"{$at}\" does not belong to workflow \"{$this->name}\"."
 				);
 			}
 
 			$workflow = (new WorkflowRepository($this->directory))->get($this->name);
 			(new WorkflowStore($this->directory))->save($operation($workflow, $at));
 
-		// IOException tu nemá kdo vyhodit: čtení jde přes JsonSource, které
-		// hlásí ParseException, a WorkflowWriter::writeFile() si svoji
-		// IOException zabaluje do WriteException.
+		// There's nothing to throw an IOException here: reading goes through
+		// JsonSource, which reports ParseException, and
+		// WorkflowWriter::writeFile() wraps its own IOException in a
+		// WriteException.
 		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException $e) {
 			$this->error = $e->getMessage();
 

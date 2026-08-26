@@ -14,14 +14,14 @@ FileSystem::createDir($dir . '/workflows');
 
 FileSystem::write($dir . '/blocks/curl-get.json', \json_encode([
 	'name' => 'curl-get',
-	'description' => 'Stáhne adresu',
+	'description' => 'Downloads the address',
 	'command' => 'curl',
-	'args' => [['-sS'], ['-H', '{%hlavicka%}'], ['{%url%}']],
+	'args' => [['-sS'], ['-H', '{%header%}'], ['{%url%}']],
 	'inputs' => [
-		'url' => ['required' => true, 'description' => 'Úplná adresa'],
-		'hlavicka' => ['required' => false, 'default' => 'Accept: */*'],
+		'url' => ['required' => true, 'description' => 'Full address'],
+		'header' => ['required' => false, 'default' => 'Accept: */*'],
 	],
-	'stdin' => ['required' => false, 'description' => 'Tělo požadavku'],
+	'stdin' => ['required' => false, 'description' => 'Request body'],
 	'timeout' => 30,
 	'allow_failure' => [0, 22],
 ]));
@@ -33,49 +33,51 @@ FileSystem::write($dir . '/workflows/sync.json', \json_encode([
 
 [, $html] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'curl-get']);
 
-// příkaz a popis
-// Samotné „curl" by tuhle aserci neuhlídalo — kámen se jmenuje curl-get,
-// takže to slovo je v HTML z <h1>, z drobečků i z odkazů, a příkaz mohl
-// z detailu úplně zmizet, aniž by to sada poznala.
+// command and description
+// "curl" alone wouldn't catch this assertion — the block is named curl-get,
+// so that word is in the HTML from <h1>, from the breadcrumbs and from the
+// links, and the command could vanish from the detail entirely without the
+// suite noticing.
 Assert::contains('příkaz: <code>curl</code>', $html);
-Assert::contains('Stáhne adresu', $html);
+Assert::contains('Downloads the address', $html);
 
-// argumenty — dnešní přehled je nevypisuje vůbec, detail je vypsat musí
+// arguments — today's overview doesn't list them at all, the detail must
 Assert::contains('-sS', $html);
 Assert::contains('-H', $html);
 
-// vstupy i s povinností a výchozí hodnotou
+// inputs, with required-ness and default value too
 Assert::contains('url', $html);
 Assert::contains('povinný', $html);
-Assert::contains('Úplná adresa', $html);
+Assert::contains('Full address', $html);
 Assert::contains('Accept: */*', $html);
 
 // stdin, timeout, allow_failure
-Assert::contains('Tělo požadavku', $html);
+Assert::contains('Request body', $html);
 Assert::contains('30', $html);
 Assert::contains('22', $html);
 
-// kdo kámen používá
+// who uses the block
 Assert::contains('sync', $html);
 
-// cesta na editaci
+// path to editing
 Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $html);
 
 
-// --- rozbitý kámen musí jít otevřít ---
-FileSystem::write($dir . '/blocks/rozbity.json', 'toto neni json');
-FileSystem::write($dir . '/workflows/oprav.json', \json_encode([
-	'name' => 'oprav',
-	'steps' => [['type' => 'run', 'block' => 'rozbity', 'in' => []]],
+// --- a broken block must be possible to open ---
+FileSystem::write($dir . '/blocks/broken.json', '{not valid json');
+FileSystem::write($dir . '/workflows/fix.json', \json_encode([
+	'name' => 'fix',
+	'steps' => [['type' => 'run', 'block' => 'broken', 'in' => []]],
 ]));
 
-[, $rozbity] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'rozbity']);
+[, $broken] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'broken']);
 
-Assert::contains('alert-danger', $rozbity);
-Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $rozbity);
+Assert::contains('alert-danger', $broken);
+Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $broken);
 
-// a hlavně: i u rozbitého kamene je vidět, kdo ho používá — $usedBy se počítá
-// z workflow, ne z kamene, a právě před opravou nebo mazáním je to ta
-// nejdůležitější informace na stránce
-Assert::contains('<h2>Používá</h2>', $rozbity);
-Assert::contains('<li>oprav</li>', $rozbity);
+// and importantly: even for a broken block you can see who uses it —
+// $usedBy is computed from the workflows, not the block, and right before
+// fixing or deleting it, that's the most important information on the
+// page
+Assert::contains('<h2>Používá</h2>', $broken);
+Assert::contains('<li>fix</li>', $broken);

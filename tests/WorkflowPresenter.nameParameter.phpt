@@ -16,9 +16,10 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// M1: `name` z query stringu se dřív lepilo do cesty bez kontroly —
-// ?name=../blocks/echo otevřelo soubor mimo workflows/. basename() v
-// renderDetail() to utne dřív, než se z něj vůbec postaví cesta k souboru.
+// M1: `name` from the query string used to get glued into the path without
+// checking — ?name=../blocks/echo opened a file outside workflows/.
+// basename() in renderDetail() cuts that off before a path to the file is
+// even built from it.
 
 function createPresenter(Profile $profile): WorkflowPresenter
 {
@@ -53,13 +54,13 @@ FileSystem::write($dir . '/blocks/echo.json', json_encode([
 
 $profile = new Profile(basename($dir), $dir);
 
-// Existující workflow se jménem bez lomítek se najde normálně.
+// An existing workflow with a name without slashes is found normally.
 $presenter = createPresenter($profile);
 Assert::noError(fn() => $presenter->renderDetail('w'));
 Assert::null($presenter->template->error);
 
-// Pokus dostat se lomítky mimo workflows/ dostane stejnou hlášku jako
-// neexistující workflow — ne obsah souboru mimo workflows/.
+// An attempt to escape workflows/ with slashes gets the same message as a
+// nonexistent workflow — not the content of a file outside workflows/.
 $presenter = createPresenter($profile);
 Assert::noError(fn() => $presenter->renderDetail('../blocks/echo'));
 Assert::type('string', $presenter->template->error);

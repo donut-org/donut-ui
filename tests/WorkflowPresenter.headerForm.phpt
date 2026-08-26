@@ -10,10 +10,10 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/workflowPresenter.php';
 
-// I2: formulář hlavičky se sestavuje i při POSTu, který mu nepatří — dřív se
-// v takovém případě překreslil prázdný a „Uložit" zapsalo description: null
-// a inputs: []. Otázka nezní „je to POST?", ale „patří ten POST tomuhle
-// formuláři?".
+// I2: the header form is built even on a POST that doesn't belong to it —
+// it used to redraw empty in that case and "Save" wrote description: null
+// and inputs: []. The question isn't "is this a POST?", but "does this POST
+// belong to this form?".
 
 $project = TEMP_DIR . '/header';
 FileSystem::createDir($project . '/blocks');
@@ -21,101 +21,103 @@ FileSystem::createDir($project . '/workflows');
 
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
-	'description' => 'Duležitý popis',
-	'inputs' => ['repo' => ['required' => true, 'description' => 'Repozitář']],
+	'description' => 'Important description',
+	'inputs' => ['repo' => ['required' => true, 'description' => 'Repository']],
 	'steps' => [['type' => 'set', 'key' => 'a', 'value' => '1']],
 ]));
 
-// --- cizí POST (neúspěšné mazání) nesmí formulář hlavičky vyprázdnit ---
+// --- a foreign POST (a failed delete) must not empty the header form ---
 
 [$response, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'deleteWorkflowForm-submit'],
-	['name' => '', 'save' => 'Smazat'],
+	['name' => '', 'save' => 'Delete'],
 );
 
-Assert::false($response instanceof RedirectResponse, 'mazání selhalo, stránka se překreslila');
-Assert::contains('value="w"', $html, 'jméno drží setDefaultValue()');
-Assert::contains('Duležitý popis', $html, 'popis se nesmí ztratit jen proto, že POST patřil jinému formuláři');
-Assert::contains('value="repo"', $html, 'vstupy se nesmí ztratit');
-Assert::contains('Repozitář', $html);
+Assert::false($response instanceof RedirectResponse, 'the delete failed, the page redrew');
+Assert::contains('value="w"', $html, 'the name is held by setDefaultValue()');
+Assert::contains('Important description', $html, 'the description must not be lost just because the POST belonged to a different form');
+Assert::contains('value="repo"', $html, 'the inputs must not be lost');
+Assert::contains('Repository', $html);
 
 
-// I3: tvar kontejneru `inputs` se při POSTu odvozuje z došlých dat, ne
-// z počtu vstupů načteného workflow. JS řádky nikdy nepřečísluje (kontrakt
-// z rows.latte), takže indexy můžou mít díry — kontejner, který pro došlý
-// index nevznikne, znamená tiše ztracený vstup a redirect k nerozeznání
-// od úspěchu.
+// I3: the shape of the `inputs` container is derived, on a POST, from the
+// incoming data, not from the number of inputs on the loaded workflow. JS
+// never renumbers rows (a contract from rows.latte), so indexes can have
+// gaps — a container that doesn't get created for an incoming index means
+// a silently lost input, and a redirect indistinguishable from success.
 
 $load = fn(string $name) => (new WorkflowParser)->parseFile($project . "/workflows/{$name}.json");
 
-// --- zakládání se vstupy na indexech 0 a 3 uloží oba ---
-// Přesně takový POST vyrábí rows.latte po smazání prostředního řádku.
+// --- creating with inputs at indexes 0 and 3 saves both ---
+// Exactly this kind of POST is what rows.latte produces after deleting the middle row.
 
 [$response] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
 	[
-		'name' => 'diry',
-		'description' => 'Se dvěma vstupy',
+		'name' => 'gaps',
+		'description' => 'With two inputs',
 		'inputs' => [
 			0 => ['name' => 'a', 'required' => '1', 'default' => '', 'description' => ''],
 			3 => ['name' => 'c', 'required' => '', 'default' => '', 'description' => ''],
 		],
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::same(['a', 'c'], array_keys($load('diry')->inputs), 'vstup na indexu s dírou se nesmí ztratit');
+Assert::same(['a', 'c'], array_keys($load('gaps')->inputs), 'an input at an index with a gap must not be lost');
 
-// --- úprava: vstup na indexu vyšším, než kolik jich workflow má ---
+// --- editing: an input at a higher index than the workflow has ---
 
 [$response] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
 	[
 		'name' => 'w',
-		'description' => 'Duležitý popis',
+		'description' => 'Important description',
 		'inputs' => [
-			0 => ['name' => 'repo', 'required' => '1', 'default' => '', 'description' => 'Repozitář'],
+			0 => ['name' => 'repo', 'required' => '1', 'default' => '', 'description' => 'Repository'],
 			5 => ['name' => 'novy', 'required' => '', 'default' => '', 'description' => ''],
 		],
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::same(['repo', 'novy'], array_keys($load('w')->inputs), 'přidaný vstup nesmí zmizet jen proto, že má vyšší index');
+Assert::same(['repo', 'novy'], array_keys($load('w')->inputs), 'an added input must not disappear just because it has a higher index');
 
-// --- GET vezme řádky z workflow, ne z (prázdného) POSTu ---
-// Bez brány na cizí signál by getPost() vrátil [] a kontejner by dostal
-// jediný řádek — druhý vstup by se do formuláře vůbec nedostal.
+// --- GET takes rows from the workflow, not from the (empty) POST ---
+// Without the guard against a foreign signal, getPost() would return [] and
+// the container would get a single row — the second input would never make
+// it into the form.
 
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w']);
 
 Assert::contains('value="repo"', $html);
-Assert::contains('value="novy"', $html, 'oba vstupy musí mít svůj řádek');
+Assert::contains('value="novy"', $html, 'both inputs must have their own row');
 
-// --- N1: GET s `do=headerForm-submit` v adrese je pořád GET ---
-// Ručně složená adresa (nebo záložka z doby před přesměrováním) nese signál,
-// ale žádná data — getPost() vrátí [], což není null. Bez testu na HTTP metodu
-// se setDefaults() přeskočí, formulář se vykreslí prázdný a „Uložit" zapíše
-// description: null a inputs: [].
+// --- N1: a GET with `do=headerForm-submit` in the address is still a GET ---
+// A hand-built address (or a bookmark from before the redirect) carries the
+// signal, but no data — getPost() returns [], which isn't null. Without the
+// test on the HTTP method, setDefaults() would be skipped, the form would
+// render empty and "Save" would write description: null and inputs: [].
 
 [, $get] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit']);
 
-Assert::contains('value="w"', $get, 'jméno drží setDefaultValue()');
-Assert::contains('Duležitý popis', $get, 'popis se nesmí ztratit — GET nic neodeslal');
-Assert::contains('value="repo"', $get, 'vstupy se nesmí ztratit');
+Assert::contains('value="w"', $get, 'the name is held by setDefaultValue()');
+Assert::contains('Important description', $get, 'the description must not be lost — GET sent nothing');
+Assert::contains('value="repo"', $get, 'the inputs must not be lost');
 Assert::contains('value="novy"', $get);
 
-// --- POST z cizího webu se nesmí dostat k zápisu ---
-// GUI nemá CSRF token ani session (readme, „Co GUI vědomě neumí") — jedinou
-// ochranou je kontrola Fetch Metadata, kterou si Form dělá sám
-// v signalReceived(). Požadavek bez hlavičky sec-fetch-site je pro Nette cizí
-// původ: skončí v detectedCsrf() → redirect('this'), takže odpověď je
-// přesměrování jako u úspěchu — rozhoduje proto disk, ne typ odpovědi.
+// --- a POST from a foreign site must not get through to a write ---
+// The GUI has no CSRF token or session (readme, "What the GUI knowingly
+// doesn't do") — the only protection is the Fetch Metadata check that Form
+// does itself in signalReceived(). A request without the sec-fetch-site
+// header is a foreign origin to Nette: it ends up in detectedCsrf() →
+// redirect('this'), so the response is a redirect just like on success — so
+// the disk decides, not the response type.
 
 $before = FileSystem::read($project . '/workflows/w.json');
 
@@ -124,14 +126,14 @@ $before = FileSystem::read($project . '/workflows/w.json');
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
 	[
 		'name' => 'w',
-		'description' => 'Z cizího webu',
+		'description' => 'From a foreign site',
 		'inputs' => [],
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 	sameOrigin: false,
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'cizí původ nesmí nic zapsat');
+Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'a foreign origin must write nothing');
 
 FileSystem::delete(TEMP_DIR);

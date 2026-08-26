@@ -9,18 +9,19 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/blockPresenter.php';
 
-// N7: jméno ze skrytého pole prochází basename(), stejně jako u workflow.
-// Sám soubor je bezpečný i bez toho (BlockStore::exists() se ptá do mapy
-// klíčované basename($path, '.json'), takže jméno s lomítkem v ní nemůže být
-// klíčem), ale kontrola použití porovnává jméno z požadavku přímo — a bez
-// basename() na podvrženou cestu nesedne a rozhodne o mazání až vzdálená
-// implementace úložiště.
+// N7: the name from the hidden field goes through basename(), same as for
+// a workflow. The file itself is safe even without it (BlockStore::exists()
+// looks it up in a map keyed by basename($path, '.json'), so a name with a
+// slash can never be a key in it), but the usage check compares the name
+// from the request directly — and without basename() it won't match a
+// forged path, and the deletion decision ends up made by the distant
+// storage implementation.
 
 $project = TEMP_DIR . '/delete-name';
 FileSystem::createDir($project . '/blocks');
 FileSystem::createDir($project . '/workflows');
 
-// pouzity je v workflow, volny ne — mazací formulář se vykreslí jen u volny.
+// pouzity is used by a workflow, volny isn't — the delete form renders only for volny.
 foreach (['pouzity', 'volny'] as $name) {
 	FileSystem::write($project . "/blocks/{$name}.json", json_encode([
 		'name' => $name, 'command' => 'echo', 'args' => [],
@@ -32,48 +33,49 @@ FileSystem::write($project . '/workflows/w.json', json_encode([
 	'steps' => [['type' => 'run', 'block' => 'pouzity']],
 ]));
 
-// --- podvržená cesta se srovná na jméno a narazí na kontrolu použití ---
+// --- a forged path normalizes to the name and hits the usage check ---
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => '../blocks/pouzity', 'delete' => 'Smazat'],
+	['name' => '../blocks/pouzity', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::true(is_file($project . '/blocks/pouzity.json'), 'soubor musí zůstat');
+Assert::true(is_file($project . '/blocks/pouzity.json'), 'the file must remain');
 
-// Hláška musí být od kontroly použití, ne „kámen neexistuje" — o osudu
-// souboru nesmí rozhodovat až klíčování mapy v BlockRepository.
-Assert::contains('nejde smazat', $html, 'kontrola použití se musí ptát na srovnané jméno, ne na cestu');
+// The message must come from the usage check, not "block does not exist" —
+// the fate of the file must not be decided all the way down at the map
+// keying in BlockRepository.
+Assert::contains('cannot be deleted', $html, 'usage check must ask about the normalized name, not the path');
 
-// --- cesta ven z blocks/ nesmaže nic ---
+// --- a path out of blocks/ deletes nothing ---
 
 FileSystem::write($project . '/tajne.json', '{}');
 
 [$response] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => '../tajne', 'delete' => 'Smazat'],
+	['name' => '../tajne', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::true(is_file($project . '/tajne.json'), 'mimo blocks/ se mazat nesmí');
+Assert::true(is_file($project . '/tajne.json'), 'nothing outside blocks/ may be deleted');
 
-// --- prázdné jméno se ohlásí stejně jako u workflow ---
-// Bez guardu se prázdný řetězec propadne až k úložišti a stránka odpoví
-// „Kámen "" neexistuje. Hledal jsem v: …/blocks", což uživateli nic neřekne.
-// deleteWorkflowFormSucceeded() na to guard má; obě poloviny GUI mají
-// odpovídat stejně.
+// --- an empty name is reported the same way as for a workflow ---
+// Without the guard, an empty string would fall all the way through to the
+// storage, and the page would answer 'Block "" does not exist. Searched in:
+// …/blocks', which tells the user nothing. deleteWorkflowFormSucceeded() has
+// this guard; both halves of the GUI should answer the same way.
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => '', 'delete' => 'Smazat'],
+	['name' => '', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::contains('Není co mazat.', $html);
-Assert::true(is_file($project . '/blocks/volny.json'), 'nic se smazat nesmělo');
+Assert::contains('Nothing to delete.', $html);
+Assert::true(is_file($project . '/blocks/volny.json'), 'nothing should have been deleted');
 
 FileSystem::delete(TEMP_DIR);

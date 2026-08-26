@@ -124,7 +124,7 @@ $echoBefore = FileSystem::read($project . '/blocks/echo.json');
 
 // Žádné přesměrování a soubor beze změny bajt po bajtu.
 Assert::false($response instanceof RedirectResponse);
-Assert::contains('existuje', $html);
+Assert::contains('already exists', $html);
 Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 
 // --- posted jméno se při editaci ignoruje — "přejmenování" nesmí založit vidle ---

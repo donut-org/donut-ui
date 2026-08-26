@@ -25,11 +25,11 @@ final class StepTreeTemplate extends Template
 
 	public ?KeyMap $keys = null;
 
-	/** Jméno vybraného klíče; null = nic není vybrané. */
+	/** Name of the selected key; null = nothing selected. */
 	public ?string $selected = null;
 
 	public string $name = '';
 
-	/** Chyba z posledního přesunu nebo mazání kroku; null = žádná. */
+	/** Error from the last step move or delete; null = none. */
 	public ?string $error = null;
 }

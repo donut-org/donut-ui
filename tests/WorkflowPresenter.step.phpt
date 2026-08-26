@@ -34,7 +34,7 @@ FileSystem::write($project . '/workflows/w.json', json_encode([
 
 $steps = fn(): array => (new WorkflowParser)->parseFile($project . '/workflows/w.json')->steps;
 
-// --- úprava existujícího kroku: formulář je předvyplněný ---
+// --- editing an existing step: the form is pre-filled ---
 
 [, $html] = runWorkflowPresenterIn($project, [
 	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
@@ -43,16 +43,20 @@ $steps = fn(): array => (new WorkflowParser)->parseFile($project . '/workflows/w
 Assert::contains('value="jq"', $html);
 Assert::contains('.id', $html);
 Assert::contains('<form', $html);
+// The step name label — pins WorkflowPresenter::createComponentStepForm()'s
+// 'Step name' caption, since no other assertion in the suite renders it.
+Assert::contains('>Step name<', $html);
 
-// --- N5: cizí POST nesmí formulář kroku vyprázdnit ---
+// --- N5: a foreign POST must not empty the step form ---
 //
-// Signály jsou v Nette nezávislé na akci, takže POST na `action=step`
-// s `do=stepTree-deleteStep` sem dorazí. Když je `at` v těle neplatná,
-// StepTreeControl::applyToStep() schválně nepřesměrovává (chyba by se přes
-// AbortException nikam nedostala) a nechá doběhnout render — a step.latte
-// vykreslí stepForm. S otázkou „je to POST?" místo „patří ten POST tomuhle
-// formuláři?" se setDefaults() přeskočí a formulář se vykreslí prázdný;
-// „Uložit" by pak u run kroku zapsalo prázdné in/out, timeout i allowFailure.
+// Signals in Nette are independent of the action, so a POST to `action=step`
+// with `do=stepTree-deleteStep` arrives here too. When `at` in the body is
+// invalid, StepTreeControl::applyToStep() deliberately doesn't redirect (the
+// error would get nowhere via AbortException) and lets render run through —
+// and step.latte renders stepForm. With the question "is this a POST?"
+// instead of "does this POST belong to this form?", setDefaults() would be
+// skipped and the form would render empty; "Save" would then write an empty
+// in/out, timeout and allowFailure for a run step.
 
 [$response, $html] = runWorkflowPresenterIn(
 	$project,
@@ -60,25 +64,25 @@ Assert::contains('<form', $html);
 	['at' => 'nesmysl'],
 );
 
-Assert::false($response instanceof RedirectResponse, 'mazání selhalo, stránka se překreslila');
-Assert::count(2, $steps(), 'neplatná cesta nesmí nic smazat');
-Assert::contains('value="jq"', $html, 'vybraný kámen se nesmí ztratit');
-Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $html, 'vstupy kroku se nesmí ztratit');
+Assert::false($response instanceof RedirectResponse, 'the delete failed, the page redrew');
+Assert::count(2, $steps(), 'an invalid path must not delete anything');
+Assert::contains('value="jq"', $html, 'the chosen block must not be lost');
+Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $html, "the step's inputs must not be lost");
 Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html);
-Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, 'výstupy kroku se nesmí ztratit');
+Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's outputs must not be lost");
 
-// --- uložení úpravy ---
+// --- saving the edit ---
 
 [$response] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
-		'type' => 'run', 'name' => 'pojmenovaný', 'block' => 'jq',
-		// díra v číslování schválně
+		'type' => 'run', 'name' => 'named', 'block' => 'jq',
+		// gap in numbering deliberately
 		'in' => [0 => ['key' => 'filter', 'value' => '.title'], 2 => ['key' => 'stdin', 'value' => '{%x%}']],
 		'out' => [0 => ['channel' => 'result', 'value' => 'title']],
 		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
@@ -86,21 +90,21 @@ Assert::type(RedirectResponse::class, $response);
 
 $run = $steps()[0];
 Assert::type(RunStep::class, $run);
-Assert::same('pojmenovaný', $run->name);
+Assert::same('named', $run->name);
 Assert::same(['filter', 'stdin'], array_keys($run->in));
 Assert::same('.title', $run->in['filter']->getSource());
 Assert::same(['result' => 'title'], $run->out);
 
-// Zbytek workflow zůstal — úprava kroku nesmí sáhnout na sousedy.
+// The rest of the workflow stayed — editing a step must not touch its neighbors.
 Assert::count(2, $steps());
 Assert::type(IfStep::class, $steps()[1]);
 
-// --- nový krok se vloží na zadanou pozici ---
+// --- a new step gets inserted at the given position ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[1]', 'type' => 'set', 'do' => 'stepForm-submit'],
-	['type' => 'set', 'name' => '', 'key' => 'branch', 'value' => 'f/{%id%}', 'save' => 'Uložit'],
+	['type' => 'set', 'name' => '', 'key' => 'branch', 'value' => 'f/{%id%}', 'save' => 'Save'],
 );
 
 Assert::count(3, $steps());
@@ -108,12 +112,12 @@ Assert::type(SetStep::class, $steps()[1]);
 Assert::same('branch', $steps()[1]->key);
 Assert::type(IfStep::class, $steps()[2]);
 
-// --- nový krok do prázdné větve ---
+// --- a new step into an empty branch ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0]', 'type' => 'foreach', 'do' => 'stepForm-submit'],
-	['type' => 'foreach', 'name' => '', 'over' => '{%list%}', 'as' => 'row', 'save' => 'Uložit'],
+	['type' => 'foreach', 'name' => '', 'over' => '{%list%}', 'as' => 'row', 'save' => 'Save'],
 );
 
 $if = $steps()[2];
@@ -122,64 +126,65 @@ Assert::count(1, $if->then);
 Assert::type(ForeachStep::class, $if->then[0]);
 Assert::same('row', $if->then[0]->as);
 
-// --- úprava if nesmí zahodit jeho větve ---
+// --- editing an if must not discard its branches ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2]', 'do' => 'stepForm-submit'],
-	['type' => 'if', 'name' => 'přejmenovaná', 'left' => '{%id%}', 'op' => 'empty', 'right' => '', 'save' => 'Uložit'],
+	['type' => 'if', 'name' => 'renamed', 'left' => '{%id%}', 'op' => 'empty', 'right' => '', 'save' => 'Save'],
 );
 
 $if = $steps()[2];
-Assert::same('přejmenovaná', $if->name);
+Assert::same('renamed', $if->name);
 Assert::same('empty', $if->condition->op);
-Assert::count(1, $if->then, 'větev then se úpravou podmínky nesmí ztratit');
+Assert::count(1, $if->then, 'the then branch must not be lost by editing the condition');
 
-// --- dej foreach vlastní podstrom, aby bylo co chránit ---
+// --- give foreach its own subtree, so there's something to protect ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0].steps[0]', 'type' => 'set', 'do' => 'stepForm-submit'],
-	['type' => 'set', 'name' => '', 'key' => 'inner', 'value' => 'x', 'save' => 'Uložit'],
+	['type' => 'set', 'name' => '', 'key' => 'inner', 'value' => 'x', 'save' => 'Save'],
 );
 
 $foreach = $steps()[2]->then[0];
 Assert::type(ForeachStep::class, $foreach);
 Assert::count(1, $foreach->steps);
 
-// --- úprava foreach nesmí zahodit jeho podstrom ---
+// --- editing foreach must not discard its subtree ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0]', 'do' => 'stepForm-submit'],
-	['type' => 'foreach', 'name' => 'přejmenovaný', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Uložit'],
+	['type' => 'foreach', 'name' => 'renamed', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Save'],
 );
 
 $foreach = $steps()[2]->then[0];
-Assert::same('přejmenovaný', $foreach->name);
+Assert::same('renamed', $foreach->name);
 Assert::same('item', $foreach->as);
-Assert::count(1, $foreach->steps, 'podstrom foreach se úpravou over/as nesmí ztratit');
+Assert::count(1, $foreach->steps, "foreach's subtree must not be lost by editing over/as");
 
-// --- server rozhoduje o typu kroku, ne skrytý input z POSTu ---
+// --- the server decides the step's type, not a hidden input from the POST ---
 //
-// Skrytý <input name=type> je obyčejné pole formuláře — POST ho může
-// poslat jinak, než jak byl formulář sestavený. Kdyby se mu věřilo,
-// StepMapper::toStep() by z hodnot foreach formuláře (bez pole "key")
-// postavil SetStep s prázdným klíčem a celý podstrom foreach by zmizel.
-// Server proto typ z POSTu ignoruje a použije ten, podle kterého formulář
-// sestavil ($this->stepType, odvozený z editovaného kroku).
+// The hidden <input name=type> is an ordinary form field — the POST can
+// send it differently than how the form was built. If it were trusted,
+// StepMapper::toStep() would build a SetStep with an empty key from the
+// foreach form's values (which have no "key" field), and the whole foreach
+// subtree would vanish. So the server ignores the type from the POST and
+// uses the one it built the form with ($this->stepType, derived from the
+// step being edited).
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[2].then[0]', 'do' => 'stepForm-submit'],
-	['type' => 'set', 'name' => '', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Uložit'],
+	['type' => 'set', 'name' => '', 'over' => '{%items%}', 'as' => 'item', 'save' => 'Save'],
 );
 
 $foreach = $steps()[2]->then[0];
-Assert::type(ForeachStep::class, $foreach, 'zfalšovaný type v POSTu nesmí změnit typ kroku');
-Assert::count(1, $foreach->steps, 'zfalšovaný type nesmí smazat podstrom');
+Assert::type(ForeachStep::class, $foreach, "a forged type in the POST must not change the step's type");
+Assert::count(1, $foreach->steps, 'a forged type must not delete the subtree');
 
-// --- neplatná cesta se ohlásí, nespadne ---
+// --- an invalid path is reported, it doesn't crash ---
 
 [, $html] = runWorkflowPresenterIn($project, [
 	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[99]',
@@ -187,15 +192,16 @@ Assert::count(1, $foreach->steps, 'zfalšovaný type nesmí smazat podstrom');
 
 Assert::contains('does not exist', $html);
 
-// --- neplatné workflow se uloží i tak: validace neblokuje ---
+// --- an invalid workflow still gets saved: validation doesn't block ---
 //
-// Kámen jq vyžaduje vstup filter i stdin; krok, který nevyplní ani jeden,
-// je pro validátor chyba. Uložit se přesto musí.
+// The jq block requires both the filter and stdin inputs; a step that fills
+// in neither is an error for the validator. It must still get saved.
 //
-// Pozn.: neplatnost se schválně nevyrábí neexistujícím jménem kamene —
-// pole `block` je addSelect nad seznamem kamenů a Nette hodnotu mimo seznam
-// odmítne dřív, než se k uložení vůbec dojde. Testovalo by se tím chování
-// formuláře, ne to, že validace workflow neblokuje.
+// Note: the invalidity is deliberately not manufactured with a nonexistent
+// block name — the `block` field is an addSelect over the list of blocks,
+// and Nette rejects a value outside the list before saving is even reached.
+// That would test the form's behavior, not that workflow validation doesn't
+// block.
 
 runWorkflowPresenterIn(
 	$project,
@@ -203,10 +209,10 @@ runWorkflowPresenterIn(
 	[
 		'type' => 'run', 'name' => '', 'block' => 'jq',
 		'in' => [], 'out' => [], 'timeout' => '',
-		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Uložit',
+		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
 );
 
-Assert::same([], $steps()[0]->in, 'krok bez povinných vstupů se uloží i tak');
+Assert::same([], $steps()[0]->in, 'a step without its required inputs still gets saved');
 
 FileSystem::delete(TEMP_DIR);

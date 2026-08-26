@@ -13,7 +13,7 @@ $project = TEMP_DIR . '/delete';
 FileSystem::createDir($project . '/blocks');
 FileSystem::createDir($project . '/workflows');
 
-// pouzity je v workflow, volny ne.
+// pouzity is used by a workflow, volny isn't.
 foreach (['pouzity', 'volny'] as $name) {
 	FileSystem::write($project . "/blocks/{$name}.json", json_encode([
 		'name' => $name, 'command' => 'echo', 'args' => [],
@@ -25,76 +25,79 @@ FileSystem::write($project . '/workflows/w.json', json_encode([
 	'steps' => [['type' => 'run', 'block' => 'pouzity']],
 ]));
 
-// --- přehled ukazuje, kdo který kámen používá ---
+// --- overview shows who uses which block ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'default']);
 
-// Tabulka ukazuje, které workflow kámen volá. Dřív se tu hlídalo slovo
-// „používá" z věty pod nadpisem — v tabulce je z něj hlavička sloupce.
-// Ptáme se proto na obsah buňky; `contains('w')` samotné nic netvrdilo,
-// protože písmeno w je v HTML všude (workflow, www).
+// The table shows which workflow calls the block. This used to check the
+// word "používá" (used by) from the sentence under the heading — in the
+// table it became the column header. So we ask about the cell content
+// instead; `contains('w')` alone asserted nothing, because the letter w is
+// everywhere in the HTML (workflow, www).
 Assert::match('~<td>\s*w\s*</td>~', $html);
 
-// --- editace volného kamene nabídne mazání ---
+// --- editing a free block offers deletion ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'volny']);
 Assert::contains('Smazat', $html);
 
-// --- editace použitého kamene mazání nenabídne a řekne proč ---
+// --- editing a used block doesn't offer deletion, and says why ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'pouzity']);
-// dřív se cílilo na '<h2>Smazat</h2>' — ten nadpis zmizel (Task 3, karty).
-// U kamene (na rozdíl od workflow) se karta „Smazat" vykresluje vždy, když
-// má jméno — u použitého kamene má v těle jen větu „Nejde smazat…", ne
-// mazací formulář. notContains('card border-danger', ...) by tu selhalo
-// vždy, protože karta se ukazuje i pro použitý kámen — cílíme proto přímo
-// na mazací formulář, který se nesmí vykreslit.
+// this used to target '<h2>Smazat</h2>' — that heading is gone (Task 3,
+// cards). For a block (unlike a workflow), the "Smazat" card renders
+// whenever it has a name — for a used block its body just has the sentence
+// "cannot be deleted…", not the delete form. notContains('card
+// border-danger', ...) would always fail here, because the card shows up
+// for a used block too — so we target the delete form directly, which must
+// not render.
 Assert::notContains('id="frm-deleteForm"', $html);
 Assert::contains('používá', $html);
 Assert::contains('w', $html);
 
-// --- POST na použitý kámen se odmítne, i když tlačítko v HTML nebylo ---
-// Šablona tlačítko schová, prezenter to ohlídá. Obojí schválně.
+// --- a POST on a used block is rejected, even though the button wasn't in the HTML ---
+// The template hides the button, the presenter guards it too. Both deliberately.
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'pouzity', 'do' => 'deleteForm-submit'],
-	['name' => 'pouzity', 'delete' => 'Smazat'],
+	['name' => 'pouzity', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
 Assert::true(is_file($project . '/blocks/pouzity.json'));
 
-// Stránka pořád edituje "pouzity" a jeho obsah nesmí zmizet jen proto, že
-// POST patřil deleteFormu, ne blockFormu — formShape() dřív reagoval na
-// libovolný POST a vyrobil formulář s nula skupinami argumentů.
+// The page is still editing "pouzity" and its content must not disappear
+// just because the POST belonged to deleteForm, not blockForm — formShape()
+// used to react to any POST and built the form with zero argument groups.
 Assert::contains('value="pouzity"', $html);
-// (skupina argumentů má od opravy I4 vedle arg-group i bootstrapí třídy,
-// proto se hledá začátek seznamu tříd, ne celý atribut)
+// (since fix I4, an argument group has Bootstrap classes alongside
+// arg-group, so we look for the start of the class list, not the whole
+// attribute)
 Assert::match('~<div class="arg-group\b~', $html);
 
-// --- volný kámen se smaže a přesměruje se do přehledu ---
+// --- a free block gets deleted and redirects to the overview ---
 
 [$response] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => 'volny', 'delete' => 'Smazat'],
+	['name' => 'volny', 'delete' => 'Delete'],
 );
 
 Assert::type(RedirectResponse::class, $response);
 Assert::false(is_file($project . '/blocks/volny.json'));
 
-// --- kámen, který se nedá naparsovat, jde smazat ---
-// Sekce Smazat dřív seděla uvnitř {if !$error}, takže rozbitý soubor — ten,
-// co nejvíc chceš odstranit — nenabídl žádnou cestu ven.
+// --- a block that fails to parse can still be deleted ---
+// The delete section used to sit inside {if !$error}, so a broken file — the
+// one you most want to remove — offered no way out.
 
-FileSystem::write($project . '/blocks/rozbity.json', 'toto neni json');
+FileSystem::write($project . '/blocks/broken.json', '{not valid json');
 
-[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'rozbity']);
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'broken']);
 
-// $error je nastavený (soubor se nenaparsoval)...
+// $error is set (the file failed to parse)...
 Assert::contains('alert-danger', $html);
-// ...ale tlačítko Smazat se přesto ukáže.
+// ...but the Smazat (delete) button still shows.
 Assert::contains('Smazat', $html);
 
 FileSystem::delete(TEMP_DIR);

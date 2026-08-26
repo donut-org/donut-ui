@@ -8,12 +8,12 @@ use Nette\Bridges\ApplicationLatte\Template;
 
 
 /**
- * Společný předek šablon, které se kreslí do @layout.latte.
+ * Common ancestor of templates that render into @layout.latte.
  *
- * Jméno profilu je jediné, z čeho uživatel pozná, kterou sadu edituje —
- * pracovní adresář mu to po přechodu na profily neřekne. Výchozí prázdná
- * hodnota je kvůli testům, které renderují metodu prezentéru napřímo,
- * tedy bez beforeRender().
+ * The profile name is the only thing that tells the user which set they're
+ * editing — the working directory no longer does, since the move to
+ * profiles. The default empty value is for tests that render a presenter
+ * method directly, i.e. without beforeRender().
  */
 abstract class LayoutTemplate extends Template
 {

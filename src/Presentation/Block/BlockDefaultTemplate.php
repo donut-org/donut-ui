@@ -9,11 +9,11 @@ use Donut\Gui\Presentation\LayoutTemplate;
 
 
 /**
- * Šablona pro Block:default — přehled kamenů z blocks/.
+ * Template for Block:default — overview of blocks from blocks/.
  */
 final class BlockDefaultTemplate extends LayoutTemplate
 {
-	/** @var array<string, Block|string> jméno => kámen, nebo hláška o chybě */
+	/** @var array<string, Block|string> name => block, or an error message */
 	public array $blocks = [];
 
 	public ?string $error = null;

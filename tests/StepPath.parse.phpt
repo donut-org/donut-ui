@@ -97,4 +97,4 @@ foreach ($files === false ? [] : $files as $file) {
 	$walk($workflow->steps, StepPath::root($workflow->name), [['steps', 0]]);
 }
 
-Assert::same(96, $checked, 'the reference load has 96 steps');
+Assert::same(96, $checked, 'the reference workload has 96 steps');

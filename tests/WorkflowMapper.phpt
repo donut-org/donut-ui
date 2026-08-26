@@ -12,7 +12,7 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- round-trip over the reference load, on the header and inputs ---
+// --- round-trip over the reference workload, on the header and inputs ---
 //
 // The form doesn't edit steps, so they aren't taken into the comparison —
 // toWorkflow() gets them from the original workflow.

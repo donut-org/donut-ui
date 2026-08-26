@@ -1,18 +1,18 @@
-// Sdílený JS pro opakující se řádky formuláře. Používá ho editace kamene
-// (args, inputs) i stránka kroku (in, out).
+// Shared JS for repeating form rows. Used by block editing (args, inputs)
+// and the step page (in, out).
 //
-// Značkování, které očekává:
+// Markup it expects:
 //   <tbody id="inputs"> … <tr class="js-row"> … <input name="inputs[0][name]"> … </tr> </tbody>
-//   <button type=button data-add="inputs">+ řádek</button>
-//   <button type=button class="js-del-row">×</button>   (uvnitř .js-row)
+//   <button type=button data-add="inputs">+ input</button>
+//   <button type=button class="js-del-row">×</button>   (inside .js-row)
 //
-// Klasický skript, ne modul: maxIndex a cloneRow musí zůstat globální,
-// protože je volá i skript skupin argumentů v Block/edit.latte.
+// Plain script, not a module: maxIndex and cloneRow must stay global,
+// because the argument-groups script in Block/edit.latte calls them too.
 
-// Řádky se nikdy nepřečíslovávají: nový dostane index o jedna vyšší, než je
-// současné maximum, a smazání nechá v číslování díru. Server pole srovná
-// přes ksort()/array_values(). Přečíslovávání by mohlo tiše prohodit dvě
-// hodnoty; takhle ta chyba nemá kde vzniknout.
+// Rows are never renumbered: a new one gets an index one higher than the
+// current maximum, and deleting leaves a gap in the numbering. The server
+// sorts the array back with ksort()/array_values(). Renumbering could
+// silently swap two values; this way that bug has nowhere to happen.
 const maxIndex = (nodes, re) => {
 	let max = -1;
 	nodes.forEach(n => {
@@ -26,8 +26,9 @@ const cloneRow = (row, rename) => {
 	const copy = row.cloneNode(true);
 	copy.querySelectorAll('input, select').forEach(i => {
 		i.setAttribute('name', rename(i.getAttribute('name')));
-		// cloneNode kopíruje i id — bez odebrání by měla dvě různá pole
-		// stejné id (Nette ho odvozuje z původního jména).
+		// cloneNode also copies the id — without removing it, two different
+		// fields would share the same id (Nette derives it from the original
+		// name).
 		i.removeAttribute('id');
 		if (i.type === 'checkbox') i.checked = false;
 		else if (i.tagName === 'SELECT') i.selectedIndex = 0;
@@ -44,8 +45,9 @@ document.addEventListener('click', e => {
 		const rows = box.querySelectorAll('.js-row');
 		const prefix = new RegExp('^' + add + '\\[(\\d+)]');
 		const next = maxIndex(box.querySelectorAll('input, select'), prefix) + 1;
-		// Přejmenuje se jen indexová část; zbytek jména zůstane, aby řádek
-		// s víc poli nedostal všechna pole pod jedním jménem.
+		// Only the index part gets renamed; the rest of the name stays, so a
+		// row with multiple fields doesn't end up with all fields under one
+		// name.
 		box.appendChild(cloneRow(
 			rows[rows.length - 1],
 			n => n.replace(new RegExp('^' + add + '\\[\\d+]'), add + '[' + next + ']')
@@ -55,7 +57,7 @@ document.addEventListener('click', e => {
 	if (e.target.classList && e.target.classList.contains('js-del-row')) {
 		const row = e.target.closest('.js-row');
 		const box = row.parentElement;
-		// Poslední řádek zůstane, jinak by nebylo co klonovat.
+		// The last row stays, otherwise there would be nothing to clone.
 		if (box.querySelectorAll('.js-row').length > 1) row.remove();
 	}
 });

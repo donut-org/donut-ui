@@ -10,7 +10,7 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- round-trip over all inputs in the reference load ---
+// --- round-trip over all inputs in the reference workload ---
 //
 // 57 inputs: 36 in blocks, 21 in workflows. This is a richer load than what
 // toInputs() had available inside BlockMapper — now it covers workflow
@@ -43,7 +43,7 @@ foreach ($workflows === false ? [] : $workflows as $file) {
 	$roundTrip((new WorkflowParser)->parseFile($file)->inputs);
 }
 
-Assert::same(57, $checked, 'the reference load has 57 inputs');
+Assert::same(57, $checked, 'the reference workload has 57 inputs');
 
 // --- holes in the indexes get sorted out, ksort holds the order ---
 //

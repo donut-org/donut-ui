@@ -316,7 +316,7 @@ final class BlockPresenter extends Presenter
 		$values = $form->getValues('array');
 
 		// basename() same as in deleteWorkflowFormSucceeded(): the name comes
-		// from the request. It can't steal anything by itself — BlockStore::exists()
+		// from the request. It can't reach outside on its own — BlockStore::exists()
 		// looks it up in a map keyed by basename($path, '.json'), so a name with
 		// a slash can never be a key in it — but the protection should be
 		// visible on both halves of the GUI and shouldn't depend on a distant

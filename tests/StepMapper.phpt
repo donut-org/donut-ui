@@ -14,7 +14,7 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// --- round-trip over the reference load ---
+// --- round-trip over the reference workload ---
 //
 // 96 steps: 75 run, 9 set, 5 if, 7 foreach. If the mapper dropped timeout,
 // allow_failure or name, this would catch it.
@@ -66,7 +66,7 @@ foreach ($files === false ? [] : $files as $file) {
 	$walk($parser->parseFile($file)->steps);
 }
 
-Assert::same(96, $checked, 'the reference load has 96 steps');
+Assert::same(96, $checked, 'the reference workload has 96 steps');
 
 // --- run: all optional fields ---
 $run = StepMapper::toStep([

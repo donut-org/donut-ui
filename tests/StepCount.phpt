@@ -33,7 +33,7 @@ Assert::same(1 + (1 + 4), StepCount::subtree($if));
 // A leaf with no children (run/set) has nothing to count.
 Assert::same(0, StepCount::subtree($leaf));
 
-// --- reference load: sync.json:steps[5] has 14 direct children, but three
+// --- reference workload: sync.json:steps[5] has 14 direct children, but three
 // of them are a foreach with another step inside — the old (non-recursive)
 // count reported 14, in reality 17 nested steps disappear (+ the step
 // itself = 18 steps in the file in total). ---

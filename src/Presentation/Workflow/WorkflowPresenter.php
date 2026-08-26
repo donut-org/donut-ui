@@ -91,7 +91,7 @@ final class WorkflowPresenter extends Presenter
 
 		// $name comes from the query string. WorkflowRepository::get() looks it
 		// up as a key in the list of files that actually exist, so slashes
-		// alone can't steal anywhere — basename() is extra, to keep that true
+		// alone can't escape the directory — basename() is extra, to keep that true
 		// even if the file path is ever assembled by hand again.
 		$name = \basename($name);
 		$template->name = $name;

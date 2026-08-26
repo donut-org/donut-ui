@@ -1,73 +1,78 @@
 code { background: #f4f4f4; padding: .1em .3em }
 .keys { font-size: .85em; color: #666 }
-/* Samotné .table-responsive v úzkém okně nestačí: políčka mají width:100%
-   a min-width:0, takže se tabulka smrskne s ním a sloupce spadnou na pár
-   znaků místo toho, aby se dala posouvat. Spodní hranice šířky je to, co
-   posuv zapne. */
+/* .table-responsive alone isn't enough in a narrow window: the cells have
+   width:100% and min-width:0, so the table shrinks along with it and the
+   columns collapse to a few characters instead of scrolling. The min-width
+   below is what turns scrolling on. */
 .table-responsive > table { min-width: 34rem }
 
-/* Řetěz: uzly pod sebou, mezi sousedy svislá spojnice. Spojnice patří
-   druhému a dalším uzlům, ne prvnímu — jinak by čára visela z ničeho. */
+/* Chain: nodes stacked, a vertical connector between neighbors. The
+   connector belongs to the second and later nodes, not the first — otherwise
+   the line would hang from nothing. */
 .chain { display: flex; flex-direction: column; align-items: center }
 .chain > * + *::before { content: ''; display: block; width: 2px; height: 1.75rem;
 	margin: 0 auto; background: var(--bs-border-color) }
 
-/* Bublina je 25rem; kontejnerový krok roste s tím, co obsahuje. Uzel je širší
-   než bublina jen u if — tam pod ní visí dva sloupce větví. */
+/* The bubble is 25rem; a container step grows with what it holds. The node
+   is wider than the bubble only for if — there, two branch columns hang
+   below it. */
 .node { display: flex; flex-direction: column; align-items: center }
 .step { width: 25rem; max-width: 100% }
 .step.loop { width: auto }
 
-/* Vybraný klíč: žlutý prstenec box-shadow, ne border — border by o dva pixely
-   změnil rozměr bubliny a graf by při kliknutí na klíč poskočil. Žlutá je
-   vyhrazená právě tomuhle, proto má štítek if tmavou a ne žlutou. */
+/* Selected key: a yellow box-shadow ring, not a border — a border would
+   change the bubble's size by two pixels and the graph would jump on a key
+   click. Yellow is reserved for exactly this, which is why the if label is
+   dark, not yellow. */
 .step.write, .step.read { box-shadow: 0 0 0 2px var(--bs-warning) }
 
-/* U cyklu jen hlavička: prstenec kolem celého rámu by tvrdil, že je vybraný
-   i každý krok v těle uvnitř. Tohle je jediná vlastnost projektu, která se dá
-   rozbít tiše. */
+/* For a loop, only the header: a ring around the whole frame would claim
+   every step in the body inside is also selected. This is the one property
+   in the project that can break silently. */
 .step.loop.write, .step.loop.read { box-shadow: none }
 .step.loop.write > .card-header, .step.loop.read > .card-header {
 	box-shadow: inset 0 0 0 2px var(--bs-warning) }
 
-/* Větve if: stejně široké sloupce, jinak vodorovná spojnice nesedí na jejich
-   středy a prázdná větev by byla zmáčknutá na šířku odkazu „+ krok". */
+/* if branches: equally wide columns, otherwise the horizontal connector
+   doesn't line up with their centers, and an empty branch would be squeezed
+   to the width of the "+ step" link. */
 .branches { --branch-gap: 2.5rem;
 	display: flex; gap: var(--branch-gap); align-items: flex-start;
 	position: relative; padding-top: 3rem }
 .branch { position: relative; flex: 1 1 0; min-width: 25rem }
 .branch-label { text-align: center; margin-bottom: .5rem }
 
-/* pahýl z bubliny dolů */
+/* stub from the bubble downward */
 .branches::before { content: ''; position: absolute; top: 0; left: 50%;
 	width: 2px; height: 1.5rem; background: var(--bs-border-color) }
-/* pahýl do každé větve */
+/* stub into each branch */
 .branch::before { content: ''; position: absolute; top: -1.5rem; left: 50%;
 	width: 2px; height: 1.5rem; background: var(--bs-border-color) }
-/* Vodorovná spojnice po polovinách, každá ukotvená ve své větvi a zatažená do
-   mezery mezi sloupci. Jedna čára přes celé .branches s left/right v procentech
-   by nesedla: procenta počítají i s mezerou, takže by konce minuly středy
-   sloupců o čtvrtinu mezery. */
+/* Horizontal connector in halves, each anchored in its own branch and pulled
+   into the gap between columns. One line across the whole .branches with
+   left/right in percent wouldn't line up: percentages count the gap too, so
+   the ends would miss the columns' centers by a quarter of the gap. */
 .branch::after { content: ''; position: absolute; top: -1.5rem; height: 2px;
 	background: var(--bs-border-color) }
 .branch:first-child::after { left: 50%; right: calc(var(--branch-gap) / -2) }
 .branch:last-child::after { right: 50%; left: calc(var(--branch-gap) / -2) }
 
-/* Tělo cyklu: tónované pozadí říká, kde foreach začíná a končí. */
+/* Loop body: a tinted background says where the foreach starts and ends. */
 .loop-body { padding: 1rem; background: var(--bs-tertiary-bg);
 	border-radius: var(--bs-border-radius) }
 
-/* Pruhy toku klíčů */
+/* Key-flow bars */
 .flow { padding: .35rem .6rem; font-size: .875rem; margin-bottom: .75rem }
 .flow:last-child { margin-bottom: 0 }
 
-/* Pruh s vybraným klíčem zesílí, ostatní zblednou — jinak zvýrazněný pruh
-   v hustém kroku zanikne. */
+/* The bar with the selected key gets bolder, the rest fade — otherwise the
+   highlighted bar disappears in a dense step. */
 .flow-dim { opacity: .45 }
 .flow-on { box-shadow: 0 0 0 .2rem rgba(var(--bs-warning-rgb), .35) }
 
-/* Karta kamene je <details>, ne bootstrapí collapse — bez JS a stav
-   „otevřeno" je pak jen atribut v šabloně, ne skript. */
+/* A block card is <details>, not Bootstrap's collapse — no JS needed, and
+   the "open" state is then just an attribute in the template, not a
+   script. */
 details.block { border: 1px solid var(--bs-border-color);
 	border-radius: var(--bs-border-radius); margin-bottom: .75rem }
 details.block > summary { cursor: pointer; padding: .35rem .6rem; font-size: .875rem }
@@ -76,6 +81,6 @@ details.block > .block-body { padding: .6rem; border-top: 1px solid var(--bs-bor
 	padding: .2rem 0; align-items: baseline }
 .in-row + .in-row { border-top: 1px dashed var(--bs-border-color) }
 
-/* + krok na konci řetězu */
+/* + step at the end of the chain */
 .add { border: 1px dashed var(--bs-border-color); border-radius: var(--bs-border-radius);
 	padding: .5rem .75rem; font-size: .875rem }

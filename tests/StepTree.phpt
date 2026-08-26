@@ -42,7 +42,7 @@ $allPaths = function (Workflow $workflow): array {
 	return $paths;
 };
 
-// --- invariants over the whole reference load ---
+// --- invariants over the whole reference workload ---
 //
 // Hand-picked cases would cover a handful of shapes; this covers 96 steps
 // to depth 3 at once. If get() and replace() drifted apart by one index or
@@ -94,7 +94,7 @@ foreach ($files === false ? [] : $files as $file) {
 	}
 }
 
-Assert::same(96, $checked, 'the reference load has 96 steps');
+Assert::same(96, $checked, 'the reference workload has 96 steps');
 
 // --- specific behavior on a small tree ---
 

@@ -16,7 +16,7 @@ require __DIR__ . '/bootstrap.php';
 // Neither KeyMap.phpt nor donut's own tests would notice a drift on their
 // own — this one does.
 //
-// Runs over the reference load, because it has all four step types, both
+// Runs over the reference workload, because it has all four step types, both
 // if branches, and a foreach, and donut's acceptance test guards it at 0
 // errors and 0 warnings. docs/workflows/donut/ is test data here, not code —
 // the rule "the GUI must not reach outside itself" is about gui/src, not
@@ -31,10 +31,10 @@ $validator = new Validator($blocks);
 // glob() returns list<string>|false — false only when the pattern itself is
 // invalid, which can't happen here, but PHPStan (level: max) doesn't know that.
 $files = \glob($root . '/workflows/*.json');
-Assert::true(\is_array($files), 'glob() over the reference load must not fail');
+Assert::true(\is_array($files), 'glob() over the reference workload must not fail');
 $files = \is_array($files) ? $files : [];
 
-Assert::count(4, $files, 'the reference load has four workflows');
+Assert::count(4, $files, 'the reference workload has four workflows');
 
 foreach ($files as $file) {
 	$workflow = $parser->parseFile($file);
@@ -59,7 +59,7 @@ foreach ($files as $file) {
 	);
 }
 
-// A fixture of our own, alongside the reference load: none of the four
+// A fixture of our own, alongside the reference workload: none of the four
 // reference workflows has a key that occurs only inside then, only inside
 // else, or only in a foreach body — so discarding a whole subtree in
 // walk() would leave the comparison above green (both sides would equally

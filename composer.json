@@ -1,6 +1,6 @@
 {
 	"name": "donut-org/donut-gui",
-	"description": "Autorské prostředí pro workflow donutu",
+	"description": "Authoring environment for Donut workflows and blocks",
 	"license": "BSD-3-Clause",
 	"type": "project",
 	"repositories": [

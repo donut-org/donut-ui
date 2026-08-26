@@ -14,7 +14,7 @@ require __DIR__ . '/bootstrap.php';
 
 $mapper = new BlockMapper;
 
-// --- round-trip over the reference load ---
+// --- round-trip over the reference workload ---
 //
 // Fifteen real blocks go through Block → values → Block. If the mapper
 // dropped timeout, an input's default, or allow_failure, this would catch

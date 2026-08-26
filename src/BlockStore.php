@@ -6,7 +6,6 @@ namespace Donut\Gui;
 
 use Donut\BlockRepository;
 use Donut\Format\Block;
-use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Writer\BlockWriter;
 use Nette\Utils\FileSystem;
@@ -31,19 +30,10 @@ final class BlockStore
 	private ?BlockRepository $repository = null;
 
 
-	/**
-	 * @throws ParseException when the directory doesn't exist
-	 */
 	public function __construct(
 		private readonly string $directory,
 	) {
 		$this->writer = new BlockWriter;
-
-		if (!\is_dir($directory)) {
-			throw new ParseException(
-				"Blocks directory '{$directory}' does not exist. " . MissingDir::hint($directory)
-			);
-		}
 	}
 
 
@@ -53,9 +43,15 @@ final class BlockStore
 	}
 
 
+	/**
+	 * Nothing can exist in a directory that doesn't exist — that's an answer,
+	 * not an error. The overwrite guard in BlockPresenter asks this before
+	 * every save, so throwing here would close the very path save() opens.
+	 * The reads that report a missing directory are names() and get().
+	 */
 	public function exists(string $name): bool
 	{
-		return $this->repository()->has($name);
+		return \is_dir($this->directory) && $this->repository()->has($name);
 	}
 
 
@@ -98,8 +94,18 @@ final class BlockStore
 	}
 
 
+	/**
+	 * Creates the directory: saving is the user asking for the file, and a
+	 * fresh profile would otherwise be a dead end — the form fills in, the
+	 * save fails, and there is nowhere in the GUI to fix it. Reading is a
+	 * different matter and still reports a missing directory.
+	 *
+	 * @throws \Nette\IOException when the directory can't be created
+	 * @throws \Donut\Writer\WriteException when the file can't be written
+	 */
 	public function save(Block $block): void
 	{
+		FileSystem::createDir($this->directory);
 		$this->writer->writeFile($block, $this->path($block->name));
 		$this->repository = null;
 	}

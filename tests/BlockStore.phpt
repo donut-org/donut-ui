@@ -63,7 +63,23 @@ Assert::same(['bad', 'good'], array_keys($loaded));
 Assert::type(Block::class, $loaded['good']);
 Assert::type('string', $loaded['bad']);
 
-// A missing directory is a different situation than an empty one.
-Assert::exception(fn() => new BlockStore($dir . '/gone'), ParseException::class);
+// A missing directory is not an error by itself: saving into it is what the
+// user asked for, so the save creates it. Reading still reports it — that's
+// BlockRepository's job, not the store's.
+$fresh = TEMP_DIR . '/fresh/blocks';
+Assert::false(\is_dir($fresh));
+
+$store = new BlockStore($fresh);
+
+// Nothing can exist in a directory that doesn't exist — that's an answer,
+// not an error. The overwrite guard in BlockPresenter asks this before every
+// save, so throwing here would close the very path the save opens.
+Assert::false($store->exists('first'));
+
+$store->save(new Block(name: 'first', command: 'ls', args: []));
+
+Assert::true(\is_dir($fresh));
+Assert::true(\is_file($fresh . '/first.json'));
+Assert::same(['first'], $store->names());
 
 FileSystem::delete(TEMP_DIR);

@@ -49,8 +49,8 @@ Assert::contains('echo', $html);
 
 // --- a missing blocks directory says what to do about it ---
 // M8: an empty project used to be a dead end — the message announced that
-// the directory was missing, but not that a single mkdir was enough. The
-// GUI deliberately doesn't create directories.
+// the directory was missing and left the user there. In the GUI the answer
+// is the save itself, so the message points at that, not at a shell.
 
 $empty = TEMP_DIR . '/empty';
 FileSystem::createDir($empty);
@@ -58,7 +58,7 @@ FileSystem::createDir($empty);
 [, $html] = runBlockPresenterIn($empty, ['action' => 'default']);
 
 Assert::contains("Blocks directory '{$empty}/blocks' does not exist.", $html);
-Assert::contains('mkdir -p ' . $empty . '/blocks', $html);
+Assert::contains('Donut will create it when you save.', $html);
 
 // --- a broken block in the overview: the error is visible and the path to
 // fixing it remains ---

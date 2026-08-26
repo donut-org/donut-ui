@@ -12,8 +12,8 @@ use Donut\Gui\BlockStore;
 use Donut\Gui\BlockUsage;
 use Donut\Gui\FormFactory;
 use Donut\Gui\Presentation\LayoutTemplate;
+use Donut\Gui\ProfileDir;
 use Donut\Gui\WorkflowRepository;
-use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Profile;
 use Donut\Validator\BlockValidator;
@@ -62,7 +62,7 @@ final class BlockPresenter extends Presenter
 			// CLI), the hint belongs here — in the presenter, same as for
 			// Workflow:detail.
 			$template->blocks = [];
-			$template->error = $e->getMessage() . ' ' . MissingDir::hint($dir);
+			$template->error = $e->getMessage() . ' ' . ProfileDir::hint();
 			$template->dir = $dir;
 
 			return;
@@ -254,8 +254,9 @@ final class BlockPresenter extends Presenter
 			}
 
 		} catch (ParseException $e) {
-			// BlockStore::__construct() throws ParseException when the blocks
-			// directory doesn't exist.
+			// A block whose file can't be parsed still counts as existing —
+			// the overwrite guard must not wave it through just because
+			// reading it failed.
 			$form->addError($e->getMessage());
 
 			return;
@@ -278,7 +279,11 @@ final class BlockPresenter extends Presenter
 		try {
 			$store->save($block);
 
-		} catch (WriteException $e) {
+		// IOException as well as WriteException: save() creates the blocks
+		// directory, and FileSystem::createDir() reports its own failure —
+		// a profile with a file where blocks/ should be must end in a
+		// message, not a 500.
+		} catch (WriteException | IOException $e) {
 			$form->addError($e->getMessage());
 
 			return;

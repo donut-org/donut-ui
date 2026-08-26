@@ -132,12 +132,11 @@ Assert::notContains('card border-danger', $newHtml);
 [, $list] = runWorkflowPresenterIn($project, ['action' => 'default']);
 Assert::contains('new workflow', $list);
 
-// --- creating without a workflows directory is reported, doesn't crash ---
+// --- creating without a workflows directory works ---
 //
-// WorkflowStore::__construct() throws a ParseException when the workflows
-// directory doesn't exist — on a fresh project that's the normal state.
-// headerFormSucceeded() must catch it just as gently as WriteException, not
-// let the exception fall through uncaught.
+// On a fresh project a missing workflows/ is the normal state, and the GUI
+// is where the user has no shell at hand. WorkflowStore::save() creates the
+// directory, so this ends in a redirect like any other save.
 
 $withoutDirectory = TEMP_DIR . '/envelope-without-workflows';
 FileSystem::createDir($withoutDirectory);
@@ -148,10 +147,8 @@ FileSystem::createDir($withoutDirectory);
 	['name' => 'new', 'description' => '', 'inputs' => [], 'save' => 'Save'],
 );
 
-Assert::false($response instanceof RedirectResponse, 'a missing directory must not end in a redirect');
-Assert::contains('does not exist', $html);
-// M8: the message must say what to do about it — otherwise a fresh project
-// is a dead end.
-Assert::contains('mkdir -p ' . $withoutDirectory . '/workflows', $html);
+Assert::true($response instanceof RedirectResponse, 'a save into a fresh profile must succeed');
+Assert::true(\is_dir($withoutDirectory . '/workflows'), 'the save creates the workflows directory');
+Assert::true(\is_file($withoutDirectory . '/workflows/new.json'), 'and writes the workflow into it');
 
 FileSystem::delete(TEMP_DIR);

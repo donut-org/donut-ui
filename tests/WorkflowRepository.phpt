@@ -48,12 +48,13 @@ Assert::same([], (new WorkflowRepository($empty))->loadAll());
 
 // A missing directory is a different situation than an empty one — it must
 // throw, not return []. The message is actionable: otherwise there's no way
-// forward from an empty project without a shell, and the GUI deliberately
-// doesn't create directories.
+// forward from an empty project. It points at saving rather than at `mkdir`,
+// because in the GUI the save is what creates the directory — the CLI keeps
+// MissingDir::hint().
 Assert::exception(
 	fn() => new WorkflowRepository($dir . '/gone'),
 	ParseException::class,
-	"Workflows directory '{$dir}/gone' does not exist. Donut will not create it — run `mkdir -p {$dir}/gone`.",
+	"Workflows directory '{$dir}/gone' does not exist. Donut will create it when you save.",
 );
 
 FileSystem::delete(TEMP_DIR);

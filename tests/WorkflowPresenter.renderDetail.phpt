@@ -79,7 +79,7 @@ Assert::contains('Validation did not run', $presenter->template->error);
 // N3: a workflow's detail is the first place a fresh user lands after
 // creating one. Without a hint an empty project is a dead end — the blocks
 // overview has one, this page was missing it.
-Assert::contains('mkdir -p ' . $dir . '/blocks', $presenter->template->error);
+Assert::contains('Donut will create it when you save.', $presenter->template->error);
 
 
 // A broken block — BlockRepository knows about it from the file listing, but

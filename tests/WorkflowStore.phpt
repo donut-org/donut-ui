@@ -39,8 +39,18 @@ Assert::count(1, $loaded->steps);
 $store->save(new Workflow(name: 'w'));
 Assert::same([], (new WorkflowParser)->parseFile($dir . '/w.json')->steps);
 
-// A missing directory is a different situation than an empty one.
-Assert::exception(fn() => new WorkflowStore($dir . '/gone'), ParseException::class);
+// A missing directory is not an error by itself: saving into it is what the
+// user asked for, so the save creates it. Reading still reports it — that's
+// WorkflowRepository's job, not the store's.
+$fresh = TEMP_DIR . '/fresh/workflows';
+Assert::false(\is_dir($fresh));
+
+$freshStore = new WorkflowStore($fresh);
+$freshStore->save(new Workflow(name: 'first'));
+
+Assert::true(\is_dir($fresh));
+Assert::true(\is_file($fresh . '/first.json'));
+Assert::true($freshStore->exists('first'));
 
 // --- exists and delete ---
 

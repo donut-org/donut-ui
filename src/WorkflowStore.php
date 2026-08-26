@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Donut\Gui;
 
 use Donut\Format\Workflow;
-use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Writer\WorkflowWriter;
 use Nette\Utils\FileSystem;
@@ -27,18 +26,9 @@ final class WorkflowStore
 	private readonly WorkflowWriter $writer;
 
 
-	/**
-	 * @throws ParseException when the directory doesn't exist
-	 */
 	public function __construct(
 		private readonly string $directory,
 	) {
-		if (!\is_dir($directory)) {
-			throw new ParseException(
-				"Workflows directory '{$directory}' does not exist. " . MissingDir::hint($directory)
-			);
-		}
-
 		$this->writer = new WorkflowWriter;
 	}
 
@@ -50,10 +40,17 @@ final class WorkflowStore
 
 
 	/**
+	 * Creates the directory: saving is the user asking for the file, and a
+	 * fresh profile would otherwise be a dead end — the form fills in, the
+	 * save fails, and there is nowhere in the GUI to fix it. Reading is a
+	 * different matter and still reports a missing directory.
+	 *
+	 * @throws \Nette\IOException when the directory can't be created
 	 * @throws \Donut\Writer\WriteException when the file can't be written
 	 */
 	public function save(Workflow $workflow): void
 	{
+		FileSystem::createDir($this->directory);
 		$this->writer->writeFile($workflow, $this->path($workflow->name));
 	}
 

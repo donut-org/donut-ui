@@ -157,10 +157,10 @@ Assert::false(is_file($project . '/blocks/renamed.json'));
 
 // --- creating without a blocks directory is reported, not a crash ---
 //
-// BlockStore::__construct() throws ParseException when the blocks
-// directory doesn't exist — on a fresh project that's a normal state.
-// blockFormSucceeded() must catch it just as gracefully as WriteException,
-// not let the exception fall through uncaught.
+// Saving into a profile whose blocks/ doesn't exist yet must work — on a
+// fresh project that's the normal state, and the GUI is where the user has
+// no shell at hand. BlockStore::save() creates the directory, so this ends
+// in a redirect like any other save, not in a form error.
 
 $noBlocksDir = TEMP_DIR . '/edit-no-blocks-dir';
 FileSystem::createDir($noBlocksDir);
@@ -181,10 +181,38 @@ FileSystem::createDir($noBlocksDir);
 	],
 );
 
-Assert::false($response instanceof RedirectResponse, 'a missing directory must not end in a redirect');
-Assert::contains('does not exist', $html);
-// M8: the message must say what to do about it — otherwise an empty project is a dead end.
-Assert::contains('mkdir -p ' . $noBlocksDir . '/blocks', $html);
+Assert::true($response instanceof RedirectResponse, 'a save into a fresh profile must succeed');
+Assert::true(\is_dir($noBlocksDir . '/blocks'), 'the save creates the blocks directory');
+Assert::true(\is_file($noBlocksDir . '/blocks/added.json'), 'and writes the block into it');
+
+// --- and when the directory can't be created, that's a form error too ---
+//
+// FileSystem::createDir() throws an IOException, not a WriteException, so
+// blockFormSucceeded() has to catch it as well — otherwise a profile with a
+// file where blocks/ should be answers with a 500 instead of a message.
+
+$blockedDir = TEMP_DIR . '/edit-blocks-is-a-file';
+FileSystem::createDir($blockedDir);
+FileSystem::write($blockedDir . '/blocks', 'not a directory');
+
+[$response, $html] = runBlockPresenterIn(
+	$blockedDir,
+	['action' => 'edit', 'do' => 'blockForm-submit'],
+	[
+		'name' => 'added',
+		'description' => '',
+		'command' => 'echo',
+		'args' => [],
+		'inputs' => [],
+		'timeout' => '',
+		'allowFailure' => 'none',
+		'allowFailureCodes' => '',
+		'save' => 'Save',
+	],
+);
+
+Assert::false($response instanceof RedirectResponse, 'a directory that can\'t be created must not end in a redirect');
+Assert::contains('Unable to create directory', $html);
 
 // --- a foreign POST must not empty the block form ---
 //

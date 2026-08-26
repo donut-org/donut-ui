@@ -13,6 +13,7 @@ use Donut\Gui\FormFactory;
 use Donut\Gui\KeyMap;
 use Donut\Gui\Presentation\LayoutTemplate;
 use Donut\Gui\ProblemMap;
+use Donut\Gui\ProfileDir;
 use Donut\Gui\RowShape;
 use Donut\Gui\StepMapper;
 use Donut\Gui\StepPath;
@@ -20,7 +21,6 @@ use Donut\Gui\StepTree;
 use Donut\Gui\WorkflowMapper;
 use Donut\Gui\WorkflowRepository;
 use Donut\Gui\WorkflowStore;
-use Donut\MissingDir;
 use Donut\Parser\ParseException;
 use Donut\Profile;
 use Donut\Validator\Result;
@@ -128,7 +128,7 @@ final class WorkflowPresenter extends Presenter
 			// for a broken block file. The block overview has it; the detail
 			// is where a fresh user arrives first, right after creating a
 			// workflow.
-			$hint = \is_dir($dir) ? '' : ' ' . MissingDir::hint($dir);
+			$hint = \is_dir($dir) ? '' : ' ' . ProfileDir::hint();
 
 			$template->error = 'Validation did not run: ' . $e->getMessage() . $hint;
 			$result = new Result;
@@ -392,11 +392,12 @@ final class WorkflowPresenter extends Presenter
 
 			(new WorkflowStore($this->workflowDir()))->save($workflow);
 
-		// There's nothing to throw an IOException here: reading goes through
-		// JsonSource, which reports ParseException, and
+		// Reading goes through JsonSource, which reports ParseException, and
 		// WorkflowWriter::writeFile() wraps its own IOException in a
-		// WriteException.
-		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException $e) {
+		// WriteException — but WorkflowStore::save() creates the workflows
+		// directory first, and FileSystem::createDir() reports its failure as
+		// an IOException that nothing wraps.
+		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException | WriteException | IOException $e) {
 			$form->addError($e->getMessage());
 
 			return;
@@ -510,12 +511,11 @@ final class WorkflowPresenter extends Presenter
 
 			$store->save($workflow);
 
-		} catch (ParseException | WriteException $e) {
-			// WorkflowStore::__construct() throws ParseException when the
-			// workflows directory doesn't exist. WorkflowStore::save() calls
-			// WorkflowWriter::writeFile(), which always wraps its internal
-			// IOException in a WriteException — none escapes, so there's
-			// nothing extra to catch here.
+		} catch (ParseException | WriteException | IOException $e) {
+			// WorkflowWriter::writeFile() wraps its internal IOException in a
+			// WriteException, but WorkflowStore::save() creates the workflows
+			// directory before writing, and FileSystem::createDir() reports
+			// its own failure — that IOException is nobody's to wrap.
 			$form->addError($e->getMessage());
 
 			return;

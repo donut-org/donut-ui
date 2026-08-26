@@ -55,7 +55,7 @@ FileSystem::createDir($prazdny);
 
 [, $html] = runBlockPresenterIn($prazdny, ['action' => 'default']);
 
-Assert::contains('neexistuje', $html);
+Assert::contains("Blocks directory '{$prazdny}/blocks' does not exist.", $html);
 Assert::contains('mkdir -p ' . $prazdny . '/blocks', $html);
 
 // --- rozbitý kámen v přehledu: chyba je vidět a cesta k opravě zůstává ---

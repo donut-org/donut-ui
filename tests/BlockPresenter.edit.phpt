@@ -42,7 +42,7 @@ Assert::notContains('Vypíše text', $new);
 // --- neexistující kámen se ohlásí, nespadne ---
 
 [, $missing] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'neni']);
-Assert::contains('neexistuje', $missing);
+Assert::contains("Block 'neni' does not exist.", $missing);
 
 // --- uložení: platný kámen projde a vznikne soubor ---
 

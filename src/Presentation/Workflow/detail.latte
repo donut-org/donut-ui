@@ -1,27 +1,29 @@
 {import 'steps.latte'}
 
-{block title}{if $workflow === null}Chyba{else}{$workflow->name}{/if} — Donut{/block}
+{block title}{if $workflow === null}Error{else}{$workflow->name}{/if} — Donut{/block}
 
 {block breadcrumbs}
-	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
-	{* U rozbitého souboru je jméno z adresy to jediné, co uživateli řekne,
-	   které workflow se nenaparsovalo — „chyba" mu neřekne nic. *}
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflows</a></li>
+	{* For a broken file, the name from the address is the only thing that
+	   tells the user which workflow failed to parse — "error" wouldn't tell
+	   them anything. *}
 	<li class="breadcrumb-item active" aria-current=page>{$workflow !== null ? $workflow->name : $name}</li>
 {/block}
 
 {block content}
-{* Chyba se hlásí i tehdy, když workflow načíst šlo — chybějící kameny berou
-   validaci, ne celou stránku. Bez workflow zbývá jen hláška. *}
+{* The error is reported even when the workflow did load — missing blocks
+   take validation down, not the whole page. Without a workflow, only the
+   message is left. *}
 <p n:if="$error" class="alert alert-danger">{$error}</p>
 
 <h1 n:if="$workflow !== null">{$workflow->name}</h1>
 
-{* Odkaz na editaci hlavičky je mimo podmínku schválně: rozbité workflow je to
-   jediné, u kterého uživatel cestu k opravě a k mazání potřebuje nejvíc.
-   Totéž pravidlo má Block:detail. Jméno jde z adresy, ne z načteného
-   workflow — u nenaparsovaného souboru žádné načtené není a hledá se stejně
-   podle jména souboru, tedy podle toho z adresy. *}
-<p><a n:href="Workflow:edit, name: $name" class="btn btn-primary">upravit hlavičku</a></p>
+{* The link to edit the header sits outside the condition on purpose: a
+   broken workflow is the one the user most needs a path to fix or delete
+   for. Block:detail has the same rule. The name comes from the address, not
+   from the loaded workflow — a file that failed to parse has no loaded
+   workflow, and is looked up the same way, by the name from the address. *}
+<p><a n:href="Workflow:edit, name: $name" class="btn btn-primary">edit header</a></p>
 
 {if $workflow !== null}
 	<p n:if="$workflow->description">{$workflow->description}</p>
@@ -30,22 +32,22 @@
 		{include problem, problem: $problem}
 	{/foreach}
 
-	<h2 n:if="$workflow->inputs">Vstupy</h2>
+	<h2 n:if="$workflow->inputs">Inputs</h2>
 	<ul n:if="$workflow->inputs">
 		<li n:foreach="$workflow->inputs as $input">
 			<code>--{$input->name}=</code>
-			{$input->required ? 'povinný' : 'volitelný'}
-			{if $input->default !== null}(výchozí <code>{$input->default}</code>){/if}
+			{$input->required ? 'required' : 'optional'}
+			{if $input->default !== null}(default <code>{$input->default}</code>){/if}
 			{$input->description}
 		</li>
 	</ul>
 
 	<p n:if="$selectedKey !== null">
-		Vybraný klíč: <code>{$selectedKey}</code>
-		<a n:href="this, key: null">zrušit výběr</a>
-		<span n:if="!$selectedKeyExists" class=text-warning>— tento klíč se ve workflow nevyskytuje</span>
+		Selected key: <code>{$selectedKey}</code>
+		<a n:href="this, key: null">clear selection</a>
+		<span n:if="!$selectedKeyExists" class=text-warning>— this key does not occur in the workflow</span>
 	</p>
 
-	<h2>Kroky</h2>
+	<h2>Steps</h2>
 	{control stepTree, $workflow, $problems, $keys, $selectedKey}
 {/if}

@@ -1,13 +1,13 @@
-{block title}Krok — {$name} — Donut{/block}
+{block title}Step — {$name} — Donut{/block}
 
 {block breadcrumbs}
-	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflows</a></li>
 	<li class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
-	<li class="breadcrumb-item active" aria-current=page>krok</li>
+	<li class="breadcrumb-item active" aria-current=page>step</li>
 {/block}
 
 {block content}
-<h1>Krok {$type}</h1>
+<h1>Step {$type}</h1>
 <p class=keys>{$at}</p>
 
 <p n:if="$error" class="alert alert-danger">{$error}</p>
@@ -34,7 +34,7 @@
 
 				{elseif $type === 'if'}
 					<p>{label left /} {input left} {input op} {input right}</p>
-					<p class=keys>Operátory <code>empty</code> a <code>not_empty</code> pravou stranu ignorují.</p>
+					<p class=keys>Operators <code>empty</code> and <code>not_empty</code> ignore the right side.</p>
 
 				{elseif $type === 'foreach'}
 					<p>{label over /} {input over}</p>
@@ -45,60 +45,61 @@
 
 		{if $type === 'run'}
 			<div class="card mb-3">
-				<div class="card-header">Vstupy kamene</div>
+				<div class="card-header">Block inputs</div>
 				<div class="card-body">
-					{* table-responsive a aria-label doslova jako ve Workflow/edit.latte. *}
+					{* table-responsive and aria-label literally like in
+					   Workflow/edit.latte. *}
 					<div class=table-responsive>
 						<table class="table table-sm align-middle">
 							<thead>
 								<tr>
-									<th scope=col>Vstup kamene</th>
-									<th scope=col>Hodnota nebo <code>{='{%klíč%}'}</code></th>
-									<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+									<th scope=col>Block input</th>
+									<th scope=col>Value or <code>{='{%key%}'}</code></th>
+									<th scope=col><span class=visually-hidden>Delete row</span></th>
 								</tr>
 							</thead>
 							<tbody id=in>
 								<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
 									<td>{input $row['key']}</td>
 									<td>{input $row['value']}</td>
-									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 
-					<button type=button class="btn btn-sm btn-secondary" data-add=in>+ vstup</button>
+					<button type=button class="btn btn-sm btn-secondary" data-add=in>+ input</button>
 				</div>
 			</div>
 
 			<div class="card mb-3">
-				<div class="card-header">Výstupy do mapy</div>
+				<div class="card-header">Outputs to the map</div>
 				<div class="card-body">
 					<div class=table-responsive>
 						<table class="table table-sm align-middle">
 							<thead>
 								<tr>
-									<th scope=col>Co z kamene</th>
-									<th scope=col>Pod jakým klíčem do mapy</th>
-									<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+									<th scope=col>Block output</th>
+									<th scope=col>Map key</th>
+									<th scope=col><span class=visually-hidden>Delete row</span></th>
 								</tr>
 							</thead>
 							<tbody id=out>
 								<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
 									<td>{input $row['channel']}</td>
 									<td>{input $row['value']}</td>
-									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
 
-					<button type=button class="btn btn-sm btn-secondary" data-add=out>+ výstup</button>
+					<button type=button class="btn btn-sm btn-secondary" data-add=out>+ output</button>
 				</div>
 			</div>
 
 			<div class="card mb-3">
-				<div class="card-header">Ostatní</div>
+				<div class="card-header">Other</div>
 				<div class="card-body">
 					<p>{label timeout /} {input timeout}</p>
 					<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>

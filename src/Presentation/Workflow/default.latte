@@ -1,24 +1,24 @@
-{block title}Workflow — Donut{/block}
+{block title}Workflows — Donut{/block}
 
 {block breadcrumbs}
-	<li class="breadcrumb-item active" aria-current=page>Workflow</li>
+	<li class="breadcrumb-item active" aria-current=page>Workflows</li>
 {/block}
 
 {block content}
-<h1>Workflow</h1>
+<h1>Workflows</h1>
 
-<p><a n:href="Workflow:edit" class="btn btn-primary">+ nové workflow</a></p>
+<p><a n:href="Workflow:edit" class="btn btn-primary">+ new workflow</a></p>
 
 <p n:if="$error" class="alert alert-danger">{$error}</p>
-<p n:if="!$error && !$workflows">V adresáři <code>{$dir}</code> žádná workflow nejsou.</p>
+<p n:if="!$error && !$workflows">There are no workflows in <code>{$dir}</code>.</p>
 
 <div class=table-responsive n:if="$workflows">
 	<table class="table table-sm align-middle">
 		<thead>
 			<tr>
-				<th scope=col>Jméno</th>
-				<th scope=col>Popis</th>
-				<th scope=col><span class=visually-hidden>Akce</span></th>
+				<th scope=col>Name</th>
+				<th scope=col>Description</th>
+				<th scope=col><span class=visually-hidden>Actions</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -37,15 +37,15 @@
 						{$workflow->description}
 					{/if}
 				</td>
-				{* Odkaz na úpravu je mimo podmínku schválně: workflow, které se
-				   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
-				   a k mazání potřebuje nejvíc. Stejně to má Block/default.latte.
+				{* The edit link sits outside the condition on purpose: a workflow
+				   that fails to parse is the one the user most needs a path to fix
+				   or delete. Block/default.latte does the same.
 
-				   aria-label rozlišuje odkazy mezi sebou, stejně jako
-				   v Block/default.latte — bez něj je v seznamu odkazů
-				   odečítače obrazovky jen tolikrát „upravit", kolik má
-				   tabulka řádků. *}
-				<td><a n:href="Workflow:edit, name: $name" class="btn btn-primary btn-sm" aria-label="Upravit workflow {$name}">upravit</a></td>
+				   aria-label tells the links apart, just like in
+				   Block/default.latte — without it a screen reader's list of
+				   links would say "edit" as many times as the table has
+				   rows. *}
+				<td><a n:href="Workflow:edit, name: $name" class="btn btn-primary btn-sm" aria-label="Edit workflow {$name}">edit</a></td>
 			</tr>
 		</tbody>
 	</table>

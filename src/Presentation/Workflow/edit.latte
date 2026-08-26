@@ -1,13 +1,13 @@
-{block title}{$name ?? 'Nové workflow'} — Donut{/block}
+{block title}{$name ?? 'New workflow'} — Donut{/block}
 
 {block breadcrumbs}
-	<li class=breadcrumb-item><a n:href="Workflow:default">Workflow</a></li>
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflows</a></li>
 	<li n:if="$name !== null" class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
-	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'nové workflow' : 'hlavička'}</li>
+	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'new workflow' : 'header'}</li>
 {/block}
 
 {block content}
-<h1>{$name ?? 'Nové workflow'}</h1>
+<h1>{$name ?? 'New workflow'}</h1>
 
 <p n:if="$error" class="alert alert-danger">{$error}</p>
 
@@ -27,21 +27,23 @@
 		</div>
 
 		<div class="card mb-3">
-			<div class="card-header">Vstupy</div>
+			<div class="card-header">Inputs</div>
 			<div class="card-body">
-				{* table-responsive: v úzkém okně se tabulka posouvá vodorovně místo
-				   toho, aby se sloupce stlačily na pár znaků.
-				   Přístupné jméno políček (aria-label) přidává prezenter — je to
-				   popisek jako každý jiný a v tomhle GUI bydlí u addText(). *}
+				{* table-responsive: on a narrow window the table scrolls
+				   horizontally instead of squeezing the columns down to a few
+				   characters.
+				   The accessible name of the fields (aria-label) is added by the
+				   presenter — it's a label like any other, and in this GUI it
+				   lives at addText(). *}
 				<div class=table-responsive>
 					<table class="table table-sm align-middle">
 						<thead>
 							<tr>
-								<th scope=col>Jméno</th>
-								<th scope=col>Povinný</th>
-								<th scope=col>Výchozí</th>
-								<th scope=col>Popis</th>
-								<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+								<th scope=col>Name</th>
+								<th scope=col>Required</th>
+								<th scope=col>Default</th>
+								<th scope=col>Description</th>
+								<th scope=col><span class=visually-hidden>Delete row</span></th>
 							</tr>
 						</thead>
 						<tbody id=inputs>
@@ -50,17 +52,17 @@
 								<td>{input $row['required']}</td>
 								<td>{input $row['default']}</td>
 								<td>{input $row['description']}</td>
-								<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+								<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
 
-				<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
+				<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ input</button>
 
 				<p class=form-text>
-					Výchozí hodnota se použije, když ji volající nepředá.
-					Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
+					The default value is used when the caller does not pass one.
+					On the command line an input is given as <code>--name=value</code>.
 				</p>
 			</div>
 		</div>
@@ -69,16 +71,16 @@
 	{/form}
 {/if}
 
-{* Mazání je mimo {if !$error} schválně: workflow, jehož soubor se
-   nenaparsuje, je to jediné, které uživatel odstranit potřebuje nejvíc.
-   Doslovně podle Block/edit.latte. *}
+{* Deletion sits outside {if !$error} on purpose: a workflow whose file fails
+   to parse is the one the user most needs to be able to remove. Literally
+   like Block/edit.latte. *}
 {if $name !== null}
 	<div class="card border-danger mb-3">
-		<div class="card-header text-danger">Smazat</div>
+		<div class="card-header text-danger">Delete</div>
 		<div class="card-body">
 			<p class=keys>
-				Workflow se spouští jménem z cronu a z CLI, což tenhle nástroj
-				nevidí — zkontroluj si, že ho nikde nespouštíš.
+				The workflow runs by name from cron and the CLI, which this tool
+				cannot see — check that nothing else runs it.
 			</p>
 
 			{form deleteWorkflowForm}
@@ -89,9 +91,10 @@
 				</div>
 
 				<input type=hidden n:name=name value="{$name}">
-				{* Jméno se do confirm() nedává schválně — v JS kontextu ho Latte
-				   json-enkóduje a v dialogu by bylo v uvozovkách navíc. *}
-				<button type=submit n:name=save onclick="return confirm('Opravdu smazat toto workflow?')">Smazat</button>
+				{* The name isn't passed to confirm() on purpose — in a JS context
+				   Latte JSON-encodes it, and the dialog would have it in extra
+				   quotes. *}
+				<button type=submit n:name=save onclick="return confirm('Really delete this workflow?')">Delete</button>
 			{/form}
 		</div>
 	</div>

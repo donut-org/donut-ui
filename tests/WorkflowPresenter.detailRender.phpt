@@ -22,27 +22,29 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// I4: nic v repozitáři šablony doopravdy nerenderovalo. Latte.TemplatesCompile.phpt
-// kompiluje, ale typované parametry {define} kontroluje Latte až za běhu —
-// vypuštění jednoho argumentu z {include steps, …} tak nechalo kompilaci
-// zelenou a spadlo by až uživateli jako HTTP 500. WorkflowPresenter.renderDetail.phpt
-// šablonu taky nerenderuje, sahá jen na $presenter->template->error. Tenhle
-// test je mezi testem a uživatelem první věc, co šablonu doopravdy vyrenderuje.
+// I4: nothing in the repository actually rendered a template.
+// Latte.TemplatesCompile.phpt compiles, but Latte only checks {define}'s typed
+// parameters at run time — dropping one argument from {include steps, …} left
+// the compile step green and would have crashed on the user as an HTTP 500.
+// WorkflowPresenter.renderDetail.phpt doesn't render the template either, it
+// only touches $presenter->template->error. This test is the first thing
+// between the test suite and the user that actually renders the template.
 
 /**
- * Presenter mimo DI kontejner potřebuje $template a injectPrimary() ručně.
- * Na rozdíl od WorkflowPresenter.renderDetail.phpt dostane Engine se skutečnou
- * UIExtension (jinak by n:href v steps.latte nefungovalo) a temp adresář.
+ * A presenter outside the DI container needs $template and injectPrimary()
+ * set up by hand. Unlike WorkflowPresenter.renderDetail.phpt, this one gets
+ * an Engine with a real UIExtension (otherwise n:href in steps.latte wouldn't
+ * work) and a temp directory.
  */
 function createPresenter(Profile $profile): WorkflowPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
 		{
-			// Bez setTempDirectory() Latte zkompilovaný kód jen eval()uje
-			// do paměti — žádný soubor na disk. Kdyby se sem přidal cache
-			// adresář pod gui/tests/, PHPStan (paths: [src, tests]) by
-			// vyzkompilované .php soubory sebral k analýze při dalším běhu.
+			// Without setTempDirectory() Latte just eval()s the compiled code
+			// into memory — no file hits disk. Adding a cache directory under
+			// gui/tests/ here would let PHPStan (paths: [src, tests]) pick up
+			// the compiled .php files on its next run.
 			$engine = new Engine;
 			$engine->addExtension(new UIExtension($control));
 
@@ -50,10 +52,10 @@ function createPresenter(Profile $profile): WorkflowPresenter
 		}
 	};
 
-	// n:href v steps.latte/detail.latte potřebuje LinkGenerator, ten se
-	// v injectPrimary() postaví, jen když dostane router i presenter factory
-	// zároveň. Presenter factory se tu nikdy nezeptá na jiný presenter,
-	// stačí jí umět vrátit tenhle jediný.
+	// n:href in steps.latte/detail.latte needs a LinkGenerator, which
+	// injectPrimary() only builds when it gets both a router and a presenter
+	// factory. The presenter factory here is never asked for another
+	// presenter, it only needs to be able to return this one.
 	$presenterFactory = new class implements IPresenterFactory {
 		public function getPresenterClass(string &$name): string
 		{
@@ -63,7 +65,7 @@ function createPresenter(Profile $profile): WorkflowPresenter
 
 		public function createPresenter(string $name): IPresenter
 		{
-			throw new \LogicException('nepoužito — LinkGenerator jen skládá adresy, nevytváří presentery');
+			throw new \LogicException('unused — a LinkGenerator only builds addresses, it does not create presenters');
 		}
 	};
 
@@ -76,9 +78,10 @@ function createPresenter(Profile $profile): WorkflowPresenter
 		templateFactory: new TemplateFactory($latteFactory),
 	);
 
-	// autoCanonicalize by po run() zkoušelo přesměrovat na kanonickou adresu
-	// — s ručně sestaveným Requestem (bez skutečného routování) by to
-	// vždycky spustilo RedirectResponse místo TextResponse se šablonou.
+	// autoCanonicalize would try to redirect to the canonical address after
+	// run() — with a manually built Request (without real routing) that would
+	// always fire a RedirectResponse instead of a TextResponse with the
+	// template.
 	$presenter->autoCanonicalize = false;
 
 	return $presenter;
@@ -86,9 +89,9 @@ function createPresenter(Profile $profile): WorkflowPresenter
 
 
 /**
- * renderDetail() čte profil, fixtura se mu tedy předává jako Profile —
- * referenční zátěž má reálné then/else/foreach větve, není potřeba stavět
- * vlastní.
+ * renderDetail() reads the profile, so the fixture is passed to it as a
+ * Profile — the reference workload has real then/else/foreach branches, no
+ * need to build one.
  */
 function renderDetailIn(string $dir, string $name, ?string $key = null): string
 {
@@ -111,91 +114,93 @@ function renderDetailIn(string $dir, string $name, ?string $key = null): string
 
 $root = __DIR__ . '/../../docs/workflows/donut';
 
-// --- bez key: obě větve podmínky u "Vybraný klíč" ---
+// --- without a key: both branches of the "Selected key" condition ---
 
 $html = renderDetailIn($root, 'card-dev');
 Assert::contains('card-dev', $html);
-Assert::contains('čte', $html);
-Assert::contains('zapisuje', $html);
-Assert::notContains('Vybraný klíč', $html);
-Assert::contains('result →', $html, 'run musí ukázat, do kterého klíče zapisuje');
+Assert::contains('reads', $html);
+Assert::contains('writes', $html);
+Assert::notContains('Selected key', $html);
+Assert::contains('result →', $html, 'run must show which key it writes to');
 
 $html = renderDetailIn($root, 'sync');
 Assert::contains('sync', $html);
-Assert::contains('čte', $html);
-Assert::contains('zapisuje', $html);
-Assert::notContains('Vybraný klíč', $html);
+Assert::contains('reads', $html);
+Assert::contains('writes', $html);
+Assert::notContains('Selected key', $html);
 
-// --- s key: druhá větev podmínky, zvýrazněný krok ---
+// --- with a key: the condition's other branch, a highlighted step ---
 
 $html = renderDetailIn($root, 'card-dev', 'repo');
-Assert::contains('Vybraný klíč: <code>repo</code>', $html);
+Assert::contains('Selected key: <code>repo</code>', $html);
 Assert::contains('class="card step write"', $html);
 Assert::contains('class="card step read"', $html);
 
 $html = renderDetailIn($root, 'sync', 'cards');
-Assert::contains('Vybraný klíč: <code>cards</code>', $html);
+Assert::contains('Selected key: <code>cards</code>', $html);
 Assert::contains('class="card step write"', $html);
-Assert::contains('class="card step loop read"', $html, 'cards čte jen foreach nad {%cards%}, takže jeho bublina nese i loop');
+Assert::contains('class="card step loop read"', $html, 'cards is read only by the foreach over {%cards%}, so its bubble carries loop too');
 
-// --- strom kroků je řetěz bublin a zvýraznění sedí na bublině, ne na uzlu ---
-// Kdyby třída sedla na .node, přetekl by prstenec na celé tělo
-// then/else/foreach.
+// --- the step tree is a chain of bubbles, and the highlight sits on the
+// bubble, not on the node ---
+// If the class landed on .node, the ring would overflow onto the whole
+// then/else/foreach body.
 
 Assert::contains('class="chain"', $html);
 Assert::match('~<div class="node">\s*<div class="card step~', $html);
 
-// A teď to podstatné: zvýraznění sedí na bublině, ne na tělu cyklu.
-// Aserce níž by byla vakuová, kdyby žádný krok zvýrazněný nebyl —
-// proto se stránka renderuje s vybraným klíčem a nejdřív se ověří,
-// že se vůbec něco zvýraznilo.
-Assert::match('~<div class="card step [^"]*\b(write|read)\b~', $html, 'aspoň jedna bublina musí být zvýrazněná, jinak aserce níž nic netvrdí');
+// And now the important part: the highlight sits on the bubble, not on the
+// loop body. The assertion below would be vacuous if no step were
+// highlighted at all — that's why the page is rendered with a selected key,
+// and we first check that something got highlighted at all.
+Assert::match('~<div class="card step [^"]*\b(write|read)\b~', $html, 'at least one bubble must be highlighted, otherwise the assertion below asserts nothing');
 
-// Tohle je jediná vlastnost projektu, která se dá rozbít tiše — vypadalo by
-// to jen „nějak divně": prstenec cyklu smí orámovat jen jeho hlavičku,
-// nikdy celé tělo, jinak by tvrdil, že je vybraný celý podstrom.
-Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'zvýraznění nesmí sednout na tělo cyklu — tvrdilo by, že je vybraný celý podstrom');
+// This is the one property of the project that can break silently — it
+// would just look "somehow off": the loop's ring may frame only its header,
+// never the whole body, otherwise it would claim the whole subtree is
+// selected.
+Assert::notMatch('~<div class="loop-body[^"]*\b(write|read)\b~', $html, 'the highlight must not land on the loop body — that would claim the whole subtree is selected');
 
-// --- pruhy se zvýrazňují jen při vybraném klíči ---
+// --- the bars highlight only when a key is selected ---
 
-Assert::contains('flow-on', $html, 'pruh s vybraným klíčem musí zesílit');
-Assert::contains('flow-dim', $html, 'ostatní pruhy musí zblednout');
+Assert::contains('flow-on', $html, 'the bar with the selected key must intensify');
+Assert::contains('flow-dim', $html, 'the other bars must dim');
 
-$syncBezKlice = renderDetailIn($root, 'sync');
-Assert::notContains('flow-on', $syncBezKlice, 'bez vybraného klíče nemá stav pruhu smysl');
-Assert::notContains('flow-dim', $syncBezKlice);
+$syncWithoutKey = renderDetailIn($root, 'sync');
+Assert::notContains('flow-on', $syncWithoutKey, 'without a selected key the bar state has no meaning');
+Assert::notContains('flow-dim', $syncWithoutKey);
 
-// --- M7: klíč, který ve workflow není ---
+// --- M7: a key that isn't in the workflow ---
 
-$html = renderDetailIn($root, 'card-dev', 'nesmysl');
-Assert::contains('Vybraný klíč: <code>nesmysl</code>', $html);
-Assert::contains('tento klíč se ve workflow nevyskytuje', $html);
+$html = renderDetailIn($root, 'card-dev', 'nonsense');
+Assert::contains('Selected key: <code>nonsense</code>', $html);
+Assert::contains('this key does not occur in the workflow', $html);
 
-// --- if má dvě větve i s prázdným else ---
-// card-dev má dvě podmínky a obě mají prázdný else. Kdyby se prázdná větev
-// nevykreslila, nešlo by do else nic přidat — a poznalo by se to až tím, že
-// uživateli chybí odkaz, ne pádem testu.
+// --- if has two branches, even with an empty else ---
+// card-dev has two conditions and both have an empty else. If the empty
+// branch didn't render, nothing could be added to else — and it would only
+// show up as the user missing a link, not as a failing test.
 
 $html = renderDetailIn($root, 'card-dev');
-Assert::same(4, substr_count($html, '<div class="branch">'), 'dvě podmínky × dvě větve');
+Assert::same(4, substr_count($html, '<div class="branch">'), 'two conditions × two branches');
 
 $pos = strpos($html, '>else</span>');
-Assert::type('int', $pos, 'bez popisku větve by aserce níž nic netvrdila');
-$vetev = substr($html, $pos, 400);
-Assert::contains('class="add"', $vetev, 'prázdná větev else musí nabízet „+ krok"');
-Assert::notContains('class="card step', $vetev, 'prázdná větev nesmí obsahovat bublinu');
+Assert::type('int', $pos, 'without the branch label the assertion below asserts nothing');
+$branch = substr($html, $pos, 400);
+Assert::contains('class="add"', $branch, 'an empty else branch must offer "+ step"');
+Assert::notContains('class="card step', $branch, 'an empty branch must not contain a bubble');
 
-// --- karta kamene se otevře jen u kroku, který s vybraným klíčem pracuje ---
-// Bez toho by uživatel po kliknutí na klíč proklikával bubliny, aby našel,
-// kde se používá. Otevřít všechny by ale bylo stejně k ničemu jako neotevřít
-// žádnou, proto se testuje obojí.
+// --- the block card opens only for a step that works with the selected key ---
+// Without this, the user would have to click through bubbles after clicking a
+// key to find where it's used. Opening all of them would be just as useless
+// as opening none, so both are tested.
 
-$cardDevBezKlice = renderDetailIn($root, 'card-dev');
-Assert::match('~<details~', $cardDevBezKlice, 'bez karet kamene by aserce níž nic netvrdily');
-Assert::notMatch('~<details[^>]*\bopen\b~', $cardDevBezKlice, 'bez vybraného klíče se nesmí otevřít žádná');
+$cardDevWithoutKey = renderDetailIn($root, 'card-dev');
+Assert::match('~<details~', $cardDevWithoutKey, 'without block cards the assertion below asserts nothing');
+Assert::notMatch('~<details[^>]*\bopen\b~', $cardDevWithoutKey, 'without a selected key none may open');
 
 $html = renderDetailIn($root, 'card-dev', 'meJson');
-$otevrenych = preg_match_all('~<details[^>]*\bopen\b~', $html);
-$vsech = preg_match_all('~<details~', $html);
-Assert::true($otevrenych > 0, 's vybraným klíčem se musí otevřít aspoň jedna');
-Assert::true($otevrenych < $vsech, 'otevřít se smí jen kroky s vybraným klíčem, ne všechny');
+$opened = preg_match_all('~<details[^>]*\bopen\b~', $html);
+$all = preg_match_all('~<details~', $html);
+Assert::true($opened > 0, 'with a selected key at least one must open');
+Assert::true($opened < $all, 'only steps with the selected key may open, not all of them');

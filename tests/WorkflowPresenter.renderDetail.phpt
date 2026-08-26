@@ -16,14 +16,14 @@ use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
 
-// C1: vadný kámen nebo chybějící blocks/ nesmí shodit renderDetail() na
-// neošetřenou výjimku — nejhorší chvíle na to, je zrovna když má stránka
-// ukázat, co je rozbité.
+// C1: a broken block or a missing blocks/ must not knock renderDetail() into
+// an unhandled exception — the worst time for that is exactly when the page
+// has to show what's broken.
 
 /**
- * Presenter mimo DI kontejner potřebuje $template a injectPrimary() ručně,
- * jinak Presenter::getTemplateFactory() vyhodí "Service TemplateFactory has
- * not been set."
+ * A presenter outside the DI container needs $template and injectPrimary()
+ * set up by hand, otherwise Presenter::getTemplateFactory() throws "Service
+ * TemplateFactory has not been set."
  */
 function createPresenter(Profile $profile): WorkflowPresenter
 {
@@ -46,7 +46,8 @@ function createPresenter(Profile $profile): WorkflowPresenter
 
 
 /**
- * renderDetail() čte profil, fixtura se mu tedy předává jako Profile.
+ * renderDetail() reads the profile, so the fixture is passed to it as a
+ * Profile.
  */
 function renderDetailIn(string $dir): WorkflowPresenter
 {
@@ -57,8 +58,8 @@ function renderDetailIn(string $dir): WorkflowPresenter
 }
 
 
-// Chybějící blocks/ — BlockRepository hází v konstruktoru dřív, než se
-// vůbec dostane k validaci.
+// A missing blocks/ — BlockRepository throws in its constructor, before it
+// even gets to validation.
 $dir = TEMP_DIR . '/missing-blocks';
 FileSystem::write($dir . '/workflows/w.json', json_encode([
 	'name' => 'w',
@@ -70,18 +71,19 @@ $presenter = renderDetailIn($dir);
 Assert::type('string', $presenter->template->error);
 Assert::contains('blocks', $presenter->template->error);
 
-// N2: stránka se vykreslí celá, ale bez jediného nálezu validátoru — musí
-// být poznat, že se nevalidovalo, ne že je všechno v pořádku.
+// N2: the page renders in full, but without a single validator finding — it
+// must be possible to tell that validation didn't run, not that everything
+// is fine.
 Assert::contains('Validation did not run', $presenter->template->error);
 
-// N3: detail workflow je po založení první místo, kam se čerstvý uživatel
-// dostane. Bez návodu je prázdný projekt slepá ulička — přehled kamenů ho má,
-// tady chyběl.
+// N3: a workflow's detail is the first place a fresh user lands after
+// creating one. Without a hint an empty project is a dead end — the blocks
+// overview has one, this page was missing it.
 Assert::contains('mkdir -p ' . $dir . '/blocks', $presenter->template->error);
 
 
-// Vadný kámen — BlockRepository ho zná ze seznamu souborů, ale parsuje ho
-// líně a vyletí až uvnitř Validator::checkRun().
+// A broken block — BlockRepository knows about it from the file listing, but
+// parses it lazily and blows up only inside Validator::checkRun().
 $dir = TEMP_DIR . '/broken-block';
 FileSystem::write($dir . '/workflows/w.json', json_encode([
 	'name' => 'w',
@@ -89,21 +91,23 @@ FileSystem::write($dir . '/workflows/w.json', json_encode([
 		['type' => 'run', 'block' => 'broken'],
 	],
 ]));
-FileSystem::write($dir . '/blocks/broken.json', '{ toto neni platny json');
+FileSystem::write($dir . '/blocks/broken.json', '{not valid json');
 
 $presenter = renderDetailIn($dir);
 
 Assert::type('string', $presenter->template->error);
 
-// N2: rozbitý soubor kamene shodí validátor uprostřed práce, takže prázdný
-// Result neznamená „nic k hlášení", ale „nevalidovalo se". Kdykoli je v
-// blocks/ rozbitý JSON, mizí i skutečné nálezy (třeba „kámen neexistuje") —
-// stránka to musí přiznat, jinak vypadá zvalidovaně.
+// N2: a broken block file knocks the validator down mid-work, so an empty
+// Result doesn't mean "nothing to report" but "validation didn't run".
+// Whenever blocks/ has broken JSON, real findings (say, "block does not
+// exist") disappear too — the page must admit that, instead of looking
+// validated.
 Assert::contains('Validation did not run', $presenter->template->error);
 
-// Adresář blocks/ tady existuje, takže rada `mkdir blocks` by byla nesmysl.
+// The blocks/ directory exists here, so the `mkdir blocks` hint would be
+// nonsense.
 Assert::notContains('mkdir', $presenter->template->error);
 
-// A pro pořádek: nálezy validátoru jsou opravdu pryč, hláška je jediné, co
-// o problému na stránce zbývá.
+// And for the record: the validator findings really are gone, the message is
+// the only thing about the problem left on the page.
 Assert::same([], $presenter->template->workflowProblems);

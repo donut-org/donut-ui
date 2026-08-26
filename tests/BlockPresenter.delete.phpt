@@ -30,7 +30,7 @@ FileSystem::write($project . '/workflows/w.json', json_encode([
 [, $html] = runBlockPresenterIn($project, ['action' => 'default']);
 
 // The table shows which workflow calls the block. This used to check the
-// word "používá" (used by) from the sentence under the heading — in the
+// Czech word for "used by" from the sentence under the heading — in the
 // table it became the column header. So we ask about the cell content
 // instead; `contains('w')` alone asserted nothing, because the letter w is
 // everywhere in the HTML (workflow, www).

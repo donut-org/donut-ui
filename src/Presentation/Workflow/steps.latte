@@ -1,4 +1,4 @@
-{* Severita → CSS třída a ikona na jednom místě, ne dvakrát opsané. *}
+{* Severity → CSS class and icon in one place, not duplicated twice. *}
 {define problem, Donut\Validator\Problem $problem}
 <div class="{$problem->severity === Donut\Validator\Problem::Error ? 'text-danger' : 'text-warning'}">
 	{$problem->severity === Donut\Validator\Problem::Error ? '✕' : '⚠'} {$problem->message}
@@ -6,12 +6,12 @@
 {/define}
 
 
-{* Pruh „zapisuje" má stejný tvar u set i foreach, na jednom místě, aby stav
-   vybraného klíče (flow-on/flow-dim) přibyl jen jednou. *}
+{* The "writes" bar has the same shape for set and foreach, in one place, so
+   the selected key's state (flow-on/flow-dim) only needs adding once. *}
 {define writes, array $writes, ?string $selected}
 <div n:if="$writes" n:class="alert, alert-info, flow,
 	$selected !== null && in_array($selected, $writes, true) ? 'flow-on'
-	: ($selected !== null ? 'flow-dim' : null)">zapisuje
+	: ($selected !== null ? 'flow-dim' : null)">writes
 	{foreach $writes as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
 </div>
 {/define}
@@ -21,8 +21,9 @@
 <div class="chain">
 	{foreach $steps as $i => $step}
 		{var $at = $path->index($i)}
-		{* Kolik kroků zmizí spolu s tímhle — rekurzivně, i s vnořenými
-		   then/else/steps, jinak by potvrzení mazání číslo podhodnotilo. *}
+		{* How many steps disappear along with this one — recursively, including
+		   nested then/else/steps, otherwise the delete confirmation would
+		   understate the count. *}
 		{var $subtree = Donut\Gui\StepCount::subtree($step)}
 		{var $type = $step instanceof Donut\Format\RunStep ? 'run'
 			: ($step instanceof Donut\Format\SetStep ? 'set'
@@ -31,14 +32,15 @@
 			'if' => 'text-bg-dark', 'foreach' => 'text-bg-primary'][$type]}
 		{var $reads = $keys->readsAt($at)}
 		{var $writes = $keys->writesAt($at)}
-		{* Prázdno znamená, že krok s vybraným klíčem nepracuje. Bez vybraného
-		   klíče vrací classAt() prázdno vždycky, takže se nic neotevře. *}
+		{* Empty means the step doesn't work with the selected key. With no
+		   selected key, classAt() always returns empty, so nothing opens. *}
 		{var $keyClass = $keys->classAt($at, $selected)}
 
 		<div class="node">
-			{* Třída z classAt() patří bublině. U cyklu bublina obsahuje i své
-			   tělo, proto navíc třída loop — CSS pak kreslí prstenec jen na
-			   hlavičce, jinak by orámoval celý podstrom uvnitř. *}
+			{* The class from classAt() belongs to the bubble. For a loop the
+			   bubble contains its own body too, hence the extra class loop — CSS
+			   then draws the ring only on the header, otherwise it would frame
+			   the whole subtree inside. *}
 			<div n:class="card, step, $type === 'foreach' ? 'loop' : null, $keyClass">
 				<div class="card-header d-flex align-items-center gap-2 flex-wrap">
 					<span n:class="badge, $typeClass">{$type}</span>
@@ -52,7 +54,7 @@
 				<div class="card-body">
 					<div n:if="$reads" n:class="alert, alert-success, flow,
 						$selected !== null && in_array($selected, $reads, true) ? 'flow-on'
-						: ($selected !== null ? 'flow-dim' : null)">čte
+						: ($selected !== null ? 'flow-dim' : null)">reads
 						{foreach $reads as $k}<a href="{plink this, key: $k}"><code>{$k}</code></a>{sep}, {/sep}{/foreach}
 					</div>
 
@@ -60,15 +62,15 @@
 						{var $inputCount = count($step->in)}
 						<details class="block" n:attr="open => $keyClass !== ''">
 							<summary><code>{$step->block}</code>
-								<span class="text-muted">· {if $inputCount === 0}bez vstupů{else}{$inputCount}
-									{$inputCount === 1 ? 'vstup' : ($inputCount < 5 ? 'vstupy' : 'vstupů')}{/if}</span>
+								<span class="text-muted">· {if $inputCount === 0}no inputs{else}{$inputCount}
+									{$inputCount === 1 ? 'input' : 'inputs'}{/if}</span>
 							</summary>
 							<div class="block-body">
 								<div class="in-row" n:foreach="$step->in as $key => $template">
 									<small class="fw-bold">{$key}</small>
 									<code>{$template->getSource()}</code>
 								</div>
-								<p n:if="$inputCount === 0" class="text-muted small mb-0">Kámen nemá vstupy.</p>
+								<p n:if="$inputCount === 0" class="text-muted small mb-0">The block has no inputs.</p>
 							</div>
 						</details>
 
@@ -103,34 +105,35 @@
 				</div>
 
 				<div class="card-footer d-flex gap-1 align-items-center justify-content-end">
-					{* btn-group tu nejde: očekává tlačítka jako přímé sourozence,
-					   ale tři ze čtyř sedí každý ve vlastním <form> — Nette
-					   komponentu nelze renderovat uvnitř n:foreach, takže
-					   formuláře musí zůstat ruční. *}
-					<a class="btn btn-sm btn-outline-secondary" href="{plink Workflow:step, name: $name, at: (string) $at}">upravit</a>
+					{* btn-group doesn't work here: it expects buttons as direct
+					   siblings, but three of the four each sit in their own <form>
+					   — a Nette component can't render inside n:foreach, so the
+					   forms have to stay manual. *}
+					<a class="btn btn-sm btn-outline-secondary" href="{plink Workflow:step, name: $name, at: (string) $at}">edit</a>
 
 					<form n:if="$i > 0" method=post action="{link moveUp!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Posunout nahoru">↑</button>
+						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Move up">↑</button>
 					</form>
 
 					<form n:if="$i < count($steps) - 1" method=post action="{link moveDown!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Posunout dolů">↓</button>
+						<button type=submit class="btn btn-sm btn-outline-secondary" aria-label="Move down">↓</button>
 					</form>
 
 					<form method=post action="{link deleteStep!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
-						<button type=submit class="btn btn-sm btn-outline-danger" aria-label="Smazat krok" n:attr="onclick => $subtree
-							? 'return confirm(\'Smazat i ' . Donut\Gui\StepCount::label($subtree) . '?\')'
+						<button type=submit class="btn btn-sm btn-outline-danger" aria-label="Delete step" n:attr="onclick => $subtree
+							? 'return confirm(\'Delete ' . Donut\Gui\StepCount::label($subtree) . '?\')'
 							: null">×</button>
 					</form>
 				</div>
 			</div>
 
-			{* Větve if visí pod bublinou, MIMO ni — na rozdíl od těla cyklu,
-			   které je uvnitř. Sloupce musí být stejně široké, jinak vodorovná
-			   spojnice nesedí na jejich středy (řeší CSS). *}
+			{* The if branches hang below the bubble, OUTSIDE it — unlike the
+			   loop body, which is inside. The columns must be equally wide,
+			   otherwise the horizontal connector wouldn't land on their centers
+			   (CSS handles that). *}
 			{if $type === 'if'}
 				<div class="branches">
 					<div class="branch">
@@ -146,7 +149,7 @@
 		</div>
 	{/foreach}
 
-	<div class="add">+ krok:
+	<div class="add">+ step:
 		{foreach ['run', 'set', 'if', 'foreach'] as $newType}
 			<a href="{plink Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $newType}">{$newType}</a>{sep} {/sep}
 		{/foreach}

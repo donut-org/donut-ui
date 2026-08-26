@@ -33,7 +33,7 @@ Assert::contains('name=broken&amp;action=edit', $list, 'the list must offer an e
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'broken']);
 
 Assert::contains('alert-danger', $html, 'the parse error is reported');
-Assert::contains('Smazat', $html, 'delete used to sit inside {if !$error}');
+Assert::contains('Delete', $html, 'delete used to sit inside {if !$error}');
 
 // --- the breadcrumbs of a broken workflow carry the file name, not the
 // word "error" ---
@@ -44,14 +44,14 @@ Assert::contains('Smazat', $html, 'delete used to sit inside {if !$error}');
 
 Assert::contains('alert-danger', $brokenDetail, 'the parse error is reported');
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>broken</li>~', $brokenDetail);
-Assert::notContains('>chyba</li>', $brokenDetail);
+Assert::notContains('>Error</li>', $brokenDetail);
 
 // --- and offer editing the header, same as the detail of a broken block ---
 // The link used to sit inside {if $workflow !== null}, so the detail of a
 // broken workflow showed only the message, and the path to fix it led
 // nowhere.
 Assert::match(
-	'~<a href="[^"]*name=broken[^"]*"[^>]*>upravit hlavičku</a>~',
+	'~<a href="[^"]*name=broken[^"]*"[^>]*>edit header</a>~',
 	$brokenDetail,
 	'even a broken workflow must offer a way to fix it',
 );
@@ -98,7 +98,7 @@ FileSystem::write($withoutBlocks . '/workflows/w.json', json_encode([
 
 Assert::contains('blocks', $detail, 'missing blocks are reported');
 Assert::contains('<h1>w</h1>', $detail, 'the header renders even without blocks');
-Assert::contains('upravit hlavičku', $detail, 'the link to the envelope must not disappear');
+Assert::contains('edit header', $detail, 'the link to the envelope must not disappear');
 Assert::match('~<span class="badge [^"]*">set</span>~', $detail, 'the step tree renders even without validation');
 
 FileSystem::delete(TEMP_DIR);

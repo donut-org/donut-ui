@@ -20,10 +20,10 @@ FileSystem::write($dir . '/workflows/w.json', \json_encode([
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
 
 // the header is what tells the user what belongs in which field
-Assert::contains('<th scope=col>Jméno</th>', $html);
-Assert::contains('<th scope=col>Povinný</th>', $html);
-Assert::contains('<th scope=col>Výchozí</th>', $html);
-Assert::contains('<th scope=col>Popis</th>', $html);
+Assert::contains('<th scope=col>Name</th>', $html);
+Assert::contains('<th scope=col>Required</th>', $html);
+Assert::contains('<th scope=col>Default</th>', $html);
+Assert::contains('<th scope=col>Description</th>', $html);
 
 // markup that rows.js reaches into
 Assert::contains('<tbody id=inputs>', $html);
@@ -33,7 +33,7 @@ Assert::contains('data-add=inputs', $html);
 
 // the delete button has an accessible name too — without aria-label a
 // screen reader would just hear "button ×"
-Assert::contains('js-del-row" aria-label="Smazat řádek"', $html);
+Assert::contains('js-del-row" aria-label="Delete row"', $html);
 
 // the old .row class is gone — it would collide with the Bootstrap grid
 Assert::notMatch('~<div class=row[ >]~', $html);
@@ -54,8 +54,8 @@ Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="repo"~', $html);
 Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="Repository"~', $html);
 
 // help text under the table
-Assert::contains('--jmeno=hodnota', $html);
-Assert::contains('když ji volající nepředá', $html);
+Assert::contains('--name=value', $html);
+Assert::contains('the caller does not pass one', $html);
 
 
 // --- the step page: the in and out tables -----------------------------
@@ -85,12 +85,12 @@ FileSystem::write($step . '/workflows/w.json', \json_encode([
 	'at' => 'w.json:steps[0]',
 ]);
 
-Assert::contains('<th scope=col>Vstup kamene</th>', $stepHtml);
-Assert::contains('<th scope=col>Co z kamene</th>', $stepHtml);
-Assert::contains('<th scope=col>Pod jakým klíčem do mapy</th>', $stepHtml);
+Assert::contains('<th scope=col>Block input</th>', $stepHtml);
+Assert::contains('<th scope=col>Block output</th>', $stepHtml);
+Assert::contains('<th scope=col>Map key</th>', $stepHtml);
 
-// the literal {%klíč%} in the header — Latte can only output it via {='…'}
-Assert::contains('&#123;%klíč%}', $stepHtml);
+// the literal {%key%} in the header — Latte can only output it via {='…'}
+Assert::contains('&#123;%key%}', $stepHtml);
 
 Assert::contains('<tbody id=in>', $stepHtml);
 Assert::contains('<tbody id=out>', $stepHtml);
@@ -101,7 +101,7 @@ Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 // the delete button has an accessible name too — without aria-label a
 // screen reader would just hear "button ×"; both tables have two rows each
 // (the filled one plus an extra empty one), so four delete buttons total
-Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Smazat řádek"'));
+Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Delete row"'));
 
 // the fields of both tables have an accessible name, and both tables
 // scroll on a narrow window

@@ -24,23 +24,23 @@ use Tester\Assert;
 
 
 /**
- * BlockPresenter mimo DI kontejner. Kopíruje uspořádání
- * z WorkflowPresenter.detailRender.phpt; navíc registruje FormsExtension,
- * bez které by se edit.latte nezkompilovala.
+ * A BlockPresenter outside the DI container. Copies the setup from
+ * WorkflowPresenter.detailRender.phpt; additionally registers FormsExtension,
+ * without which edit.latte wouldn't compile.
  *
  * @param array<string, mixed> $post
- * @param bool                 $sameOrigin poslat hlavičku sec-fetch-site, jako by
- *                                         požadavek přišel ze stejného webu?
- * @param Profile              $profile   fixtura místo pracovního adresáře
+ * @param bool                 $sameOrigin send the sec-fetch-site header as if
+ *                                         the request came from the same site?
+ * @param Profile              $profile   a fixture standing in for the working directory
  */
 function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): BlockPresenter
 {
 	$latteFactory = new class implements LatteFactory {
 		public function create(?Control $control = null): Engine
 		{
-			// Bez setTempDirectory() Latte zkompilovaný kód jen eval()uje do
-			// paměti. Cache adresář pod gui/tests/ by PHPStan (paths: [src,
-			// tests]) sebral k analýze při dalším běhu.
+			// Without setTempDirectory() Latte just eval()s the compiled code
+			// into memory. A cache directory under gui/tests/ would let
+			// PHPStan (paths: [src, tests]) pick it up on its next run.
 			$engine = new Engine;
 			$engine->addExtension(new UIExtension($control));
 			$engine->addExtension(new FormsExtension);
@@ -52,9 +52,10 @@ function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): 
 	$presenterFactory = new class implements IPresenterFactory {
 		public function getPresenterClass(string &$name): string
 		{
-			// Poctivé mapování jména na třídu: bez něj vrací isLinkCurrent()
-			// v šabloně true pro každou sekci a aserce na aktivní položku
-			// navigace by byla vakuová. Doslova jako ve workflowPresenter.php.
+			// An honest mapping from name to class: without it isLinkCurrent()
+			// in the template returns true for every section and the
+			// assertion on the active nav item would be vacuous. Literally
+			// like in workflowPresenter.php.
 			return $name === 'Workflow'
 				? WorkflowPresenter::class
 				: BlockPresenter::class;
@@ -63,7 +64,7 @@ function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): 
 
 		public function createPresenter(string $name): IPresenter
 		{
-			throw new \LogicException('nepoužito — LinkGenerator jen skládá adresy');
+			throw new \LogicException('unused — a LinkGenerator only builds addresses');
 		}
 	};
 
@@ -72,15 +73,15 @@ function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): 
 		new HttpRequest(
 			new UrlScript('http://localhost/'),
 			post: $post,
-			// Nette\Application\UI\Form odmítá signál "submit", pokud request
-			// nevypadá jako same-origin (ochrana proti CSRF bez session,
-			// založená na Fetch Metadata) — skutečný prohlížeč hlavičku
-			// posílá sám u každé navigace v rámci webu, GETem počínaje, tady
-			// ji musíme simulovat, jinak formulář tiše spadne do
-			// detectedCsrf() a onSuccess se nikdy nezavolá — a GET se signálem
-			// v adrese (`do=…`) se místo vykreslení odkloní na redirect.
-			// Právě ten odklon je to, co $sameOrigin: false modeluje —
-			// požadavek z cizího webu.
+			// Nette\Application\UI\Form rejects the "submit" signal if the
+			// request doesn't look same-origin (CSRF protection without a
+			// session, based on Fetch Metadata) — a real browser sends the
+			// header itself on every same-site navigation, starting with GET,
+			// so it has to be simulated here, otherwise the form silently
+			// falls into detectedCsrf() and onSuccess never fires — and a GET
+			// with a signal in the address (`do=…`) veers off into a redirect
+			// instead of rendering. That veer-off is exactly what
+			// $sameOrigin: false models — a request from a foreign site.
 			headers: $sameOrigin ? ['sec-fetch-site' => 'same-origin'] : [],
 			method: $post === [] ? 'GET' : 'POST',
 		),
@@ -90,8 +91,9 @@ function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): 
 		templateFactory: new TemplateFactory($latteFactory),
 	);
 
-	// Bez tohohle by autoCanonicalize po run() vracelo RedirectResponse
-	// místo šablony — Request je sestavený ručně, ne skutečným routováním.
+	// Without this, autoCanonicalize would return a RedirectResponse after
+	// run() instead of the template — the Request is built by hand, not
+	// through real routing.
 	$presenter->autoCanonicalize = false;
 
 	return $presenter;
@@ -99,14 +101,14 @@ function createBlockPresenter(array $post, bool $sameOrigin, Profile $profile): 
 
 
 /**
- * Prezenter čte profil, ne pracovní adresář — fixtura se mu předává jako
- * Profile. Jméno profilu je jméno adresáře fixtury, aby se dalo tvrdit i o
- * tom, co GUI ukazuje v hlavičce.
+ * The presenter reads the profile, not the working directory — the fixture
+ * is passed to it as a Profile. The profile name is the fixture directory's
+ * name, so it's possible to assert on what the GUI shows in the header too.
  *
  * @param  array<string, mixed> $params
  * @param  array<string, mixed> $post
- * @param  bool                 $sameOrigin viz createBlockPresenter()
- * @return array{0: mixed, 1: string} odpověď a vyrenderované HTML ('' u redirectu)
+ * @param  bool                 $sameOrigin see createBlockPresenter()
+ * @return array{0: mixed, 1: string} the response and the rendered HTML ('' for a redirect)
  */
 function runBlockPresenterIn(string $dir, array $params, array $post = [], bool $sameOrigin = true): array
 {
@@ -125,10 +127,11 @@ function runBlockPresenterIn(string $dir, array $params, array $post = [], bool 
 	$source = $response->getSource();
 	Assert::type(Template::class, $source);
 
-	// getSource() má návratový typ mixed — Assert::type() to ověří za
-	// běhu, ale PHPStanu typ nezúží. Instanceof je tu jen kvůli tomu.
+	// getSource() has a return type of mixed — Assert::type() verifies that
+	// at run time, but it doesn't narrow the type for PHPStan. The instanceof
+	// is here only for that.
 	if (!$source instanceof Template) {
-		throw new \LogicException('nedosažitelné — Assert::type() by už selhalo');
+		throw new \LogicException('unreachable — Assert::type() would already have failed');
 	}
 
 	return [$response, $source->renderToString()];

@@ -16,40 +16,40 @@ FileSystem::createDir($project . '/workflows');
 
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
-	'description' => 'Popis',
-	'inputs' => ['repo' => ['required' => true, 'description' => 'Repozitář']],
+	'description' => 'Description',
+	'inputs' => ['repo' => ['required' => true, 'description' => 'Repository']],
 	'steps' => [['type' => 'set', 'key' => 'a', 'value' => '1']],
 ]));
 
 $load = fn(string $name) => (new WorkflowParser)->parseFile($project . "/workflows/{$name}.json");
 
-// --- úprava: formulář je předvyplněný ---
+// --- editing: the form is prefilled ---
 
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w']);
 
 Assert::contains('value="w"', $html);
-Assert::contains('Popis', $html);
+Assert::contains('Description', $html);
 Assert::contains('repo', $html);
 
-// sekce mazání je karta s červeným rámečkem — hranice nevratné operace
-// má být vidět dřív, než do ní uživatel klikne
+// the delete section is a card with a red border — the boundary of an
+// irreversible operation should be visible before the user clicks into it
 Assert::match('~<div class="card border-danger[^"]*">~', $html);
 
-// --- zakládání: prázdný formulář, žádný pád ---
+// --- creating: an empty form, no crash ---
 
-[, $novy] = runWorkflowPresenterIn($project, ['action' => 'edit']);
+[, $new] = runWorkflowPresenterIn($project, ['action' => 'edit']);
 
-Assert::contains('<form', $novy);
-Assert::notContains('Repozitář', $novy);
+Assert::contains('<form', $new);
+Assert::notContains('Repository', $new);
 
-// --- zakládání uloží prázdné workflow ---
+// --- creating saves an empty workflow ---
 
 [$response] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
 	[
-		'name' => 'nove',
-		'description' => 'Nové',
+		'name' => 'new',
+		'description' => 'New',
 		'inputs' => [0 => ['name' => 'x', 'required' => '1', 'default' => '', 'description' => '']],
 		'save' => 'Save',
 	],
@@ -57,99 +57,101 @@ Assert::notContains('Repozitář', $novy);
 
 Assert::type(RedirectResponse::class, $response);
 
-$nove = $load('nove');
-Assert::same('nove', $nove->name);
-Assert::same('Nové', $nove->description);
-Assert::same(['x'], array_keys($nove->inputs));
-Assert::same([], $nove->steps, 'nové workflow vzniká prázdné');
+$new = $load('new');
+Assert::same('new', $new->name);
+Assert::same('New', $new->description);
+Assert::same(['x'], array_keys($new->inputs));
+Assert::same([], $new->steps, 'a new workflow is created empty');
 
-// --- zakládání přes existující jméno NEPŘEPÍŠE ---
+// --- creating under an existing name does NOT overwrite ---
 //
-// Lekce z editace kamene, kde to byl Critical: writeFile() přepisuje bez
-// ptaní a přesměrování vypadá jako úspěch.
+// A lesson from editing a block, where it was Critical: writeFile() overwrites
+// without asking, and the redirect looks like success.
 
 $before = FileSystem::read($project . '/workflows/w.json');
 
 [$response, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
-	['name' => 'w', 'description' => 'Přepis', 'inputs' => [], 'save' => 'Save'],
+	['name' => 'w', 'description' => 'Overwrite', 'inputs' => [], 'save' => 'Save'],
 );
 
-Assert::false($response instanceof RedirectResponse, 'přepis se nesmí tvářit jako úspěch');
+Assert::false($response instanceof RedirectResponse, 'an overwrite must not look like success');
 Assert::contains('Workflow "w" already exists. Edit it, or choose another name.', $html);
-Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'původní soubor musí zůstat bajt po bajtu stejný');
+Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'the original file must stay byte for byte the same');
 
-// --- úprava nesmí ztratit kroky ---
+// --- editing must not lose steps ---
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
-	['name' => 'w', 'description' => 'Jiný popis', 'inputs' => [], 'save' => 'Save'],
+	['name' => 'w', 'description' => 'Different description', 'inputs' => [], 'save' => 'Save'],
 );
 
-$upravene = $load('w');
-Assert::same('Jiný popis', $upravene->description);
-Assert::count(1, $upravene->steps, 'kroky se úpravou hlavičky nesmí ztratit');
+$edited = $load('w');
+Assert::same('Different description', $edited->description);
+Assert::count(1, $edited->steps, 'editing the header must not lose the steps');
 
-// --- odeslání změněného jména při úpravě zapíše původní ---
+// --- submitting a changed name on edit writes the original ---
 //
-// Lekce z editace kamene, kde to byl Important: „přejmenování" jinak objekt
-// rozdvojí.
+// A lesson from editing a block, where it was Important: a "rename" otherwise
+// forks the object in two.
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
-	['name' => 'prejmenovane', 'description' => 'X', 'inputs' => [], 'save' => 'Save'],
+	['name' => 'renamed', 'description' => 'X', 'inputs' => [], 'save' => 'Save'],
 );
 
 Assert::true(\is_file($project . '/workflows/w.json'));
-Assert::false(\is_file($project . '/workflows/prejmenovane.json'), 'nesmí vzniknout druhý soubor');
+Assert::false(\is_file($project . '/workflows/renamed.json'), 'a second file must not appear');
 
-// --- mazání ---
+// --- deleting ---
 
 [$response] = runWorkflowPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'nove', 'do' => 'deleteWorkflowForm-submit'],
-	['name' => 'nove', 'save' => 'Smazat'],
+	['action' => 'edit', 'name' => 'new', 'do' => 'deleteWorkflowForm-submit'],
+	['name' => 'new', 'save' => 'Delete'],
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::false(\is_file($project . '/workflows/nove.json'));
+Assert::false(\is_file($project . '/workflows/new.json'));
 
-// --- mazání se nenabízí u zakládání ---
+// --- deleting isn't offered while creating ---
 
-[, $novy] = runWorkflowPresenterIn($project, ['action' => 'edit']);
-// dřív se cílilo na '<h2>Smazat</h2>' — ten nadpis zmizel (Task 3, karty),
-// nahradila ho hlavička karty. Sekce mazání se u zakládání nevykresluje
-// vůbec (šablona ji obaluje {if $name !== null}), takže se karta se
-// třídou border-danger neobjeví — na tu teď cílíme.
-Assert::notContains('card border-danger', $novy);
+[, $new] = runWorkflowPresenterIn($project, ['action' => 'edit']);
+// this used to target '<h2>Smazat</h2>' — that heading is gone (Task 3,
+// cards), replaced by the card header. The delete section doesn't render at
+// all while creating (the template wraps it in {if $name !== null}), so the
+// card with the border-danger class doesn't appear — that's what we target
+// now.
+Assert::notContains('card border-danger', $new);
 
-// --- seznam nabízí zakládání ---
+// --- the list offers creating ---
 
-[, $seznam] = runWorkflowPresenterIn($project, ['action' => 'default']);
-Assert::contains('nové workflow', $seznam);
+[, $list] = runWorkflowPresenterIn($project, ['action' => 'default']);
+Assert::contains('new workflow', $list);
 
-// --- zakládání bez adresáře workflows se ohlásí, nespadne ---
+// --- creating without a workflows directory is reported, doesn't crash ---
 //
-// WorkflowStore::__construct() hází ParseException, když adresář workflows
-// neexistuje — na čerstvém projektu je to normální stav. headerFormSucceeded()
-// to musí zachytit stejně vlídně jako WriteException, ne nechat výjimku
-// propadnout jako neodchycenou.
+// WorkflowStore::__construct() throws a ParseException when the workflows
+// directory doesn't exist — on a fresh project that's the normal state.
+// headerFormSucceeded() must catch it just as gently as WriteException, not
+// let the exception fall through uncaught.
 
-$bezAdresare = TEMP_DIR . '/envelope-bez-workflows';
-FileSystem::createDir($bezAdresare);
+$withoutDirectory = TEMP_DIR . '/envelope-without-workflows';
+FileSystem::createDir($withoutDirectory);
 
 [$response, $html] = runWorkflowPresenterIn(
-	$bezAdresare,
+	$withoutDirectory,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
-	['name' => 'nove', 'description' => '', 'inputs' => [], 'save' => 'Save'],
+	['name' => 'new', 'description' => '', 'inputs' => [], 'save' => 'Save'],
 );
 
-Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');
+Assert::false($response instanceof RedirectResponse, 'a missing directory must not end in a redirect');
 Assert::contains('does not exist', $html);
-// M8: hláška musí říct, co s tím — jinak je prázdný projekt slepá ulička.
-Assert::contains('mkdir -p ' . $bezAdresare . '/workflows', $html);
+// M8: the message must say what to do about it — otherwise a fresh project
+// is a dead end.
+Assert::contains('mkdir -p ' . $withoutDirectory . '/workflows', $html);
 
 FileSystem::delete(TEMP_DIR);

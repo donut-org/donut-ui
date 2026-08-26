@@ -9,7 +9,7 @@ require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/workflowPresenter.php';
 require __DIR__ . '/inc/blockPresenter.php';
 
-$dir = TEMP_DIR . '/projekt';
+$dir = TEMP_DIR . '/project';
 FileSystem::createDir($dir . '/workflows');
 FileSystem::write($dir . '/workflows/w.json', '{"name":"w","steps":[{"type":"set","key":"x","value":"1"}]}');
 
@@ -53,32 +53,32 @@ Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $html);
 
 // overview breadcrumbs: the last item is active (and carries aria-current
 // for a screen reader) and is not a link
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>Workflow</li>~', $html);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>Workflows</li>~', $html);
 
 // detail breadcrumbs: the section is a link, the workflow name is last
 [, $detail] = runWorkflowPresenterIn($dir, ['action' => 'detail', 'name' => 'w']);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $detail);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflows</a></li>~', $detail);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>w</li>~', $detail);
 
 // the "back" links are gone — breadcrumbs replaced them
 Assert::notContains('← workflow', $detail);
 
-// Workflow:edit breadcrumbs without a name: "nové workflow", link only to the overview
+// Workflow:edit breadcrumbs without a name: "new workflow", link only to the overview
 [, $newWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit']);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $newWorkflow);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>nové workflow</li>~', $newWorkflow);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflows</a></li>~', $newWorkflow);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>new workflow</li>~', $newWorkflow);
 
 // Workflow:edit breadcrumbs with a name: the middle item links to that
 // workflow's detail (to the target, not just the text — the whole point
 // breadcrumbs exist for is "there's a path from editing to the detail")
 [, $editWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">w</a></li>~', $editWorkflow);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>hlavička</li>~', $editWorkflow);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>header</li>~', $editWorkflow);
 
-// Workflow:step breadcrumbs: "krok" is active, preceded by a link to the workflow's detail
+// Workflow:step breadcrumbs: "step" is active, preceded by a link to the workflow's detail
 [, $step] = runWorkflowPresenterIn($dir, ['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">w</a></li>~', $step);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>krok</li>~', $step);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>step</li>~', $step);
 
 // Block:default breadcrumbs: the last (only) item is active
 [, $blockDefault] = runBlockPresenterIn($dir, ['action' => 'default']);
@@ -109,5 +109,5 @@ Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $
 // set is active, so it's the only thing that tells the user what they're
 // actually editing. Must be on both sections — either one can be the first
 // place the user lands.
-Assert::contains('<code>projekt</code>', $html);
-Assert::contains('<code>projekt</code>', $blockDefault);
+Assert::contains('<code>project</code>', $html);
+Assert::contains('<code>project</code>', $blockDefault);

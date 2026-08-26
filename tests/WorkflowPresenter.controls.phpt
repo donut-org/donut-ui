@@ -165,7 +165,7 @@ $write([
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
 
 Assert::contains(
-	"onclick=\"return confirm(&apos;Smazat i 1 nested step?&apos;)\"",
+	"onclick=\"return confirm(&apos;Delete 1 nested step?&apos;)\"",
 	$html,
 	'a step with a subtree must offer a delete confirmation',
 );

@@ -21,6 +21,7 @@ use Donut\Gui\StepTree;
 use Donut\Gui\WorkflowMapper;
 use Donut\Gui\WorkflowRepository;
 use Donut\Gui\WorkflowStore;
+use Donut\Parser\NotFoundException;
 use Donut\Parser\ParseException;
 use Donut\Profile;
 use Donut\Validator\Result;
@@ -99,6 +100,14 @@ final class WorkflowPresenter extends Presenter
 		try {
 			$repository = new WorkflowRepository($this->workflowDir());
 			$workflow = $repository->get($name);
+
+		} catch (NotFoundException $e) {
+			// A URL that names something which isn't there is a 404, not a
+			// page about it: a typo in the address bar must not look like a
+			// resource to every client that asks. A file that exists and
+			// won't parse takes the branch below and keeps its 200 — that
+			// message is the only way to see what to fix.
+			$this->error($e->getMessage());
 
 		} catch (ParseException $e) {
 			$template->error = $e->getMessage();
@@ -418,6 +427,14 @@ final class WorkflowPresenter extends Presenter
 
 		try {
 			$this->editedWorkflow = (new WorkflowRepository($this->workflowDir()))->get(\basename($name));
+
+		} catch (NotFoundException $e) {
+			// A URL that names something which isn't there is a 404, not a
+			// page about it: a typo in the address bar must not look like a
+			// resource to every client that asks. A file that exists and
+			// won't parse takes the branch below and keeps its 200 — that
+			// message is the only way to see what to fix.
+			$this->error($e->getMessage());
 
 		} catch (ParseException $e) {
 			$template->error = $e->getMessage();

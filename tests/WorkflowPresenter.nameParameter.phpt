@@ -12,6 +12,7 @@ use Nette\Http\Request;
 use Nette\Http\Response;
 use Nette\Http\UrlScript;
 use Nette\Utils\FileSystem;
+use Nette\Application\BadRequestException;
 use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
@@ -59,10 +60,12 @@ $presenter = createPresenter($profile);
 Assert::noError(fn() => $presenter->renderDetail('w'));
 Assert::null($presenter->template->error);
 
-// An attempt to escape workflows/ with slashes gets the same message as a
-// nonexistent workflow — not the content of a file outside workflows/.
+// An attempt to escape workflows/ with slashes ends exactly like a
+// nonexistent workflow — a 404 — and never as the content of a file outside
+// workflows/. The 404 is what makes the two indistinguishable to the caller:
+// a different answer here would tell an attacker the file is there.
 $presenter = createPresenter($profile);
-Assert::noError(fn() => $presenter->renderDetail('../blocks/echo'));
-Assert::type('string', $presenter->template->error);
-Assert::contains('does not exist', $presenter->template->error);
-Assert::notContains('command', $presenter->template->error);
+$e = Assert::exception(fn() => $presenter->renderDetail('../blocks/echo'), BadRequestException::class);
+Assert::same(404, $e->getHttpCode());
+Assert::contains('does not exist', $e->getMessage());
+Assert::notContains('command', $e->getMessage());

@@ -2,6 +2,14 @@ application:
 	mapping:
 		*: Donut\Gui\Presentation\*\**Presenter
 
+	# Without catchExceptions the error presenter is not even wired in debug
+	# mode (ApplicationExtension gates it on `catchExceptions || !debugMode`),
+	# so a 404 would reach Tracy instead of a page. ErrorPresenter handles 4xx
+	# and rethrows everything else, which Application::run() then rethrows in
+	# turn — so real crashes still get their bluescreen.
+	catchExceptions: true
+	errorPresenter: Error
+
 services:
 	# Where blocks and workflows live. The environment is read when the server
 	# starts, as in the CLI — the GUI does not switch profiles at runtime;

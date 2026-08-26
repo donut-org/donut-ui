@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Donut\Gui;
 
 use Donut\Format\Workflow;
+use Donut\Parser\NotFoundException;
 use Donut\Parser\ParseException;
 use Donut\Parser\WorkflowParser;
 
@@ -66,7 +67,7 @@ final class WorkflowRepository
 	public function get(string $name): Workflow
 	{
 		if (!isset($this->files[$name])) {
-			throw new ParseException("Workflow \"{$name}\" does not exist. Searched in: {$this->directory}");
+			throw new NotFoundException("Workflow \"{$name}\" does not exist. Searched in: {$this->directory}");
 		}
 
 		return $this->parser->parseFile($this->files[$name]);

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Donut\Format\Workflow;
 use Donut\Gui\WorkflowRepository;
 use Donut\Parser\ParseException;
+use Donut\Parser\NotFoundException;
 use Nette\Utils\FileSystem;
 use Tester\Assert;
 
@@ -56,5 +57,19 @@ Assert::exception(
 	ParseException::class,
 	"Workflows directory '{$dir}/gone' does not exist. Donut will create it when you save.",
 );
+
+// A workflow that isn't there is a different failure from one whose file is
+// broken: the first is a missing resource (the GUI answers 404), the second
+// is a resource that exists and won't parse. NotFoundException extends
+// ParseException, so everything that caught the general kind still does.
+Assert::exception(
+	fn() => (new WorkflowRepository($dir))->get('nope'),
+	NotFoundException::class,
+	"Workflow \"nope\" does not exist. Searched in: {$dir}",
+);
+
+FileSystem::write($dir . '/broken.json', '{ not json');
+$broken = Assert::exception(fn() => (new WorkflowRepository($dir))->get('broken'), ParseException::class);
+Assert::false($broken instanceof NotFoundException, 'a broken file is a resource that exists, not a missing one');
 
 FileSystem::delete(TEMP_DIR);

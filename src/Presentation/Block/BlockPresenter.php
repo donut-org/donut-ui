@@ -14,6 +14,7 @@ use Donut\Gui\FormFactory;
 use Donut\Gui\Presentation\LayoutTemplate;
 use Donut\Gui\ProfileDir;
 use Donut\Gui\WorkflowRepository;
+use Donut\Parser\NotFoundException;
 use Donut\Parser\ParseException;
 use Donut\Profile;
 use Donut\Validator\BlockValidator;
@@ -93,6 +94,14 @@ final class BlockPresenter extends Presenter
 		try {
 			$this->detail = $this->store()->get($name);
 
+		} catch (NotFoundException $e) {
+			// A URL that names something which isn't there is a 404, not a
+			// page about it: a typo in the address bar must not look like a
+			// resource to every client that asks. A file that exists and
+			// won't parse takes the branch below and keeps its 200 — that
+			// message is the only way to see what to fix.
+			$this->error($e->getMessage());
+
 		} catch (ParseException $e) {
 			// A missing directory and an unparseable file end the same way:
 			// the page renders with the message and a link to edit, because
@@ -124,6 +133,14 @@ final class BlockPresenter extends Presenter
 
 		try {
 			$this->edited = $this->store()->get($name);
+
+		} catch (NotFoundException $e) {
+			// A URL that names something which isn't there is a 404, not a
+			// page about it: a typo in the address bar must not look like a
+			// resource to every client that asks. A file that exists and
+			// won't parse takes the branch below and keeps its 200 — that
+			// message is the only way to see what to fix.
+			$this->error($e->getMessage());
 
 		} catch (ParseException $e) {
 			/** @var BlockEditTemplate $template */

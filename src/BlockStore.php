@@ -6,6 +6,7 @@ namespace Donut\Gui;
 
 use Donut\BlockRepository;
 use Donut\Format\Block;
+use Donut\Parser\NotFoundException;
 use Donut\Parser\ParseException;
 use Donut\Writer\BlockWriter;
 use Nette\Utils\FileSystem;
@@ -117,7 +118,7 @@ final class BlockStore
 	public function delete(string $name): void
 	{
 		if (!$this->exists($name)) {
-			throw new ParseException("Block \"{$name}\" does not exist. Searched in: {$this->directory}");
+			throw new NotFoundException("Block \"{$name}\" does not exist. Searched in: {$this->directory}");
 		}
 
 		FileSystem::delete($this->path($name));

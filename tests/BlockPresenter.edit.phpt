@@ -5,6 +5,9 @@ declare(strict_types=1);
 use Donut\Parser\BlockParser;
 use Nette\Application\Responses\RedirectResponse;
 use Nette\Utils\FileSystem;
+use Nette\Application\BadRequestException;
+use Nette\Application\Request as NetteRequest;
+use Donut\Profile;
 use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
@@ -39,10 +42,18 @@ Assert::contains('value="5"', $html);
 Assert::contains('<form', $new);
 Assert::notContains('Prints text', $new);
 
-// --- a nonexistent block is reported, not a crash ---
+// --- a nonexistent block is a 404, not a page about one ---
+//
+// It used to render the edit form with the message in it, which made a typo
+// in the address bar indistinguishable from a block that exists.
 
-[, $missing] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'missing']);
-Assert::contains("Block 'missing' does not exist.", $missing);
+$e = Assert::exception(
+	fn() => createBlockPresenter([], true, new Profile(\basename($project), $project))
+		->run(new NetteRequest('Block', 'GET', ['action' => 'edit', 'name' => 'missing'])),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+Assert::contains("Block 'missing' does not exist.", $e->getMessage());
 
 // --- saving: a valid block goes through and a file is created ---
 

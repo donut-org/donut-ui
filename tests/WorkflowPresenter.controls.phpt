@@ -165,10 +165,32 @@ $write([
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
 
 Assert::contains(
-	"onclick=\"return confirm(&apos;Delete 1 nested step?&apos;)\"",
+	"onclick=\"return confirm(&apos;Delete this step and 1 nested step?&apos;)\"",
 	$html,
 	'a step with a subtree must offer a delete confirmation',
 );
 Assert::same(1, substr_count($html, 'confirm('), 'a step without children (set a, set b) must not offer a confirmation at all');
+
+// --- the input-count badge on a run step's block card has the right
+// singular/plural, including the zero case ---
+// steps.latte collapses the Czech three-way plural (0/1/2-4/5+) to English's
+// two forms; nothing else in the suite pins the rendered text, so a
+// regression here (e.g. reverting to the Czech forms) would pass unnoticed.
+
+$write([
+	['type' => 'run', 'block' => 'echo', 'in' => []],
+	['type' => 'run', 'block' => 'echo', 'in' => ['a' => '1']],
+	['type' => 'run', 'block' => 'echo', 'in' => ['a' => '1', 'b' => '2']],
+]);
+
+[, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
+
+Assert::contains('no inputs', $html, 'zero inputs must say "no inputs", not "0 input(s)"');
+Assert::contains('The block has no inputs.', $html);
+// The count and the word are separated by a line break in the template, so
+// a plain contains() on "1 input" would never match — the whitespace
+// between them has to be tolerated.
+Assert::match('~\b1\s+input\b~', $html, 'one input must be singular');
+Assert::match('~\b2\s+inputs\b~', $html, 'more than one input must be plural');
 
 FileSystem::delete(TEMP_DIR);

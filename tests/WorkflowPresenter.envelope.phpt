@@ -16,7 +16,7 @@ FileSystem::createDir($project . '/workflows');
 
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
-	'description' => 'Description',
+	'description' => 'Runs after every push.',
 	'inputs' => ['repo' => ['required' => true, 'description' => 'Repository']],
 	'steps' => [['type' => 'set', 'key' => 'a', 'value' => '1']],
 ]));
@@ -28,7 +28,7 @@ $load = fn(string $name) => (new WorkflowParser)->parseFile($project . "/workflo
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w']);
 
 Assert::contains('value="w"', $html);
-Assert::contains('Description', $html);
+Assert::contains('Runs after every push.', $html);
 Assert::contains('repo', $html);
 
 // the delete section is a card with a red border — the boundary of an
@@ -37,10 +37,10 @@ Assert::match('~<div class="card border-danger[^"]*">~', $html);
 
 // --- creating: an empty form, no crash ---
 
-[, $new] = runWorkflowPresenterIn($project, ['action' => 'edit']);
+[, $newHtml] = runWorkflowPresenterIn($project, ['action' => 'edit']);
 
-Assert::contains('<form', $new);
-Assert::notContains('Repository', $new);
+Assert::contains('<form', $newHtml);
+Assert::notContains('Repository', $newHtml);
 
 // --- creating saves an empty workflow ---
 
@@ -119,13 +119,13 @@ Assert::false(\is_file($project . '/workflows/new.json'));
 
 // --- deleting isn't offered while creating ---
 
-[, $new] = runWorkflowPresenterIn($project, ['action' => 'edit']);
+[, $newHtml] = runWorkflowPresenterIn($project, ['action' => 'edit']);
 // this used to target '<h2>Smazat</h2>' — that heading is gone (Task 3,
 // cards), replaced by the card header. The delete section doesn't render at
 // all while creating (the template wraps it in {if $name !== null}), so the
 // card with the border-danger class doesn't appear — that's what we target
 // now.
-Assert::notContains('card border-danger', $new);
+Assert::notContains('card border-danger', $newHtml);
 
 // --- the list offers creating ---
 

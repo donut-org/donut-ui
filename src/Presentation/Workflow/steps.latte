@@ -124,7 +124,7 @@
 					<form method=post action="{link deleteStep!}" class="d-inline">
 						<input type=hidden name=at value="{$at}">
 						<button type=submit class="btn btn-sm btn-outline-danger" aria-label="Delete step" n:attr="onclick => $subtree
-							? 'return confirm(\'Delete ' . Donut\Gui\StepCount::label($subtree) . '?\')'
+							? 'return confirm(\'Delete this step and ' . Donut\Gui\StepCount::label($subtree) . '?\')'
 							: null">×</button>
 					</form>
 				</div>

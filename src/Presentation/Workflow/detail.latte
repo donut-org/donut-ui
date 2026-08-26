@@ -5,7 +5,7 @@
 {block breadcrumbs}
 	<li class=breadcrumb-item><a n:href="Workflow:default">Workflows</a></li>
 	{* For a broken file, the name from the address is the only thing that
-	   tells the user which workflow failed to parse — "error" wouldn't tell
+	   tells the user which workflow failed to parse — "Error" wouldn't tell
 	   them anything. *}
 	<li class="breadcrumb-item active" aria-current=page>{$workflow !== null ? $workflow->name : $name}</li>
 {/block}

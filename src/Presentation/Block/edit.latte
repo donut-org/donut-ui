@@ -1,13 +1,13 @@
-{block title}{$name ?? 'Nový kámen'} — Donut{/block}
+{block title}{$name ?? 'New block'} — Donut{/block}
 
 {block breadcrumbs}
-	<li class=breadcrumb-item><a n:href="Block:default">Kameny</a></li>
+	<li class=breadcrumb-item><a n:href="Block:default">Blocks</a></li>
 	<li n:if="$name !== null" class=breadcrumb-item><a n:href="Block:detail, name: $name">{$name}</a></li>
-	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'nový kámen' : 'úprava'}</li>
+	<li class="breadcrumb-item active" aria-current=page>{$name === null ? 'new block' : 'edit'}</li>
 {/block}
 
 {block content}
-<h1>{$name ?? 'Nový kámen'}</h1>
+<h1>{$name ?? 'New block'}</h1>
 
 <p n:if="$error" class="alert alert-danger">{$error}</p>
 
@@ -40,43 +40,45 @@
 		</div>
 
 		<div class="card mb-3">
-			<div class="card-header">Argumenty</div>
+			<div class="card-header">Arguments</div>
 			<div class="card-body">
-				<p class=keys>Skupina, ve které se proměnná vyhodnotí na prázdno, vypadne celá.</p>
+				<p class=keys>A group where a variable evaluates to empty is dropped whole.</p>
 
-				{* Vodorovný tvar skupiny: form-control z FormFactory je display:block
-				   na celou šířku, takže bez tohohle by z argumentů byl svislý sloupec
-				   stejně vypadajících políček a hranice skupiny by zmizela. Třída
-				   se sem píše celá i s form-control — ochrana ve FormFactory (doplní
-				   třídu jen tam, kde žádná není) se tu neuplatní, protože {input}
-				   s class => … atribut class přepíše celý; kdyby form-control
-				   v tomhle řetězci chybělo, v HTML by chybělo taky. *}
+				{* Horizontal group shape: form-control from FormFactory is
+				   display:block full width, so without this the arguments would
+				   be a vertical column of identical-looking fields and the group
+				   boundary would disappear. The class is written out in full
+				   including form-control — the guard in FormFactory (adds the
+				   class only where none is present) doesn't apply here, because
+				   {input} with a class => … attribute overwrites the whole class;
+				   if form-control were missing from this string, it would be
+				   missing from the HTML too. *}
 				<div id=args>
 					<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
 						<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>
 						<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
-						<button type=button class="btn btn-sm btn-outline-danger del-group">× skupina</button>
+						<button type=button class="btn btn-sm btn-outline-danger del-group">× group</button>
 					</div>
 				</div>
 
-				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ skupina</button>
+				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ group</button>
 			</div>
 		</div>
 
 		<div class="card mb-3">
-			<div class="card-header">Vstupy</div>
+			<div class="card-header">Inputs</div>
 			<div class="card-body">
-				{* table-responsive a aria-label doslova jako ve Workflow/edit.latte —
-				   je to táž tabulka vstupů. *}
+				{* table-responsive and aria-label literally like in
+				   Workflow/edit.latte — it's the same inputs table. *}
 				<div class=table-responsive>
 					<table class="table table-sm align-middle">
 						<thead>
 							<tr>
-								<th scope=col>Jméno</th>
-								<th scope=col>Povinný</th>
-								<th scope=col>Výchozí</th>
-								<th scope=col>Popis</th>
-								<th scope=col><span class=visually-hidden>Smazat řádek</span></th>
+								<th scope=col>Name</th>
+								<th scope=col>Required</th>
+								<th scope=col>Default</th>
+								<th scope=col>Description</th>
+								<th scope=col><span class=visually-hidden>Delete row</span></th>
 							</tr>
 						</thead>
 						<tbody id=inputs>
@@ -85,17 +87,17 @@
 								<td>{input $row['required']}</td>
 								<td>{input $row['default']}</td>
 								<td>{input $row['description']}</td>
-								<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Smazat řádek">×</button></td>
+								<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
 							</tr>
 						</tbody>
 					</table>
 				</div>
 
-				<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ vstup</button>
+				<button type=button class="btn btn-sm btn-secondary" data-add=inputs>+ input</button>
 
 				<p class=form-text>
-					Výchozí hodnota se použije, když ji volající nepředá.
-					Na příkazové řádce se vstup zadává jako <code>--jmeno=hodnota</code>.
+					The default value is used when the caller does not pass one.
+					On the command line an input is given as <code>--name=value</code>.
 				</p>
 			</div>
 		</div>
@@ -110,7 +112,7 @@
 		</div>
 
 		<div class="card mb-3">
-			<div class="card-header">Ostatní</div>
+			<div class="card-header">Other</div>
 			<div class="card-body">
 				<p>{label timeout /} {input timeout}</p>
 				<p>{label allowFailure /} {input allowFailure} {input allowFailureCodes}</p>
@@ -120,9 +122,9 @@
 		<p>{input save}</p>
 	{/form}
 
-	{* Skupiny argumentů jsou dvouúrovňové (args[g][a]) — sdílený mechanismus
-	   z rows.js zvládá jen jednu úroveň, takže args zůstává na vlastním
-	   kódu. Používá ale jeho maxIndex a cloneRow. *}
+	{* Argument groups are two-level (args[g][a]) — the shared mechanism from
+	   rows.js only handles one level, so args stays on its own code. It does
+	   use its maxIndex and cloneRow though. *}
 	<script n:syntax="off">
 	document.getElementById('add-group').addEventListener('click', () => {
 		const box = document.getElementById('args');
@@ -156,11 +158,11 @@
 
 {if $name !== null}
 	<div class="card border-danger mb-3">
-		<div class="card-header text-danger">Smazat</div>
+		<div class="card-header text-danger">Delete</div>
 		<div class="card-body">
 			{if $usedBy}
 				<p class=keys>
-					Nejde smazat — používá ho: {implode(', ', $usedBy)}.
+					Cannot be deleted — used by: {implode(', ', $usedBy)}.
 				</p>
 			{else}
 				{form deleteForm}
@@ -171,10 +173,11 @@
 					</div>
 
 					<input type=hidden n:name=name value="{$name}">
-					{* Jméno se do confirm() nedává schválně: Latte hodnotu v JS
-					   kontextu json-enkóduje a v dialogu by byla v uvozovkách navíc.
-					   Escapování se nevypíná, text se přeformuloval. *}
-					<button type=submit n:name=delete onclick="return confirm('Opravdu smazat tenhle kámen?')">Smazat</button>
+					{* The name isn't passed to confirm() on purpose: Latte
+					   JSON-encodes a value in a JS context, and the dialog would
+					   have it in extra quotes. Escaping isn't disabled, the text
+					   was reworded instead. *}
+					<button type=submit n:name=delete onclick="return confirm('Really delete this block?')">Delete</button>
 				{/form}
 			{/if}
 		</div>

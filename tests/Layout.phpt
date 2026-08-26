@@ -82,7 +82,7 @@ Assert::match('~<li class="breadcrumb-item active" aria-current=page>krok</li>~'
 
 // Block:default breadcrumbs: the last (only) item is active
 [, $blockDefault] = runBlockPresenterIn($dir, ['action' => 'default']);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>Kameny</li>~', $blockDefault);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>Blocks</li>~', $blockDefault);
 
 // on the block page, "Blocks" lights up in the nav, and "Workflows" doesn't.
 // While the test factory returned a BlockPresenter for every name, this
@@ -94,15 +94,15 @@ Assert::match('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $blockDefault);
 Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflows</a>~', $blockDefault);
 
 // Block:edit breadcrumbs: section is a link, the middle item links to the
-// block's detail, last item is "úprava"
+// block's detail, last item is "edit"
 [, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Blocks</a></li>~', $blockEdit);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">k</a></li>~', $blockEdit);
-Assert::match('~<li class="breadcrumb-item active" aria-current=page>úprava</li>~', $blockEdit);
+Assert::match('~<li class="breadcrumb-item active" aria-current=page>edit</li>~', $blockEdit);
 
 // Block:detail breadcrumbs: section is a link, the block's name is last
 [, $blockDetail] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'k']);
-Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockDetail);
+Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Blocks</a></li>~', $blockDetail);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $blockDetail);
 
 // profile name in the header: the working directory no longer decides which

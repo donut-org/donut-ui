@@ -1,30 +1,31 @@
-{block title}Kameny — Donut{/block}
+{block title}Blocks — Donut{/block}
 
 {block breadcrumbs}
-	<li class="breadcrumb-item active" aria-current=page>Kameny</li>
+	<li class="breadcrumb-item active" aria-current=page>Blocks</li>
 {/block}
 
 {block content}
-<h1>Kameny</h1>
+<h1>Blocks</h1>
 
-<p><a n:href="Block:edit" class="btn btn-primary">+ nový kámen</a></p>
+<p><a n:href="Block:edit" class="btn btn-primary">+ new block</a></p>
 
-{* Hláška i s návodem `mkdir blocks` přichází hotová z renderDefault(),
-   stejně jako na Workflow:detail. *}
+{* The message, including the `mkdir blocks` hint, arrives ready-made from
+   renderDefault(), same as on Workflow:detail. *}
 <p n:if="$error" class="alert alert-danger">{$error}</p>
-<p n:if="!$error && !$blocks">V adresáři <code>{$dir}</code> žádné kameny nejsou.</p>
+<p n:if="!$error && !$blocks">There are no blocks in <code>{$dir}</code>.</p>
 
 <div class=table-responsive n:if="$blocks">
 	<table class="table table-sm align-middle">
 		<thead>
 			<tr>
-				<th scope=col>Jméno</th>
-				{* Popis je druhý sloupec stejně jako u workflow: příkaz sám kameny
-				   nerozliší (v reálném projektu ho sdílí 9 z 15), popis ano. *}
-				<th scope=col>Popis</th>
-				<th scope=col>Příkaz</th>
-				<th scope=col>Používá</th>
-				<th scope=col><span class=visually-hidden>Akce</span></th>
+				<th scope=col>Name</th>
+				{* Description is the second column, same as for workflows: the
+				   command alone doesn't distinguish blocks (in a real project 9
+				   of 15 share it), the description does. *}
+				<th scope=col>Description</th>
+				<th scope=col>Command</th>
+				<th scope=col>Used by</th>
+				<th scope=col><span class=visually-hidden>Actions</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -36,9 +37,9 @@
 						<a n:href="Block:detail, name: $name">{$name}</a>
 					{/if}
 				</td>
-				{* Hláška rozbitého kamene sedí ve druhém sloupci, stejně jako
-				   u rozbitého workflow; ostatní sloupce zůstanou u takového
-				   řádku prázdné, protože se nemají odkud vzít. *}
+				{* The broken block's message sits in the second column, same as
+				   for a broken workflow; the other columns stay empty for such a
+				   row, because there's nowhere for them to come from. *}
 				<td>
 					{if is_string($block)}
 						<span class=text-danger>{$block}</span>
@@ -52,15 +53,15 @@
 					{/if}
 				</td>
 				<td>{if isset($usage[$name])}{implode(', ', $usage[$name])}{/if}</td>
-				{* Odkaz na úpravu je mimo podmínku schválně: kámen, který se
-				   nenaparsuje, je ten jediný, u kterého uživatel cestu k opravě
-				   a k mazání potřebuje nejvíc. Stejně to má Workflow/default.latte.
+				{* The edit link sits outside the condition on purpose: a block that
+				   fails to parse is the one whose user needs the path to fixing
+				   and deleting most. Workflow/default.latte does the same.
 
-				   aria-label rozlišuje odkazy mezi sebou: v seznamu odkazů
-				   odečítače obrazovky je jinak tolikrát „upravit", kolik má
-				   tabulka řádků, a který je který, z něj nepoznáš. Laťku
-				   nastavil aria-label="Smazat řádek" u řádkových tlačítek. *}
-				<td><a n:href="Block:edit, name: $name" class="btn btn-primary btn-sm" aria-label="Upravit kámen {$name}">upravit</a></td>
+				   aria-label tells the links apart: in a screen reader's list of
+				   links it would otherwise say "edit" as many times as the table
+				   has rows, with no way to tell which is which. The bar was set
+				   by aria-label="Delete row" on the row buttons. *}
+				<td><a n:href="Block:edit, name: $name" class="btn btn-primary btn-sm" aria-label="Edit block {$name}">edit</a></td>
 			</tr>
 		</tbody>
 	</table>

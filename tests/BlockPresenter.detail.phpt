@@ -38,7 +38,7 @@ FileSystem::write($dir . '/workflows/sync.json', \json_encode([
 // so that word is in the HTML from <h1>, from the breadcrumbs and from the
 // links, and the command could vanish from the detail entirely without the
 // suite noticing.
-Assert::contains('příkaz: <code>curl</code>', $html);
+Assert::contains('command: <code>curl</code>', $html);
 Assert::contains('Downloads the address', $html);
 
 // arguments — today's overview doesn't list them at all, the detail must
@@ -47,7 +47,7 @@ Assert::contains('-H', $html);
 
 // inputs, with required-ness and default value too
 Assert::contains('url', $html);
-Assert::contains('povinný', $html);
+Assert::contains('required', $html);
 Assert::contains('Full address', $html);
 Assert::contains('Accept: */*', $html);
 
@@ -60,7 +60,7 @@ Assert::contains('22', $html);
 Assert::contains('sync', $html);
 
 // path to editing
-Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $html);
+Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>edit</a>~', $html);
 
 
 // --- a broken block must be possible to open ---
@@ -73,11 +73,11 @@ FileSystem::write($dir . '/workflows/fix.json', \json_encode([
 [, $broken] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'broken']);
 
 Assert::contains('alert-danger', $broken);
-Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>upravit</a>~', $broken);
+Assert::match('~<a href="[^"]*action=edit[^"]*"[^>]*>edit</a>~', $broken);
 
 // and importantly: even for a broken block you can see who uses it —
 // $usedBy is computed from the workflows, not the block, and right before
 // fixing or deleting it, that's the most important information on the
 // page
-Assert::contains('<h2>Používá</h2>', $broken);
+Assert::contains('<h2>Used by</h2>', $broken);
 Assert::contains('<li>fix</li>', $broken);

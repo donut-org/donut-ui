@@ -132,10 +132,10 @@ FileSystem::write($block . '/blocks/k.json', \json_encode([
 [, $blockHtml] = runBlockPresenterIn($block, ['action' => 'edit', 'name' => 'k']);
 
 // the header is what tells the user what belongs in which field
-Assert::contains('<th scope=col>Jméno</th>', $blockHtml);
-Assert::contains('<th scope=col>Povinný</th>', $blockHtml);
-Assert::contains('<th scope=col>Výchozí</th>', $blockHtml);
-Assert::contains('<th scope=col>Popis</th>', $blockHtml);
+Assert::contains('<th scope=col>Name</th>', $blockHtml);
+Assert::contains('<th scope=col>Required</th>', $blockHtml);
+Assert::contains('<th scope=col>Default</th>', $blockHtml);
+Assert::contains('<th scope=col>Description</th>', $blockHtml);
 
 // markup that rows.js reaches into
 Assert::contains('<tbody id=inputs>', $blockHtml);
@@ -145,7 +145,7 @@ Assert::contains('data-add=inputs', $blockHtml);
 
 // the delete button has an accessible name too — without aria-label a
 // screen reader would just hear "button ×"
-Assert::contains('js-del-row" aria-label="Smazat řádek"', $blockHtml);
+Assert::contains('js-del-row" aria-label="Delete row"', $blockHtml);
 
 // the old .row class is gone — it would collide with the Bootstrap grid
 Assert::notMatch('~<div class=row[ >]~', $blockHtml);
@@ -162,8 +162,8 @@ Assert::match('~name="inputs\[0\]\[name\]"[^>]*value="text"~', $blockHtml);
 Assert::match('~name="inputs\[0\]\[description\]"[^>]*value="What to print"~', $blockHtml);
 
 // help text under the table
-Assert::contains('--jmeno=hodnota', $blockHtml);
-Assert::contains('když ji volající nepředá', $blockHtml);
+Assert::contains('--name=value', $blockHtml);
+Assert::contains('the caller does not pass one', $blockHtml);
 
 // arguments of one group stand next to each other and the group is visible
 // as a whole; without w-auto, form-control would turn them into a vertical

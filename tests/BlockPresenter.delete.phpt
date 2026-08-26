@@ -39,20 +39,20 @@ Assert::match('~<td>\s*w\s*</td>~', $html);
 // --- editing a free block offers deletion ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'free']);
-Assert::contains('Smazat', $html);
+Assert::contains('Delete', $html);
 
 // --- editing a used block doesn't offer deletion, and says why ---
 
 [, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'used']);
 // this used to target '<h2>Smazat</h2>' — that heading is gone (Task 3,
-// cards). For a block (unlike a workflow), the "Smazat" card renders
+// cards). For a block (unlike a workflow), the "Delete" card renders
 // whenever it has a name — for a used block its body just has the sentence
 // "cannot be deleted…", not the delete form. notContains('card
 // border-danger', ...) would always fail here, because the card shows up
 // for a used block too — so we target the delete form directly, which must
 // not render.
 Assert::notContains('id="frm-deleteForm"', $html);
-Assert::contains('používá', $html);
+Assert::contains('used by', $html);
 Assert::contains('w', $html);
 
 // --- a POST on a used block is rejected, even though the button wasn't in the HTML ---
@@ -97,7 +97,7 @@ FileSystem::write($project . '/blocks/broken.json', '{not valid json');
 
 // $error is set (the file failed to parse)...
 Assert::contains('alert-danger', $html);
-// ...but the Smazat (delete) button still shows.
-Assert::contains('Smazat', $html);
+// ...but the Delete button still shows.
+Assert::contains('Delete', $html);
 
 FileSystem::delete(TEMP_DIR);

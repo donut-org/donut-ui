@@ -52,13 +52,13 @@ Assert::contains('echo', $html);
 // the directory was missing, but not that a single mkdir was enough. The
 // GUI deliberately doesn't create directories.
 
-$prazdny = TEMP_DIR . '/prazdny';
-FileSystem::createDir($prazdny);
+$empty = TEMP_DIR . '/empty';
+FileSystem::createDir($empty);
 
-[, $html] = runBlockPresenterIn($prazdny, ['action' => 'default']);
+[, $html] = runBlockPresenterIn($empty, ['action' => 'default']);
 
-Assert::contains("Blocks directory '{$prazdny}/blocks' does not exist.", $html);
-Assert::contains('mkdir -p ' . $prazdny . '/blocks', $html);
+Assert::contains("Blocks directory '{$empty}/blocks' does not exist.", $html);
+Assert::contains('mkdir -p ' . $empty . '/blocks', $html);
 
 // --- a broken block in the overview: the error is visible and the path to
 // fixing it remains ---
@@ -66,31 +66,31 @@ Assert::contains('mkdir -p ' . $prazdny . '/blocks', $html);
 // deleting most. For a workflow, the previous project had to add this as an
 // Important finding; for blocks, no assertion had guarded it until now.
 
-$sRozbitym = TEMP_DIR . '/s-rozbitym';
-FileSystem::createDir($sRozbitym . '/blocks');
-FileSystem::write($sRozbitym . '/blocks/dobry.json', json_encode([
-	'name' => 'dobry', 'command' => 'echo', 'args' => [], 'description' => 'Prints text',
+$withBroken = TEMP_DIR . '/with-broken';
+FileSystem::createDir($withBroken . '/blocks');
+FileSystem::write($withBroken . '/blocks/good.json', json_encode([
+	'name' => 'good', 'command' => 'echo', 'args' => [], 'description' => 'Prints text',
 ]));
-FileSystem::write($sRozbitym . '/blocks/rozbity.json', 'this is not json');
+FileSystem::write($withBroken . '/blocks/broken.json', 'this is not json');
 
-[, $html] = runBlockPresenterIn($sRozbitym, ['action' => 'default']);
+[, $html] = runBlockPresenterIn($withBroken, ['action' => 'default']);
 
-Assert::contains('<strong>rozbity</strong>', $html);
+Assert::contains('<strong>broken</strong>', $html);
 Assert::contains('class=text-danger', $html);
-Assert::match('~<a href="[^"]*name=rozbity[^"]*"[^>]*>edit</a>~', $html);
+Assert::match('~<a href="[^"]*name=broken[^"]*"[^>]*>edit</a>~', $html);
 
 // "edit" links must be distinguishable in a screen reader's list of links
-Assert::contains('aria-label="Edit block rozbity"', $html);
-Assert::contains('aria-label="Edit block dobry"', $html);
+Assert::contains('aria-label="Edit block broken"', $html);
+Assert::contains('aria-label="Edit block good"', $html);
 
 // the good block next to it stays a link to the detail
-Assert::match('~<a href="[^"]*action=detail[^"]*">dobry</a>~', $html);
+Assert::match('~<a href="[^"]*action=detail[^"]*">good</a>~', $html);
 
 // the description sits right after the name, same as in the workflow
 // table: the command alone doesn't distinguish blocks (in a real project 9
 // of 15 share it), the description is what you search the overview by
 Assert::contains('<th scope=col>Description</th>', $html);
-Assert::match('~">dobry</a>\s*</td>\s*<td>\s*Prints text\s*</td>~', $html);
+Assert::match('~">good</a>\s*</td>\s*<td>\s*Prints text\s*</td>~', $html);
 
 // the remaining headers and the command in the cell — without them, the
 // mutations "rename the header" and "print something else instead of the
@@ -105,7 +105,7 @@ Assert::contains('table-responsive', $html);
 
 // and the broken block's message sits in the second column, same as for a
 // broken workflow
-Assert::match('~<strong>rozbity</strong>\s*</td>\s*<td>\s*<span class=text-danger>~', $html);
+Assert::match('~<strong>broken</strong>\s*</td>\s*<td>\s*<span class=text-danger>~', $html);
 
 // the buttons have Bootstrap classes — without them they look like bare
 // links in the middle of an otherwise styled page

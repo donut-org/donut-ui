@@ -41,13 +41,13 @@ Assert::notContains('Prints text', $new);
 
 // --- a nonexistent block is reported, not a crash ---
 
-[, $missing] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'neni']);
-Assert::contains("Block 'neni' does not exist.", $missing);
+[, $missing] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'missing']);
+Assert::contains("Block 'missing' does not exist.", $missing);
 
 // --- saving: a valid block goes through and a file is created ---
 
 $post = [
-	'name' => 'novy',
+	'name' => 'added',
 	'description' => 'Description',
 	'command' => 'curl',
 	'args' => [
@@ -73,8 +73,8 @@ $post = [
 // Success ends with a redirect to editing the saved block.
 Assert::type(RedirectResponse::class, $response);
 
-$saved = (new BlockParser)->parseFile($project . '/blocks/novy.json');
-Assert::same('novy', $saved->name);
+$saved = (new BlockParser)->parseFile($project . '/blocks/added.json');
+Assert::same('added', $saved->name);
 Assert::same('curl', $saved->command);
 
 // The gap in indices closed up and the order was kept.
@@ -84,7 +84,7 @@ Assert::same(['url'], array_keys($saved->inputs));
 
 // --- saving: an undeclared variable in args is rejected ---
 
-$invalid = ['name' => 'vadny', 'args' => [0 => [0 => '{%chybi%}']], 'inputs' => []] + $post;
+$invalid = ['name' => 'bad', 'args' => [0 => [0 => '{%undeclared%}']], 'inputs' => []] + $post;
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
@@ -94,8 +94,8 @@ $invalid = ['name' => 'vadny', 'args' => [0 => [0 => '{%chybi%}']], 'inputs' => 
 
 // No redirect — the form came back with an error.
 Assert::false($response instanceof RedirectResponse);
-Assert::contains('chybi', $html);
-Assert::false(is_file($project . '/blocks/vadny.json'));
+Assert::contains('undeclared', $html);
+Assert::false(is_file($project . '/blocks/bad.json'));
 
 // The message belongs among the errors, not the warnings — otherwise the
 // user would see the specific rejection reason as a mere warning and only
@@ -104,13 +104,13 @@ Assert::false(is_file($project . '/blocks/vadny.json'));
 // template.
 //
 // .*? between <div> and </div> would skip across the rest of the page to
-// the first following </div> after the word "chybi" — and that's also the
-// form's div with the generic "The block was not saved" message; "chybi"
+// the first following </div> after the word "undeclared" — and that's also the
+// form's div with the generic "The block was not saved" message; "undeclared"
 // shows up again further down in the args field's value. The pattern is
 // therefore tied to the structure from Step 2 (div > ul.mb-0 > li) without
 // jumping across another tag.
-Assert::match('~<div class="alert alert-danger">\s*<ul class="mb-0">\s*<li>[^<]*chybi[^<]*</li>~s', $html);
-Assert::notMatch('~<div class="alert alert-warning">\s*<ul class="mb-0">\s*<li>[^<]*chybi[^<]*</li>~s', $html);
+Assert::match('~<div class="alert alert-danger">\s*<ul class="mb-0">\s*<li>[^<]*undeclared[^<]*</li>~s', $html);
+Assert::notMatch('~<div class="alert alert-warning">\s*<ul class="mb-0">\s*<li>[^<]*undeclared[^<]*</li>~s', $html);
 
 // --- creating must not overwrite an existing block ---
 // writeFile() overwrites without asking; without a safeguard this POST
@@ -139,7 +139,7 @@ Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 	$project,
 	['action' => 'edit', 'name' => 'echo', 'do' => 'blockForm-submit'],
 	[
-		'name' => 'prejmenovany',
+		'name' => 'renamed',
 		'description' => 'Prints text',
 		'command' => 'echo',
 		'args' => [0 => [0 => '{%text%}']],
@@ -153,7 +153,7 @@ Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 
 Assert::type(RedirectResponse::class, $response);
 Assert::true(is_file($project . '/blocks/echo.json'));
-Assert::false(is_file($project . '/blocks/prejmenovany.json'));
+Assert::false(is_file($project . '/blocks/renamed.json'));
 
 // --- creating without a blocks directory is reported, not a crash ---
 //
@@ -162,14 +162,14 @@ Assert::false(is_file($project . '/blocks/prejmenovany.json'));
 // blockFormSucceeded() must catch it just as gracefully as WriteException,
 // not let the exception fall through uncaught.
 
-$bezAdresare = TEMP_DIR . '/edit-bez-blocks';
-FileSystem::createDir($bezAdresare);
+$noBlocksDir = TEMP_DIR . '/edit-no-blocks-dir';
+FileSystem::createDir($noBlocksDir);
 
 [$response, $html] = runBlockPresenterIn(
-	$bezAdresare,
+	$noBlocksDir,
 	['action' => 'edit', 'do' => 'blockForm-submit'],
 	[
-		'name' => 'novy',
+		'name' => 'added',
 		'description' => '',
 		'command' => 'echo',
 		'args' => [],
@@ -184,7 +184,7 @@ FileSystem::createDir($bezAdresare);
 Assert::false($response instanceof RedirectResponse, 'a missing directory must not end in a redirect');
 Assert::contains('does not exist', $html);
 // M8: the message must say what to do about it — otherwise an empty project is a dead end.
-Assert::contains('mkdir -p ' . $bezAdresare . '/blocks', $html);
+Assert::contains('mkdir -p ' . $noBlocksDir . '/blocks', $html);
 
 // --- a foreign POST must not empty the block form ---
 //
@@ -196,7 +196,7 @@ Assert::contains('mkdir -p ' . $bezAdresare . '/blocks', $html);
 [$response, $html] = runBlockPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'echo', 'do' => 'deleteForm-submit'],
-	['name' => 'neni', 'delete' => 'Delete'],
+	['name' => 'missing', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse, 'deletion failed, the page re-rendered');

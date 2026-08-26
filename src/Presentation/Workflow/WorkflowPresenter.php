@@ -262,8 +262,8 @@ final class WorkflowPresenter extends Presenter
 				$row = $out->addContainer((string) $i);
 				$row->addSelect('channel', null, \array_combine(RunStep::Channels, RunStep::Channels))
 					->setPrompt('—')
-					->setHtmlAttribute('aria-label', 'What from the block');
-				$row->addText('value')->setHtmlAttribute('aria-label', 'Under which key in the map');
+					->setHtmlAttribute('aria-label', 'Block output');
+				$row->addText('value')->setHtmlAttribute('aria-label', 'Map key');
 			}
 
 			$form->addText('timeout', 'Timeout (s)')
@@ -293,8 +293,8 @@ final class WorkflowPresenter extends Presenter
 			$form->addText('right', 'Right');
 
 		} elseif ($this->stepType === 'foreach') {
-			$form->addText('over', 'Over what')->setRequired('Fill in what to iterate over.');
-			$form->addText('as', 'Under which name')->setRequired('Fill in the item name.');
+			$form->addText('over', 'Iterate over')->setRequired('Fill in what to iterate over.');
+			$form->addText('as', 'Item name')->setRequired('Fill in the item name.');
 		}
 
 		$form->addSubmit('save', 'Save');

@@ -107,8 +107,8 @@ Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Smazat řádek
 // scroll on a narrow window
 Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Block input"~', $stepHtml);
 Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="Value"~', $stepHtml);
-Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="What from the block"~', $stepHtml);
-Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Under which key in the map"~', $stepHtml);
+Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="Block output"~', $stepHtml);
+Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Map key"~', $stepHtml);
 Assert::same(2, \substr_count($stepHtml, '<div class=table-responsive>'));
 
 // the step's values stay in the tables

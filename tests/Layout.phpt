@@ -35,21 +35,21 @@ Assert::contains('data-bs-toggle=offcanvas', $html);
 Assert::contains('id=nav', $html);
 
 // obě sekce v navigaci
-Assert::contains('>Workflow</a>', $html);
-Assert::contains('>Kameny</a>', $html);
+Assert::contains('>Workflows</a>', $html);
+Assert::contains('>Blocks</a>', $html);
 
 // aktivní je ta, na které stojíme — a ta druhá ne
 // (Latte vykresluje href z n:href před class z n:class bez ohledu na pořadí
 // atributů v šabloně, proto [^>]* i před "class")
-Assert::match('~<a[^>]*class="nav-link active"[^>]*>Workflow</a>~', $html, 'Workflow je aktivní');
-Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Kameny</a>~', $html, 'Kameny aktivní nejsou');
+Assert::match('~<a[^>]*class="nav-link active"[^>]*>Workflows</a>~', $html, 'Workflow je aktivní');
+Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Blocks</a>~', $html, 'Kameny aktivní nejsou');
 
 // výchozí drobečky, dokud je stránka nepřepíše (Task 4)
 Assert::contains('breadcrumb', $html);
 
 // aktivní položka to musí říct i odečítači obrazovky, ne jen barvou
-Assert::match('~<a[^>]*aria-current="page"[^>]*>Workflow</a>~', $html);
-Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Kameny</a>~', $html);
+Assert::match('~<a[^>]*aria-current="page"[^>]*>Workflows</a>~', $html);
+Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $html);
 
 // drobečky přehledu: poslední položka je aktivní (a pro odečítač obrazovky
 // nese aria-current) a není odkaz
@@ -87,10 +87,10 @@ Assert::match('~<li class="breadcrumb-item active" aria-current=page>Kameny</li>
 // na stránce kamene svítí v navigaci „Kameny", a Workflow ne. Dokud testovací
 // továrna vracela BlockPresenter pro každé jméno, byla tahle aserce vakuová —
 // isLinkCurrent() vracelo true pro obě sekce naráz.
-Assert::match('~<a[^>]*class="nav-link active"[^>]*>Kameny</a>~', $blockDefault);
-Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Workflow</a>~', $blockDefault);
-Assert::match('~<a[^>]*aria-current="page"[^>]*>Kameny</a>~', $blockDefault);
-Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflow</a>~', $blockDefault);
+Assert::match('~<a[^>]*class="nav-link active"[^>]*>Blocks</a>~', $blockDefault);
+Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Workflows</a>~', $blockDefault);
+Assert::match('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $blockDefault);
+Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflows</a>~', $blockDefault);
 
 // drobečky Block:edit: sekce je odkaz, mezičlánek je odkaz na detail kamene,
 // poslední položka je "úprava"

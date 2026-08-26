@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang=cs>
+<html lang=en>
 <meta charset=utf-8>
 <meta name=viewport content="width=device-width, initial-scale=1">
 <title>{block title}Donut{/block}</title>
@@ -9,37 +9,40 @@
 <div class="container-fluid">
 	<div class="row">
 		{*
-			Levý sloupec je jeden prvek, ne dva: offcanvas-md znamená pod md
-			vysouvací panel, od md výš obyčejný sloupec. Navigace se proto
-			nepíše dvakrát a nic se nepřepíná v JS.
+			The left column is one element, not two: offcanvas-md means a
+			slide-out panel below md, a plain column from md up. The
+			navigation is therefore not written twice, and nothing switches
+			in JS.
 		*}
-		<nav id=nav class="col-md-3 col-lg-2 offcanvas-md offcanvas-start bg-body-tertiary p-3" tabindex="-1" aria-label="Hlavní navigace">
+		<nav id=nav class="col-md-3 col-lg-2 offcanvas-md offcanvas-start bg-body-tertiary p-3" tabindex="-1" aria-label="Main navigation">
 			<div class="d-flex justify-content-between align-items-center mb-3">
 				<a class="fs-4 fw-semibold text-decoration-none" n:href="Workflow:default">Donut</a>
-				<button type=button class="btn-close d-md-none" data-bs-dismiss=offcanvas data-bs-target="#nav" aria-label="Zavřít"></button>
+				<button type=button class="btn-close d-md-none" data-bs-dismiss=offcanvas data-bs-target="#nav" aria-label="Close"></button>
 			</div>
 
-			{* Kterou sadu právě edituju. Bez tohohle GUI o profilu mlčí a
-			   splete se jen jednou — zato tiše. *}
-			<div class="text-body-secondary small mb-3">Profil: <code>{$profile}</code></div>
+			{* Which set I'm currently editing. Without this the GUI says
+			   nothing about the profile, and you mix it up only once —
+			   silently, though. *}
+			<div class="text-body-secondary small mb-3">Profile: <code>{$profile}</code></div>
 
-			{* aria-current říká odečítači obrazovky totéž, co vidícímu uživateli
-			   zvýrazněná položka. Třída active sama o sobě je jen barva. *}
+			{* aria-current tells a screen reader the same thing the
+			   highlighted item tells a sighted user. The active class
+			   alone is just color. *}
 			<ul class="nav nav-pills flex-column">
 				<li class=nav-item>
-					<a n:class="nav-link, isLinkCurrent('Workflow:*') ? active" n:attr="aria-current => isLinkCurrent('Workflow:*') ? 'page'" n:href="Workflow:default">Workflow</a>
+					<a n:class="nav-link, isLinkCurrent('Workflow:*') ? active" n:attr="aria-current => isLinkCurrent('Workflow:*') ? 'page'" n:href="Workflow:default">Workflows</a>
 				</li>
 				<li class=nav-item>
-					<a n:class="nav-link, isLinkCurrent('Block:*') ? active" n:attr="aria-current => isLinkCurrent('Block:*') ? 'page'" n:href="Block:default">Kameny</a>
+					<a n:class="nav-link, isLinkCurrent('Block:*') ? active" n:attr="aria-current => isLinkCurrent('Block:*') ? 'page'" n:href="Block:default">Blocks</a>
 				</li>
 			</ul>
 		</nav>
 
 		<main class="col py-3 px-md-4">
 			<div class="d-flex align-items-center gap-2 mb-3">
-				<button type=button class="btn btn-outline-secondary d-md-none" data-bs-toggle=offcanvas data-bs-target="#nav" aria-label="Otevřít navigaci">☰</button>
+				<button type=button class="btn btn-outline-secondary d-md-none" data-bs-toggle=offcanvas data-bs-target="#nav" aria-label="Open navigation">☰</button>
 
-				<nav aria-label="Drobečky">
+				<nav aria-label="Breadcrumbs">
 					<ol class="breadcrumb mb-0">
 						{block breadcrumbs}<li class="breadcrumb-item active" aria-current=page>Donut</li>{/block}
 					</ol>

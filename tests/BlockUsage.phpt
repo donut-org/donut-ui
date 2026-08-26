@@ -36,7 +36,7 @@ $w2 = new Workflow(name: 'second', steps: [
 	new RunStep(block: 'echo'),
 ]);
 
-$usage = BlockUsage::of(['first' => $w1, 'second' => $w2]);
+$usage = BlockUsage::of(['second' => $w2, 'first' => $w1]);
 
 // A block used in both workflows is listed once per workflow, not once per step.
 Assert::same(['first', 'second'], $usage['echo']);

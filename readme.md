@@ -64,7 +64,7 @@ soubory odtamtud. Žádný build krok, žádný `npm`.
 - **seznam workflow** — název a popis každého workflow z `workflows/`
 - **detail workflow** — kroky ve stromu (`if`/`foreach` vnořené) a problémy
   z validátoru u kroku, kterého se týkají
-- **editace kroku** — u každého kroku odkaz „upravit" na formulář podle jeho
+- **editace kroku** — u každého kroku odkaz „edit" na formulář podle jeho
   typu (`run`, `set`, `if`, `foreach`); pod stromem i v každé vnořené větvi
   jde krok daného typu přidat, přesunout nahoru/dolů nebo smazat (mazání
   krokem s podstromem se ptá na potvrzení)

@@ -61,7 +61,7 @@ $post = [
 	'timeout' => '',
 	'allowFailure' => 'none',
 	'allowFailureCodes' => '',
-	'save' => 'Uložit',
+	'save' => 'Save',
 ];
 
 [$response] = runBlockPresenterIn(
@@ -124,7 +124,7 @@ $echoBefore = FileSystem::read($project . '/blocks/echo.json');
 
 // Žádné přesměrování a soubor beze změny bajt po bajtu.
 Assert::false($response instanceof RedirectResponse);
-Assert::contains('already exists', $html);
+Assert::contains('Block "echo" already exists. Edit it, or choose another name.', $html);
 Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 
 // --- posted jméno se při editaci ignoruje — "přejmenování" nesmí založit vidle ---
@@ -143,7 +143,7 @@ Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 		'timeout' => '5',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
@@ -173,7 +173,7 @@ FileSystem::createDir($bezAdresare);
 		'timeout' => '',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
@@ -235,7 +235,7 @@ $before = FileSystem::read($project . '/blocks/echo.json');
 		'timeout' => '',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 	sameOrigin: false,
 );

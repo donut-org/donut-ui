@@ -12,7 +12,7 @@ use Nette\Bridges\ApplicationLatte\Template;
 
 
 /**
- * Šablona pro StepTreeControl.
+ * Template for StepTreeControl.
  */
 final class StepTreeTemplate extends Template
 {

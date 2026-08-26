@@ -61,7 +61,7 @@ Assert::contains('>Step name<', $html);
 [$response, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepTree-deleteStep'],
-	['at' => 'nesmysl'],
+	['at' => 'nonsense'],
 );
 
 Assert::false($response instanceof RedirectResponse, 'the delete failed, the page redrew');

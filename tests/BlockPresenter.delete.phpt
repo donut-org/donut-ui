@@ -13,8 +13,8 @@ $project = TEMP_DIR . '/delete';
 FileSystem::createDir($project . '/blocks');
 FileSystem::createDir($project . '/workflows');
 
-// pouzity is used by a workflow, volny isn't.
-foreach (['pouzity', 'volny'] as $name) {
+// block "used" is referenced by a workflow, "free" isn't.
+foreach (['used', 'free'] as $name) {
 	FileSystem::write($project . "/blocks/{$name}.json", json_encode([
 		'name' => $name, 'command' => 'echo', 'args' => [],
 	]));
@@ -22,7 +22,7 @@ foreach (['pouzity', 'volny'] as $name) {
 
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
-	'steps' => [['type' => 'run', 'block' => 'pouzity']],
+	'steps' => [['type' => 'run', 'block' => 'used']],
 ]));
 
 // --- overview shows who uses which block ---
@@ -38,12 +38,12 @@ Assert::match('~<td>\s*w\s*</td>~', $html);
 
 // --- editing a free block offers deletion ---
 
-[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'volny']);
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'free']);
 Assert::contains('Smazat', $html);
 
 // --- editing a used block doesn't offer deletion, and says why ---
 
-[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'pouzity']);
+[, $html] = runBlockPresenterIn($project, ['action' => 'edit', 'name' => 'used']);
 // this used to target '<h2>Smazat</h2>' — that heading is gone (Task 3,
 // cards). For a block (unlike a workflow), the "Smazat" card renders
 // whenever it has a name — for a used block its body just has the sentence
@@ -60,17 +60,17 @@ Assert::contains('w', $html);
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'pouzity', 'do' => 'deleteForm-submit'],
-	['name' => 'pouzity', 'delete' => 'Delete'],
+	['action' => 'edit', 'name' => 'used', 'do' => 'deleteForm-submit'],
+	['name' => 'used', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::true(is_file($project . '/blocks/pouzity.json'));
+Assert::true(is_file($project . '/blocks/used.json'));
 
-// The page is still editing "pouzity" and its content must not disappear
+// The page is still editing "used" and its content must not disappear
 // just because the POST belonged to deleteForm, not blockForm — formShape()
 // used to react to any POST and built the form with zero argument groups.
-Assert::contains('value="pouzity"', $html);
+Assert::contains('value="used"', $html);
 // (since fix I4, an argument group has Bootstrap classes alongside
 // arg-group, so we look for the start of the class list, not the whole
 // attribute)
@@ -80,12 +80,12 @@ Assert::match('~<div class="arg-group\b~', $html);
 
 [$response] = runBlockPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => 'volny', 'delete' => 'Delete'],
+	['action' => 'edit', 'name' => 'free', 'do' => 'deleteForm-submit'],
+	['name' => 'free', 'delete' => 'Delete'],
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::false(is_file($project . '/blocks/volny.json'));
+Assert::false(is_file($project . '/blocks/free.json'));
 
 // --- a block that fails to parse can still be deleted ---
 // The delete section used to sit inside {if !$error}, so a broken file — the

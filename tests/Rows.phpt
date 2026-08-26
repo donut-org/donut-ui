@@ -9,7 +9,7 @@ require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/workflowPresenter.php';
 require __DIR__ . '/inc/blockPresenter.php';
 
-$dir = TEMP_DIR . '/projekt';
+$dir = TEMP_DIR . '/project';
 FileSystem::createDir($dir . '/workflows');
 FileSystem::write($dir . '/workflows/w.json', \json_encode([
 	'name' => 'w',

@@ -51,7 +51,7 @@ Assert::notContains('Repozitář', $novy);
 		'name' => 'nove',
 		'description' => 'Nové',
 		'inputs' => [0 => ['name' => 'x', 'required' => '1', 'default' => '', 'description' => '']],
-		'save' => 'Uložit',
+		'save' => 'Save',
 	],
 );
 
@@ -73,11 +73,11 @@ $before = FileSystem::read($project . '/workflows/w.json');
 [$response, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
-	['name' => 'w', 'description' => 'Přepis', 'inputs' => [], 'save' => 'Uložit'],
+	['name' => 'w', 'description' => 'Přepis', 'inputs' => [], 'save' => 'Save'],
 );
 
 Assert::false($response instanceof RedirectResponse, 'přepis se nesmí tvářit jako úspěch');
-Assert::contains('already exists', $html);
+Assert::contains('Workflow "w" already exists. Edit it, or choose another name.', $html);
 Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'původní soubor musí zůstat bajt po bajtu stejný');
 
 // --- úprava nesmí ztratit kroky ---
@@ -85,7 +85,7 @@ Assert::same($before, FileSystem::read($project . '/workflows/w.json'), 'původn
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
-	['name' => 'w', 'description' => 'Jiný popis', 'inputs' => [], 'save' => 'Uložit'],
+	['name' => 'w', 'description' => 'Jiný popis', 'inputs' => [], 'save' => 'Save'],
 );
 
 $upravene = $load('w');
@@ -100,7 +100,7 @@ Assert::count(1, $upravene->steps, 'kroky se úpravou hlavičky nesmí ztratit')
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'edit', 'name' => 'w', 'do' => 'headerForm-submit'],
-	['name' => 'prejmenovane', 'description' => 'X', 'inputs' => [], 'save' => 'Uložit'],
+	['name' => 'prejmenovane', 'description' => 'X', 'inputs' => [], 'save' => 'Save'],
 );
 
 Assert::true(\is_file($project . '/workflows/w.json'));
@@ -144,7 +144,7 @@ FileSystem::createDir($bezAdresare);
 [$response, $html] = runWorkflowPresenterIn(
 	$bezAdresare,
 	['action' => 'edit', 'do' => 'headerForm-submit'],
-	['name' => 'nove', 'description' => '', 'inputs' => [], 'save' => 'Uložit'],
+	['name' => 'nove', 'description' => '', 'inputs' => [], 'save' => 'Save'],
 );
 
 Assert::false($response instanceof RedirectResponse, 'chybějící adresář nesmí skončit přesměrováním');

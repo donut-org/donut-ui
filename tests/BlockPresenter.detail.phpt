@@ -8,7 +8,7 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/inc/blockPresenter.php';
 
-$dir = TEMP_DIR . '/projekt';
+$dir = TEMP_DIR . '/project';
 FileSystem::createDir($dir . '/blocks');
 FileSystem::createDir($dir . '/workflows');
 

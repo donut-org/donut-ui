@@ -136,7 +136,7 @@ Assert::contains('Path "other.json:steps[0]" does not belong to workflow "w".', 
 // rejected.
 
 $write([
-	['type' => 'run', 'block' => 'neni'],
+	['type' => 'run', 'block' => 'missing'],
 	['type' => 'set', 'key' => 'a', 'value' => '1'],
 ]);
 

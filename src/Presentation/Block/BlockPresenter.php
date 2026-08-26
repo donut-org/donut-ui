@@ -184,7 +184,7 @@ final class BlockPresenter extends Presenter
 
 		$form->addCheckbox('hasStdin', 'Block reads stdin');
 		$form->addCheckbox('stdinRequired', 'stdin is required');
-		$form->addText('stdinDescription', 'stdin description');
+		$form->addText('stdinDescription', 'Stdin description');
 
 		$form->addText('timeout', 'Timeout (s)')
 			->addCondition(Form::Filled)

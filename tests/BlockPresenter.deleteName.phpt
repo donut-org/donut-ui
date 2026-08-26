@@ -21,8 +21,8 @@ $project = TEMP_DIR . '/delete-name';
 FileSystem::createDir($project . '/blocks');
 FileSystem::createDir($project . '/workflows');
 
-// pouzity is used by a workflow, volny isn't — the delete form renders only for volny.
-foreach (['pouzity', 'volny'] as $name) {
+// used is used by a workflow, free isn't — the delete form renders only for free.
+foreach (['used', 'free'] as $name) {
 	FileSystem::write($project . "/blocks/{$name}.json", json_encode([
 		'name' => $name, 'command' => 'echo', 'args' => [],
 	]));
@@ -30,37 +30,37 @@ foreach (['pouzity', 'volny'] as $name) {
 
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
-	'steps' => [['type' => 'run', 'block' => 'pouzity']],
+	'steps' => [['type' => 'run', 'block' => 'used']],
 ]));
 
 // --- a forged path normalizes to the name and hits the usage check ---
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => '../blocks/pouzity', 'delete' => 'Delete'],
+	['action' => 'edit', 'name' => 'free', 'do' => 'deleteForm-submit'],
+	['name' => '../blocks/used', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::true(is_file($project . '/blocks/pouzity.json'), 'the file must remain');
+Assert::true(is_file($project . '/blocks/used.json'), 'the file must remain');
 
 // The message must come from the usage check, not "block does not exist" —
 // the fate of the file must not be decided all the way down at the map
 // keying in BlockRepository.
-Assert::contains('cannot be deleted', $html, 'usage check must ask about the normalized name, not the path');
+Assert::contains('Block "used" cannot be deleted — used by: w.', $html, 'usage check must ask about the normalized name, not the path');
 
 // --- a path out of blocks/ deletes nothing ---
 
-FileSystem::write($project . '/tajne.json', '{}');
+FileSystem::write($project . '/secret.json', '{}');
 
 [$response] = runBlockPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
-	['name' => '../tajne', 'delete' => 'Delete'],
+	['action' => 'edit', 'name' => 'free', 'do' => 'deleteForm-submit'],
+	['name' => '../secret', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
-Assert::true(is_file($project . '/tajne.json'), 'nothing outside blocks/ may be deleted');
+Assert::true(is_file($project . '/secret.json'), 'nothing outside blocks/ may be deleted');
 
 // --- an empty name is reported the same way as for a workflow ---
 // Without the guard, an empty string would fall all the way through to the
@@ -70,12 +70,12 @@ Assert::true(is_file($project . '/tajne.json'), 'nothing outside blocks/ may be 
 
 [$response, $html] = runBlockPresenterIn(
 	$project,
-	['action' => 'edit', 'name' => 'volny', 'do' => 'deleteForm-submit'],
+	['action' => 'edit', 'name' => 'free', 'do' => 'deleteForm-submit'],
 	['name' => '', 'delete' => 'Delete'],
 );
 
 Assert::false($response instanceof RedirectResponse);
 Assert::contains('Nothing to delete.', $html);
-Assert::true(is_file($project . '/blocks/volny.json'), 'nothing should have been deleted');
+Assert::true(is_file($project . '/blocks/free.json'), 'nothing should have been deleted');
 
 FileSystem::delete(TEMP_DIR);

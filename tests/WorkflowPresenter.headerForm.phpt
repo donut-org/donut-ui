@@ -79,14 +79,14 @@ Assert::same(['a', 'c'], array_keys($load('gaps')->inputs), 'an input at an inde
 		'description' => 'Important description',
 		'inputs' => [
 			0 => ['name' => 'repo', 'required' => '1', 'default' => '', 'description' => 'Repository'],
-			5 => ['name' => 'novy', 'required' => '', 'default' => '', 'description' => ''],
+			5 => ['name' => 'added', 'required' => '', 'default' => '', 'description' => ''],
 		],
 		'save' => 'Save',
 	],
 );
 
 Assert::type(RedirectResponse::class, $response);
-Assert::same(['repo', 'novy'], array_keys($load('w')->inputs), 'an added input must not disappear just because it has a higher index');
+Assert::same(['repo', 'added'], array_keys($load('w')->inputs), 'an added input must not disappear just because it has a higher index');
 
 // --- GET takes rows from the workflow, not from the (empty) POST ---
 // Without the guard against a foreign signal, getPost() would return [] and
@@ -96,7 +96,7 @@ Assert::same(['repo', 'novy'], array_keys($load('w')->inputs), 'an added input m
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'edit', 'name' => 'w']);
 
 Assert::contains('value="repo"', $html);
-Assert::contains('value="novy"', $html, 'both inputs must have their own row');
+Assert::contains('value="added"', $html, 'both inputs must have their own row');
 
 // --- N1: a GET with `do=headerForm-submit` in the address is still a GET ---
 // A hand-built address (or a bookmark from before the redirect) carries the
@@ -109,7 +109,7 @@ Assert::contains('value="novy"', $html, 'both inputs must have their own row');
 Assert::contains('value="w"', $get, 'the name is held by setDefaultValue()');
 Assert::contains('Important description', $get, 'the description must not be lost — GET sent nothing');
 Assert::contains('value="repo"', $get, 'the inputs must not be lost');
-Assert::contains('value="novy"', $get);
+Assert::contains('value="added"', $get);
 
 // --- a POST from a foreign site must not get through to a write ---
 // The GUI has no CSRF token or session (readme, "What the GUI knowingly

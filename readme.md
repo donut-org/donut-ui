@@ -27,11 +27,17 @@ GUI hledá `blocks/` a `workflows/` v **profilu**, stejně jako CLI: v
 nehraje.
 
 Nejrychlejší cesta je `make server` v `gui/` — spustí vestavěný PHP server
-nad profilem z `gui/Makefile` (`docs/workflows/donut`):
+nad **výchozím profilem**, tedy nad tím samým, který by vzal CLI:
 
 ```bash
 cd gui
 make server
+```
+
+Nad ukázkovou sadou z repozitáře (`docs/workflows/donut`) přes proměnné:
+
+```bash
+make server home=$(pwd)/../docs/workflows profile=donut
 ```
 
 Ruční spuštění nad libovolným profilem:

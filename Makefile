@@ -2,11 +2,13 @@ php_bin = php
 tester_bin = vendor/bin/tester
 tests_dir = tests/
 
-# Where the GUI looks for blocks and workflows: $(home)/$(profile)/{blocks,workflows}.
-# docs/workflows/ is effectively the profile root — donut/ inside it has both
-# blocks/ and workflows/.
-home = $(CURDIR)/../docs/workflows
-profile = donut
+# `make server` runs against the same profile the CLI would use:
+# $DONUT_HOME/$DONUT_PROFILE, by default ~/.config/donut/default. An empty
+# value is the same as unset, so leaving these blank hands the decision to
+# Profile::fromEnvironment(). To browse the repository's own sample set:
+#   make server home=$(CURDIR)/../docs/workflows profile=donut
+home =
+profile =
 port = 8000
 
 # The docroot must be www/ (assets are served from there) and the router script
@@ -15,7 +17,7 @@ docroot = $(CURDIR)/www
 
 .PHONY: server test phpstan
 server:
-	@echo "GUI: http://127.0.0.1:$(port)  nad profilem  $(profile)  ($(home)/$(profile))"
+	@echo "GUI: http://127.0.0.1:$(port)  (the page header names the profile)"
 	@DONUT_HOME=$(home) DONUT_PROFILE=$(profile) $(php_bin) -S 127.0.0.1:$(port) -t $(docroot) $(docroot)/index.php
 
 test:

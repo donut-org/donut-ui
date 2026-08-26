@@ -185,7 +185,7 @@ $write([
 
 [, $html] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
 
-Assert::contains('no inputs', $html, 'zero inputs must say "no inputs", not "0 input(s)"');
+Assert::contains('<span class="text-muted">· no inputs</span>', $html, 'zero inputs must say "no inputs", not "0 input(s)", on the summary badge');
 Assert::contains('The block has no inputs.', $html);
 // The count and the word are separated by a line break in the template, so
 // a plain contains() on "1 input" would never match — the whitespace

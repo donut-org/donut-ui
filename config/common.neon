@@ -3,13 +3,13 @@ application:
 		*: Donut\Gui\Presentation\*\**Presenter
 
 services:
-	# Kde leží kameny a workflow. Prostředí se čte při startu serveru, jako
-	# u CLI — GUI profily nepřepíná za běhu, přepnutí je restart s jinou
-	# proměnnou.
+	# Where blocks and workflows live. The environment is read when the server
+	# starts, as in the CLI — the GUI does not switch profiles at runtime;
+	# switching means a restart with a different variable.
 	- Donut\Profile::fromEnvironment(::getenv())
 
-	# SimpleRouter stačí: adresy jsou v query stringu
-	# (?presenter=Workflow&action=detail&name=card-dev) a nic hezčího
-	# lokální autorský nástroj nepotřebuje. Bez routeru by aplikace
-	# nenastartovala — nette/application ho vyžaduje jako službu.
+	# SimpleRouter is enough: URLs live in the query string
+	# (?presenter=Workflow&action=detail&name=card-dev) and a local authoring
+	# tool needs nothing prettier. Without a router the application would not
+	# start — nette/application requires it as a service.
 	- Nette\Application\Routers\SimpleRouter(Workflow:default)

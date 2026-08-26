@@ -2,15 +2,15 @@ php_bin = php
 tester_bin = vendor/bin/tester
 tests_dir = tests/
 
-# Kde GUI hledá kameny a workflow: $(home)/$(profile)/{blocks,workflows}.
-# docs/workflows/ je de facto kořen profilů — donut/ v něm má blocks/
-# i workflows/.
+# Where the GUI looks for blocks and workflows: $(home)/$(profile)/{blocks,workflows}.
+# docs/workflows/ is effectively the profile root — donut/ inside it has both
+# blocks/ and workflows/.
 home = $(CURDIR)/../docs/workflows
 profile = donut
 port = 8000
 
-# Docroot musí být www/ (odtud se vydávají assety) a router script je povinný:
-# bez něj by vestavěný server hledal soubory podle URL.
+# The docroot must be www/ (assets are served from there) and the router script
+# is required: without it the built-in server would look for files by URL.
 docroot = $(CURDIR)/www
 
 .PHONY: server test phpstan

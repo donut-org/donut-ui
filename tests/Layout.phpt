@@ -18,94 +18,96 @@ FileSystem::write($dir . '/blocks/k.json', '{"name":"k","command":"echo","args":
 
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'default']);
 
-// assety
+// assets
 Assert::contains('/assets/bootstrap.min.css', $html);
 Assert::contains('/assets/donut.css', $html);
 Assert::contains('/assets/bootstrap.bundle.min.js', $html);
 Assert::contains('/assets/rows.js', $html);
 
-// dvousloupcový rám
+// two-column frame
 Assert::contains('container-fluid', $html);
-Assert::match('~<main[^>]*class="[^"]*\bcol\b~', $html, 'obsah je pravý sloupec');
+Assert::match('~<main[^>]*class="[^"]*\bcol\b~', $html, 'content is the right column');
 
-// levý sloupec je jeden prvek: pod md offcanvas, od md výš sloupec
+// left column is one element: offcanvas below md, plain column from md up
 Assert::match('~<nav[^>]*class="[^"]*\boffcanvas-md\b~', $html);
 Assert::match('~<nav[^>]*class="[^"]*\bcol-md-3\b~', $html);
 Assert::contains('data-bs-toggle=offcanvas', $html);
 Assert::contains('id=nav', $html);
 
-// obě sekce v navigaci
+// both sections are in the nav
 Assert::contains('>Workflows</a>', $html);
 Assert::contains('>Blocks</a>', $html);
 
-// aktivní je ta, na které stojíme — a ta druhá ne
-// (Latte vykresluje href z n:href před class z n:class bez ohledu na pořadí
-// atributů v šabloně, proto [^>]* i před "class")
-Assert::match('~<a[^>]*class="nav-link active"[^>]*>Workflows</a>~', $html, 'Workflow je aktivní');
-Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Blocks</a>~', $html, 'Kameny aktivní nejsou');
+// the one we're standing on is active — and the other one isn't
+// (Latte renders href from n:href before class from n:class regardless of
+// attribute order in the template, hence [^>]* before "class" too)
+Assert::match('~<a[^>]*class="nav-link active"[^>]*>Workflows</a>~', $html, 'Workflows is active');
+Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Blocks</a>~', $html, 'Blocks is not active');
 
-// výchozí drobečky, dokud je stránka nepřepíše (Task 4)
+// default breadcrumbs, until the page overrides them (Task 4)
 Assert::contains('breadcrumb', $html);
 
-// aktivní položka to musí říct i odečítači obrazovky, ne jen barvou
+// the active item has to say so to a screen reader too, not just by color
 Assert::match('~<a[^>]*aria-current="page"[^>]*>Workflows</a>~', $html);
 Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $html);
 
-// drobečky přehledu: poslední položka je aktivní (a pro odečítač obrazovky
-// nese aria-current) a není odkaz
+// overview breadcrumbs: the last item is active (and carries aria-current
+// for a screen reader) and is not a link
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>Workflow</li>~', $html);
 
-// drobečky detailu: sekce je odkaz, jméno workflow poslední
+// detail breadcrumbs: the section is a link, the workflow name is last
 [, $detail] = runWorkflowPresenterIn($dir, ['action' => 'detail', 'name' => 'w']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $detail);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>w</li>~', $detail);
 
-// zpáteční odkazy zmizely — drobečky je nahradily
+// the "back" links are gone — breadcrumbs replaced them
 Assert::notContains('← workflow', $detail);
 
-// drobečky Workflow:edit bez jména: nové workflow, odkaz jen na přehled
+// Workflow:edit breadcrumbs without a name: "nové workflow", link only to the overview
 [, $newWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Workflow</a></li>~', $newWorkflow);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>nové workflow</li>~', $newWorkflow);
 
-// drobečky Workflow:edit se jménem: mezičlánek je odkaz na detail toho workflow
-// (na cíl, ne jen na text — vlastnost, kvůli které drobečky vznikly, je „z
-// editace vede cesta na detail")
+// Workflow:edit breadcrumbs with a name: the middle item links to that
+// workflow's detail (to the target, not just the text — the whole point
+// breadcrumbs exist for is "there's a path from editing to the detail")
 [, $editWorkflow] = runWorkflowPresenterIn($dir, ['action' => 'edit', 'name' => 'w']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">w</a></li>~', $editWorkflow);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>hlavička</li>~', $editWorkflow);
 
-// drobečky Workflow:step: krok je aktivní, před ním odkaz na detail workflow
+// Workflow:step breadcrumbs: "krok" is active, preceded by a link to the workflow's detail
 [, $step] = runWorkflowPresenterIn($dir, ['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">w</a></li>~', $step);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>krok</li>~', $step);
 
-// drobečky Block:default: poslední (jediná) položka je aktivní
+// Block:default breadcrumbs: the last (only) item is active
 [, $blockDefault] = runBlockPresenterIn($dir, ['action' => 'default']);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>Kameny</li>~', $blockDefault);
 
-// na stránce kamene svítí v navigaci „Kameny", a Workflow ne. Dokud testovací
-// továrna vracela BlockPresenter pro každé jméno, byla tahle aserce vakuová —
-// isLinkCurrent() vracelo true pro obě sekce naráz.
+// on the block page, "Blocks" lights up in the nav, and "Workflows" doesn't.
+// While the test factory returned a BlockPresenter for every name, this
+// assertion was vacuous — isLinkCurrent() returned true for both sections
+// at once.
 Assert::match('~<a[^>]*class="nav-link active"[^>]*>Blocks</a>~', $blockDefault);
 Assert::notMatch('~<a[^>]*class="nav-link active"[^>]*>Workflows</a>~', $blockDefault);
 Assert::match('~<a[^>]*aria-current="page"[^>]*>Blocks</a>~', $blockDefault);
 Assert::notMatch('~<a[^>]*aria-current="page"[^>]*>Workflows</a>~', $blockDefault);
 
-// drobečky Block:edit: sekce je odkaz, mezičlánek je odkaz na detail kamene,
-// poslední položka je "úprava"
+// Block:edit breadcrumbs: section is a link, the middle item links to the
+// block's detail, last item is "úprava"
 [, $blockEdit] = runBlockPresenterIn($dir, ['action' => 'edit', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockEdit);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*action=detail[^"]*">k</a></li>~', $blockEdit);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>úprava</li>~', $blockEdit);
 
-// drobečky Block:detail: sekce je odkaz, jméno kamene poslední
+// Block:detail breadcrumbs: section is a link, the block's name is last
 [, $blockDetail] = runBlockPresenterIn($dir, ['action' => 'detail', 'name' => 'k']);
 Assert::match('~<li class=breadcrumb-item><a href="[^"]*">Kameny</a></li>~', $blockDetail);
 Assert::match('~<li class="breadcrumb-item active" aria-current=page>k</li>~', $blockDetail);
 
-// jméno profilu v hlavičce: pracovní adresář o sadě nerozhoduje, takže je to
-// jediné, z čeho uživatel pozná, co vlastně edituje. Musí být na obou
-// sekcích — kterákoli může být první, kam se dostane.
+// profile name in the header: the working directory no longer decides which
+// set is active, so it's the only thing that tells the user what they're
+// actually editing. Must be on both sections — either one can be the first
+// place the user lands.
 Assert::contains('<code>projekt</code>', $html);
 Assert::contains('<code>projekt</code>', $blockDefault);

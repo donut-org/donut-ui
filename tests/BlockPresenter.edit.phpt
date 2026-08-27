@@ -35,16 +35,24 @@ Assert::contains('Prints text', $html);
 Assert::contains('{%text%}', $html);
 Assert::contains('value="5"', $html);
 
-// --- inputs come before arguments ---
+// --- what the block declares comes before what uses it ---
 //
-// An argument is written in terms of the inputs ({%name%}), so the list they
-// come from has to be readable first. Nothing else pins the order of the
-// cards, so a later edit to the template could quietly put it back.
+// Inputs and stdin are the block's interface; an argument is written in
+// terms of them ({%name%}), so the lists they come from have to be readable
+// first. Nothing else pins the order of the cards, so a later edit to the
+// template could quietly put it back.
 
-Assert::true(
-	strpos($html, '>Inputs<') < strpos($html, '>Arguments<'),
-	'the Inputs card is rendered before the Arguments card'
+$order = array_map(
+	fn(string $card): int|false => strpos($html, '>' . $card . '<'),
+	['Inputs', 'Stdin', 'Arguments', 'Other']
 );
+
+Assert::same([], array_filter($order, fn($at): bool => $at === false), 'every card is rendered');
+Assert::same($order, array_values(array_unique($order)), 'no two cards share a position');
+
+$sorted = $order;
+sort($sorted);
+Assert::same($sorted, $order, 'Inputs, Stdin, Arguments, Other — declaration before use');
 
 // --- stdin is one field with three options, not two checkboxes ---
 //

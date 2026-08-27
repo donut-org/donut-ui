@@ -39,9 +39,10 @@
 			</div>
 		</div>
 
-		{* Inputs before Arguments: an argument is written in terms of the
+		{* What the block declares comes first — inputs, then stdin — and
+		   only then what uses it. An argument is written in terms of the
 		   inputs ({%name%}), so the list they come from has to be readable
-		   first. The other way round the reader meets the placeholders
+		   first; the other way round the reader meets the placeholders
 		   before anything that says what they are. *}
 		<div class="card mb-3">
 			<div class="card-header">Inputs</div>
@@ -81,6 +82,16 @@
 		</div>
 
 		<div class="card mb-3">
+			<div class="card-header">Stdin</div>
+			<div class="card-body">
+				<p>{label stdin /} {input stdin}</p>
+				{* The id is what the select's toggle() addresses; without it
+				   netteForms.js has nothing to show or hide. *}
+				<p id=stdin-description>{label stdinDescription /} {input stdinDescription}</p>
+			</div>
+		</div>
+
+		<div class="card mb-3">
 			<div class="card-header">Arguments</div>
 			<div class="card-body">
 				<p class=keys>A group where a variable evaluates to empty is dropped whole.</p>
@@ -103,16 +114,6 @@
 				</div>
 
 				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ group</button>
-			</div>
-		</div>
-
-		<div class="card mb-3">
-			<div class="card-header">Stdin</div>
-			<div class="card-body">
-				<p>{label stdin /} {input stdin}</p>
-				{* The id is what the select's toggle() addresses; without it
-				   netteForms.js has nothing to show or hide. *}
-				<p id=stdin-description>{label stdinDescription /} {input stdinDescription}</p>
 			</div>
 		</div>
 

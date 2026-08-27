@@ -9,6 +9,9 @@ use Donut\Format\SetStep;
 use Donut\Parser\WorkflowParser;
 use Nette\Application\Responses\RedirectResponse;
 use Nette\Utils\FileSystem;
+use Nette\Application\BadRequestException;
+use Nette\Application\Request as NetteRequest;
+use Donut\Profile;
 use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
@@ -184,13 +187,20 @@ $foreach = $steps()[2]->then[0];
 Assert::type(ForeachStep::class, $foreach, "a forged type in the POST must not change the step's type");
 Assert::count(1, $foreach->steps, 'a forged type must not delete the subtree');
 
-// --- an invalid path is reported, it doesn't crash ---
+// --- a step that isn't there is a 404, it doesn't crash and isn't a page ---
+//
+// It used to render the step form with the message in it, so a stale link
+// or a hand-edited address looked like a step that exists.
 
-[, $html] = runWorkflowPresenterIn($project, [
-	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[99]',
-]);
-
-Assert::contains('does not exist', $html);
+$e = Assert::exception(
+	fn() => createWorkflowPresenter([], true, new Profile(\basename($project), $project))
+		->run(new NetteRequest('Workflow', 'GET', [
+			'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[99]',
+		])),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+Assert::contains('does not exist', $e->getMessage());
 
 // --- an invalid workflow still gets saved: validation doesn't block ---
 //

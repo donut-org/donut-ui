@@ -29,6 +29,7 @@ use Donut\Validator\Validator;
 use Donut\Writer\WriteException;
 use Nette\Application\UI\Form;
 use Nette\Application\UI\Presenter;
+use Nette\Http\IResponse;
 use Nette\IOException;
 
 
@@ -199,7 +200,23 @@ final class WorkflowPresenter extends Presenter
 				$this->stepType = $type;
 			}
 
-		} catch (\InvalidArgumentException | \OutOfRangeException | ParseException $e) {
+		// Everything below arrives from the query string, so each failure is a
+		// statement about the address, not about the page.
+		} catch (NotFoundException | \OutOfRangeException $e) {
+			// The address is well formed and names a workflow or a step that
+			// isn't there.
+			$this->error($e->getMessage());
+
+		} catch (\InvalidArgumentException $e) {
+			// The address itself is wrong: `at` doesn't parse, or it points
+			// into a different workflow. Answering 404 here would tell the
+			// caller to look elsewhere, when what they need is to fix the
+			// request they sent.
+			$this->error($e->getMessage(), IResponse::S400_BadRequest);
+
+		} catch (ParseException $e) {
+			// A workflow that exists and won't parse keeps its page: this is
+			// the one message that says what to fix.
 			$template->error = $e->getMessage();
 		}
 	}

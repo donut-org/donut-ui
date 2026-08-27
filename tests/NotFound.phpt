@@ -86,6 +86,43 @@ Assert::exception(
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'detail', 'name' => 'broken']);
 Assert::contains('broken', $html);
 
+// --- a step that isn't in the workflow ---
+//
+// Same rule one level down: `at` names a position in the tree, and a
+// position that isn't there is a missing resource, not a page about one.
+
+$e = Assert::exception(
+	fn() => runWorkflow($dir, ['action' => 'step', 'name' => 'sync', 'at' => 'sync.json:steps[99]']),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+Assert::contains('does not exist', $e->getMessage());
+
+// A malformed `at` is a broken request rather than a missing thing, so it
+// answers 400 — otherwise the two would be indistinguishable, and only one
+// of them means "try a different address".
+$e = Assert::exception(
+	fn() => runWorkflow($dir, ['action' => 'step', 'name' => 'sync', 'at' => 'not a path']),
+	BadRequestException::class,
+);
+Assert::same(400, $e->getHttpCode());
+
+// An `at` pointing into a different workflow is the same kind of mistake.
+$e = Assert::exception(
+	fn() => runWorkflow($dir, ['action' => 'step', 'name' => 'sync', 'at' => 'other.json:steps[0]']),
+	BadRequestException::class,
+);
+Assert::same(400, $e->getHttpCode());
+
+// The step page of a workflow that isn't there is a 404 too, not a 400 —
+// the address is well formed, the thing behind it isn't there.
+$e = Assert::exception(
+	fn() => runWorkflow($dir, ['action' => 'step', 'name' => 'nope', 'at' => 'nope.json:steps[0]']),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+
+
 // --- and a workflow that is there still renders ---
 
 [, $html] = runWorkflowPresenterIn($dir, ['action' => 'detail', 'name' => 'sync']);

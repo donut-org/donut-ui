@@ -85,26 +85,12 @@
 			<div class="card mb-3">
 				<div class="card-header">Outputs to the map</div>
 				<div class="card-body">
-					<div class=table-responsive>
-						<table class="table table-sm align-middle">
-							<thead>
-								<tr>
-									<th scope=col>Block output</th>
-									<th scope=col>Map key</th>
-									<th scope=col><span class=visually-hidden>Delete row</span></th>
-								</tr>
-							</thead>
-							<tbody id=out>
-								<tr class=js-row n:foreach="$form['out']->getComponents() as $row">
-									<td>{input $row['channel']}</td>
-									<td>{input $row['value']}</td>
-									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
+					<p class="text-muted small">Under which key in the engine map to store each
+						channel. An empty field means the channel is thrown away.</p>
 
-					<button type=button class="btn btn-sm btn-secondary" data-add=out>+ output</button>
+					<p n:foreach="$form['out']->getComponents() as $channel => $field">
+						<label for="{$field->getHtmlId()}">{$channel}</label> {input $field}
+					</p>
 				</div>
 			</div>
 

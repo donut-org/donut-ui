@@ -96,7 +96,7 @@ $run = StepMapper::toStep([
 		0 => ['key' => 'stdin', 'value' => '{%payload%}'],
 		2 => ['key' => 'filter', 'value' => '.id'],
 	],
-	'out' => [1 => ['channel' => 'stdout', 'value' => 'cardId']],
+	'out' => ['stdout' => 'cardId'],
 	'timeout' => '90',
 	'allowFailure' => 'list',
 	'allowFailureCodes' => '0, 1',
@@ -132,14 +132,44 @@ $withEmpty = StepMapper::toStep([
 	// valid input, format spec section 6: an empty string and unfilled are
 	// the same thing.
 	'in' => [0 => ['key' => '', 'value' => 'nowhere'], 1 => ['key' => 'a', 'value' => 'x'], 2 => ['key' => 'b', 'value' => '']],
-	'out' => [0 => ['channel' => 'stdout', 'value' => '']],
+	'out' => ['stdout' => ''],
 ] + $base);
 
 Assert::same(['a', 'b'], \array_keys($withEmpty->in));
 Assert::same('', $withEmpty->in['b']->getSource(), 'a filled-in key with an empty value is not dropped');
 Assert::same([], $withEmpty->out);
 
-// --- the order of keys from POST isn't guaranteed, and order matters for both in and out ---
+// --- out: three named fields, not rows ---
+//
+// An empty field means the channel is not mapped; there is no such thing as
+// a row with a channel and no key.
+$run2 = StepMapper::toStep([
+	'type' => 'run', 'name' => '', 'block' => 'jq',
+	'in' => [],
+	'out' => ['stdout' => 'cardId', 'stderr' => '', 'exit_code' => 'rc'],
+	'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
+]);
+
+Assert::type(RunStep::class, $run2);
+Assert::same(['stdout' => 'cardId', 'exit_code' => 'rc'], $run2->out, 'an empty field is not a mapping');
+
+// a channel the form cannot offer is ignored — the fields are built from
+// RunStep::Channels, so anything else came from a hand-built POST
+$forged = StepMapper::toStep([
+	'type' => 'run', 'name' => '', 'block' => 'jq',
+	'in' => [], 'out' => ['result' => 'x', 'stdout' => 'ok'],
+	'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
+]);
+
+Assert::same(['stdout' => 'ok'], $forged->out);
+
+// and back: every channel is present, unmapped ones as an empty string, so
+// setDefaults() has something to put in each of the three fields
+$roundTrip = StepMapper::toValues(new RunStep(block: 'jq', out: ['stdout' => 'id']));
+
+Assert::same(['stdout' => 'id', 'stderr' => '', 'exit_code' => ''], $roundTrip['out']);
+
+// --- the order of keys from POST isn't guaranteed, and order matters for in ---
 //
 // Without ksort() in rows(), a descending key order would show up as a
 // reversed row order — the index hole tested elsewhere in the file is
@@ -150,14 +180,13 @@ $reversed = StepMapper::toStep([
 		1 => ['key' => 'second', 'value' => 'b'],
 		0 => ['key' => 'first', 'value' => 'a'],
 	],
-	'out' => [
-		1 => ['channel' => 'stderr', 'value' => 'err'],
-		0 => ['channel' => 'stdout', 'value' => 'res'],
-	],
+	// out is looked up by channel name now, not by position — its raw key
+	// order can't affect anything, scrambled here on purpose.
+	'out' => ['exit_code' => 'ec', 'stdout' => 'res', 'stderr' => 'err'],
 ] + $base);
 
 Assert::same(['first', 'second'], \array_keys($reversed->in));
-Assert::same(['stdout' => 'res', 'stderr' => 'err'], $reversed->out);
+Assert::same(['stdout' => 'res', 'stderr' => 'err', 'exit_code' => 'ec'], $reversed->out, 'out is keyed by channel, its raw order is irrelevant');
 
 // --- '' means unfilled ---
 
@@ -216,7 +245,7 @@ Assert::same('jq', $values['block']);
 // see BlockInputs. Asserting its absence is what keeps a half-finished
 // revert from passing.
 Assert::false(array_key_exists('in', $values), 'toValues() does not build the in rows');
-Assert::same([['channel' => 'stdout', 'value' => 'id']], $values['out']);
+Assert::same(['stdout' => 'id', 'stderr' => '', 'exit_code' => ''], $values['out']);
 Assert::same('30', $values['timeout']);
 Assert::same('list', $values['allowFailure']);
 Assert::same('0, 1', $values['allowFailureCodes']);

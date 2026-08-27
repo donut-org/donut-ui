@@ -21,8 +21,9 @@ use Donut\Template;
  * why toStep() returns an if or foreach step with empty branches, and the
  * caller fills them in itself.
  *
- * Indexes in in and out can have holes — JS never renumbers rows. The
- * sorting happens here, same as in BlockMapper.
+ * Indexes in in can have holes — JS never renumbers rows. The sorting
+ * happens here, same as in BlockMapper. out has no such thing any more: it
+ * is three named fields, one per RunStep::Channels entry.
  */
 final class StepMapper
 {
@@ -76,8 +77,12 @@ final class StepMapper
 		if ($step instanceof RunStep) {
 			$out = [];
 
-			foreach ($step->out as $channel => $value) {
-				$out[] = ['channel' => $channel, 'value' => $value];
+			// Every channel is present, unmapped ones as an empty string:
+			// setDefaults() has to have something for each of the three
+			// fields, and an absent key would leave the last value standing
+			// after a failed submit.
+			foreach (RunStep::Channels as $channel) {
+				$out[$channel] = $step->out[$channel] ?? '';
 			}
 
 			// `in` is not returned: the values of the inputs travel with the
@@ -202,6 +207,13 @@ final class StepMapper
 
 
 	/**
+	 * The three channels as three named fields. An empty field means the
+	 * channel is not mapped — that is the only way to say it, so a row with a
+	 * channel and no key no longer exists as a concept.
+	 *
+	 * Anything outside RunStep::Channels is ignored: the form offers exactly
+	 * those three, so a different key came from a hand-built POST.
+	 *
 	 * @param  mixed $raw
 	 * @return array<string, string>
 	 */
@@ -209,12 +221,10 @@ final class StepMapper
 	{
 		$out = [];
 
-		foreach (self::rows($raw) as $row) {
-			$channel = self::text($row['channel'] ?? '');
-			$value = self::text($row['value'] ?? '');
+		foreach (RunStep::Channels as $channel) {
+			$value = self::text(\is_array($raw) ? ($raw[$channel] ?? '') : '');
 
-			// A channel without a key writes nowhere — it's an unfinished row.
-			if ($channel !== '' && $value !== '') {
+			if ($value !== '') {
 				$out[$channel] = $value;
 			}
 		}
@@ -225,7 +235,7 @@ final class StepMapper
 
 	/**
 	 * Rows sorted by index. The order of keys from POST isn't guaranteed,
-	 * and order matters for both in and out.
+	 * and order matters for in.
 	 *
 	 * @param  mixed $raw
 	 * @return list<array<array-key, mixed>>

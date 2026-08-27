@@ -72,12 +72,15 @@ FileSystem::write($step . '/blocks/jq.json', \json_encode([
 ]));
 FileSystem::write($step . '/workflows/w.json', \json_encode([
 	'name' => 'w',
-	'steps' => [[
-		'type' => 'run',
-		'block' => 'jq',
-		'in' => ['filter' => '.id'],
-		'out' => ['stdout' => 'id'],
-	]],
+	'steps' => [
+		[
+			'type' => 'run',
+			'block' => 'jq',
+			'in' => ['filter' => '.id'],
+			'out' => ['stdout' => 'id'],
+		],
+		['type' => 'if', 'condition' => ['left' => '{%id%}', 'op' => 'not_empty'], 'then' => []],
+	],
 ]));
 
 [, $stepHtml] = runWorkflowPresenterIn($step, [
@@ -87,8 +90,6 @@ FileSystem::write($step . '/workflows/w.json', \json_encode([
 ]);
 
 Assert::contains('<th scope=col>Block input</th>', $stepHtml);
-Assert::contains('<th scope=col>Block output</th>', $stepHtml);
-Assert::contains('<th scope=col>Map key</th>', $stepHtml);
 
 // the literal {%key%} in the header — Latte can only output it via {='…'}
 Assert::contains('&#123;%key%}', $stepHtml);
@@ -101,23 +102,20 @@ Assert::notContains('data-add=in', $stepHtml);
 Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="filter"~', $stepHtml);
 Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $stepHtml);
 
-Assert::contains('<tbody id=out>', $stepHtml);
-Assert::contains('data-add=out', $stepHtml);
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 
-// the delete button has an accessible name too — without aria-label a
-// screen reader would just hear "button ×"; only the out table has them now,
-// and it has two rows (the filled one plus an extra empty one)
-Assert::same(2, \substr_count($stepHtml, 'js-del-row" aria-label="Delete row"'));
+// Three named fields, no table and no add/delete buttons: the set of
+// channels is fixed and a fourth row was always a mistake.
+Assert::notContains('<tbody id=out>', $stepHtml);
+Assert::notContains('data-add=out', $stepHtml);
+Assert::notContains('js-del-row', $stepHtml, 'the step page has no variable rows left');
+Assert::match('~name="out\[stdout\]"[^>]*aria-label="stdout"~', $stepHtml);
+Assert::match('~name="out\[stderr\]"[^>]*aria-label="stderr"~', $stepHtml);
+Assert::match('~name="out\[exit_code\]"[^>]*aria-label="exit_code"~', $stepHtml);
+Assert::match('~name="out\[stdout\]"[^>]*value="id"~', $stepHtml);
 
-// the fields of both tables have an accessible name, and both tables
-// scroll on a narrow window
-Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="Block output"~', $stepHtml);
-Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Map key"~', $stepHtml);
-Assert::same(2, \substr_count($stepHtml, '<div class=table-responsive>'));
-
-// the step's values stay in the tables
-Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $stepHtml);
+// only the in table is left, and it still scrolls on a narrow window
+Assert::same(1, \substr_count($stepHtml, '<div class=table-responsive>'));
 
 
 // --- the block page: the inputs table -----------------------------------
@@ -187,9 +185,16 @@ Assert::contains('class="form-control"', $html);
 Assert::contains('class="form-check-input"', $html);
 Assert::contains('class="btn btn-primary"', $html);
 
-// WorkflowPresenter: step (plus a dropdown)
+// WorkflowPresenter: step. The run step has no dropdown any more — the
+// block is text and the channels are three fields — so the select is
+// asserted on the if step, where the operator still is one. Without this
+// the suite would pass even if the form reverted to plain new Form.
 Assert::contains('class="form-control"', $stepHtml);
-Assert::contains('class="form-select"', $stepHtml);
+
+[, $ifHtml] = runWorkflowPresenterIn($step, [
+	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[1]',
+]);
+Assert::contains('class="form-select"', $ifHtml);
 Assert::contains('class="btn btn-primary"', $stepHtml);
 
 // BlockPresenter: block

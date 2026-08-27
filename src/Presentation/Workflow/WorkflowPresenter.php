@@ -394,12 +394,13 @@ final class WorkflowPresenter extends Presenter
 
 			$out = $form->addContainer('out');
 
-			foreach ($this->rowShape()['out'] as $i) {
-				$row = $out->addContainer((string) $i);
-				$row->addSelect('channel', null, \array_combine(RunStep::Channels, RunStep::Channels))
-					->setPrompt('—')
-					->setHtmlAttribute('aria-label', 'Block output');
-				$row->addText('value')->setHtmlAttribute('aria-label', 'Map key');
+			// Three channels, three fields. A variable list of dropdowns was
+			// machinery around a set that can never have a fourth member, and
+			// where more than three rows was always a mistake.
+			foreach (RunStep::Channels as $channel) {
+				$out->addText($channel)
+					// aria-label, see the in container above.
+					->setHtmlAttribute('aria-label', $channel);
 			}
 
 			$form->addText('timeout', 'Timeout (s)')
@@ -436,8 +437,9 @@ final class WorkflowPresenter extends Presenter
 		$form->addSubmit('save', 'Save');
 		$form->onSuccess[] = $this->stepFormSucceeded(...);
 
-		// Same question as in rowShape(), and so the same mechanism: not
-		// "is this a POST?", but "does this POST belong to this form?". Today
+		// Same question as for the header form's inputs container below, and
+		// so the same mechanism: not "is this a POST?", but "does this POST
+		// belong to this form?". Today
 		// step.latte has only one form, so a foreign signal can't arrive here —
 		// but one idiom for one question across all three forms is what keeps
 		// a GET with the signal in the address out of play.
@@ -446,30 +448,6 @@ final class WorkflowPresenter extends Presenter
 		}
 
 		return $form;
-	}
-
-
-	/**
-	 * How many rows the `out` container has. The `in` container is not
-	 * variable any more — its rows come from the block, see BlockInputs.
-	 *
-	 * @return array{out: array<int, int>}
-	 */
-	private function rowShape(): array
-	{
-		// A different signal carries no out at all — without this condition
-		// the form would be built with zero rows and the page would show an
-		// empty step that in fact isn't empty.
-		$post = $this->isFormPost('stepForm-submit')
-			? $this->getHttpRequest()->getPost()
-			: null;
-
-		$out = \is_array($post) ? ($post['out'] ?? null) : null;
-		$step = $this->editedStep;
-
-		return [
-			'out' => RowShape::of($out, $step instanceof RunStep ? \count($step->out) : 0),
-		];
 	}
 
 

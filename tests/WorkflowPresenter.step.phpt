@@ -107,7 +107,7 @@ Assert::false($response instanceof RedirectResponse, 'the delete failed, the pag
 Assert::count(2, $steps(), 'an invalid path must not delete anything');
 Assert::contains('>jq</a>', $html, 'the block must not be lost');
 Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html, "the step's inputs must not be lost");
-Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's outputs must not be lost");
+Assert::match('~name="out\[stdout\]"[^>]*value="id"~', $html, "the step's outputs must not be lost");
 
 // --- saving the edit ---
 
@@ -121,7 +121,7 @@ Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's ou
 		// is stdin — the server knows that from the block, the POST does not
 		// say it anywhere.
 		'in' => [0 => ['value' => '.title'], 1 => ['value' => ''], 2 => ['value' => '{%x%}']],
-		'out' => [0 => ['channel' => 'stdout', 'value' => 'title']],
+		'out' => ['stdout' => 'title', 'stderr' => '', 'exit_code' => ''],
 		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
 		'save' => 'Save',
 	],

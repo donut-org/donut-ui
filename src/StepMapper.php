@@ -85,11 +85,18 @@ final class StepMapper
 				$out[$channel] = $step->out[$channel] ?? '';
 			}
 
-			// `in` is not returned: the values of the inputs travel with the
-			// slots (BlockInputs::slots()), and the container they belong to
-			// is keyed by position, not by the shape this method used to
-			// produce. Nette ignores keys it has no control for, so leaving
-			// it here would fail silently rather than loudly.
+			// `in` is not returned, and leaving it out is load-bearing, not
+			// tidiness. `in` is a real control — a Container — so
+			// Container::setValues() recurses into it instead of ignoring it,
+			// and createComponentStepForm() calls setDefaults() *after* every
+			// slot's own setDefaultValue(), so a stale `in` would win over the
+			// values BlockInputs::slots() put there. The two shapes are keyed
+			// differently as well: the rows this method used to build are
+			// keyed by insertion order, the container by slot position, and
+			// the two do not line up. A stale `in` would therefore write
+			// values into the wrong inputs — a right-looking field showing a
+			// wrong value, which the user then saves. StepMapper.phpt pins
+			// the absence, and this is why.
 			return [
 				'type' => 'run',
 				'name' => $step->name ?? '',

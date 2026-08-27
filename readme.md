@@ -142,6 +142,11 @@ Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
 - **přepnout kámen u existujícího kroku** — vstupy jsou pevné podle kamene
   a formulář nemá jak poznat, které hodnoty patří do nového; jiný kámen je
   jiný krok, tedy smazat a založit znovu
+- **otevřít krok `run`, jehož kámen chybí nebo se nedá přečíst** — celý seznam
+  vstupů pochází z kamene, takže bez něj není z čeho formulář postavit: krok
+  volající kámen, který v `blocks/` není, odpoví 404, a krok volající kámen
+  s rozbitým souborem dá stránku s chybovou hláškou a bez formuláře. Takový
+  krok jde ve stromu workflow už jen smazat
 
 
 ## Testy a statická analýza

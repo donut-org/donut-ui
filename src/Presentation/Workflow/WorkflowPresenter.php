@@ -226,8 +226,12 @@ final class WorkflowPresenter extends Presenter
 				// A block that cannot be read leaves nothing to render: the
 				// whole input list comes from it. Unlike a broken workflow,
 				// there is no page to keep, so this ends the request.
-				$block = (new BlockRepository($this->blockDir()))->get($blockName);
-				$this->block = $block;
+				// A local of its own, not $block: that parameter is the
+				// block name from the address, and overwriting it with a
+				// Block object would change the type of the name a reader is
+				// tracing.
+				$resolved = (new BlockRepository($this->blockDir()))->get($blockName);
+				$this->block = $resolved;
 
 				// The slots are built here, not in createComponentStepForm():
 				// the template needs them too, and Latte builds the form only
@@ -235,7 +239,7 @@ final class WorkflowPresenter extends Presenter
 				// here they exist before both, and the order of rendering
 				// stops mattering.
 				$this->slots = BlockInputs::slots(
-					$block,
+					$resolved,
 					$this->editedStep instanceof RunStep ? $this->editedStep : null,
 				);
 			}
@@ -291,6 +295,11 @@ final class WorkflowPresenter extends Presenter
 	{
 		/** @var WorkflowPickBlockTemplate $template */
 		$template = $this->template;
+		// basename() same as in renderDetail() and the rest of this file: the
+		// name comes from the query string. The page only builds links, so
+		// nothing here touches the disk — but the links it builds should name
+		// the same workflow every other entry point would resolve.
+		$name = \basename($name);
 		$template->name = $name;
 		$template->at = $at;
 		$template->dir = $this->blockDir();

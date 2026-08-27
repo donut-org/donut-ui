@@ -34,7 +34,15 @@
 					<p n:if="$block->description" class="card-text small">{$block->description}</p>
 					<p class="card-text text-muted small mb-0">
 						<code>{$block->command}</code>
-						{var $count = count($block->inputs)}
+						{* stdin counts: it is a slot on the step form like any
+						   other, so a block with no `inputs` but with stdin
+						   must not say "no inputs" here and then open a form
+						   with one required field. The isset() is the same
+						   guard BlockInputs::slots() applies — a block that
+						   declares an input literally named "stdin" gets one
+						   slot, not two. *}
+						{var $count = count($block->inputs)
+							+ ($block->stdin !== null && !isset($block->inputs['stdin']) ? 1 : 0)}
 						· {if $count === 0}no inputs{else}{$count} {$count === 1 ? 'input' : 'inputs'}{/if}
 					</p>
 				</div>

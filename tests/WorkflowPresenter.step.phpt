@@ -225,4 +225,42 @@ runWorkflowPresenterIn(
 
 Assert::same([], $steps()[0]->in, 'a step without its required inputs still gets saved');
 
+// --- a new run step needs to know its block ---
+//
+// The whole input list comes from the block. Without it there is nothing to
+// build the form from, and an address that leaves it out is a wrong request,
+// not a missing page — the picker is the way in.
+
+$e = Assert::exception(
+	fn() => createWorkflowPresenter([], true, new Profile(\basename($project), $project))
+		->run(new NetteRequest('Workflow', 'GET', [
+			'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'type' => 'run',
+		])),
+	BadRequestException::class,
+);
+Assert::same(400, $e->getHttpCode());
+
+// --- a block that is not in blocks/ is a 404, not a half-usable form ---
+
+$e = Assert::exception(
+	fn() => createWorkflowPresenter([], true, new Profile(\basename($project), $project))
+		->run(new NetteRequest('Workflow', 'GET', [
+			'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
+			'type' => 'run', 'block' => 'nope',
+		])),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+
+// --- editing takes the block from the step, not from the address ---
+//
+// A forged `block` in the query string must not decide which inputs the form
+// offers; the step already says which block it calls.
+
+[, $html] = runWorkflowPresenterIn($project, [
+	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'block' => 'nope',
+]);
+
+Assert::contains('<form', $html, 'the step is edited, the address is ignored');
+
 FileSystem::delete(TEMP_DIR);

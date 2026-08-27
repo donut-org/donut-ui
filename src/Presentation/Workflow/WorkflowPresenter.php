@@ -173,7 +173,7 @@ final class WorkflowPresenter extends Presenter
 	}
 
 
-	public function actionStep(string $name, string $at, ?string $type = null): void
+	public function actionStep(string $name, string $at, ?string $type = null, ?string $block = null): void
 	{
 		/** @var WorkflowStepTemplate $template */
 		$template = $this->template;
@@ -198,6 +198,31 @@ final class WorkflowPresenter extends Presenter
 				// A new step — not saved anywhere yet, just the type and target
 				// position.
 				$this->stepType = $type;
+			}
+
+			if ($this->stepType === 'run') {
+				// Editing takes the block from the step, same as the type:
+				// the step already says which block it calls, and a forged
+				// `block` in the address must not decide which inputs the
+				// form offers.
+				$blockName = $this->editedStep instanceof RunStep
+					? $this->editedStep->block
+					: ($block ?? '');
+
+				if ($blockName === '') {
+					throw new \InvalidArgumentException(
+						'A new run step needs the block it calls — start from the block picker.'
+					);
+				}
+
+				// A block that cannot be read leaves nothing to render: the
+				// whole input list comes from it. Unlike a broken workflow,
+				// there is no page to keep, so this ends the request.
+				//
+				// The resolved block itself isn't kept yet — nothing reads
+				// it until createComponentStepForm() is rebuilt to use it —
+				// so it stays local to this validation for now.
+				(new BlockRepository($this->blockDir()))->get($blockName);
 			}
 
 		// Everything below arrives from the query string, so each failure is a

@@ -66,6 +66,7 @@ FileSystem::createDir($step . '/workflows');
 FileSystem::write($step . '/blocks/jq.json', \json_encode([
 	'name' => 'jq',
 	'command' => 'jq',
+	'args' => [],
 	'inputs' => ['filter' => ['required' => true]],
 	'stdin' => ['required' => true],
 ]));

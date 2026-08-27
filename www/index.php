@@ -13,7 +13,9 @@ if (\PHP_SAPI === 'cli-server' && \is_string($uri) && Donut\Gui\StaticFile::shou
 	return false;
 }
 
-Donut\Gui\Bootstrap::boot()
+// getenv() with no argument returns the whole environment; Bootstrap takes
+// it as an array so the debug-mode decision can be tested.
+Donut\Gui\Bootstrap::boot(\getenv())
 	->createContainer()
 	->getByType(Nette\Application\Application::class)
 	->run();

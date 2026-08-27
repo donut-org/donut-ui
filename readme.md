@@ -40,6 +40,20 @@ Nad ukázkovou sadou z repozitáře (`docs/workflows/donut`) přes proměnné:
 make server home=$(pwd)/../docs/workflows profile=donut
 ```
 
+GUI běží ve **výchozím stavu v produkčním režimu** — bez Tracy baru, protože
+pro toho, kdo v něm autoruje, je to hotová aplikace. Neodchycená chyba se
+zapíše do `gui/log/exception.log` a uživatel dostane stránku, ne bluescreen.
+
+Při práci na samotném GUI:
+
+```bash
+make server debug=1
+```
+
+To zapne Tracy a zároveň **rozmrazí cache Latte a DI kontejneru**, které
+produkční režim schválně drží — bez toho se úprava šablony neprojeví, dokud
+nesmažeš `gui/temp/cache`. Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
+
 Ruční spuštění nad libovolným profilem:
 
 ```bash

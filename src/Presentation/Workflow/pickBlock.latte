@@ -1,0 +1,45 @@
+{block title}Which block? — {$name} — Donut{/block}
+
+{block breadcrumbs}
+	<li class=breadcrumb-item><a n:href="Workflow:default">Workflows</a></li>
+	<li class=breadcrumb-item><a n:href="Workflow:detail, name: $name">{$name}</a></li>
+	<li class="breadcrumb-item active" aria-current=page>new run step</li>
+{/block}
+
+{block content}
+<h1>Which block?</h1>
+<p class=keys>{$at}</p>
+
+{* The message, including the hint about a missing blocks/, arrives
+   ready-made from renderPickBlock(), same as on Block:default. *}
+<p n:if="$error" class="alert alert-danger">{$error}</p>
+<p n:if="!$error && !$blocks">There are no blocks in <code>{$dir}</code>.</p>
+
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
+	<div class=col n:foreach="$blocks as $blockName => $block">
+		{if is_string($block)}
+			{* A broken file keeps its card so the name stays visible; there is
+			   nothing to link to, because nothing parsed. *}
+			<div class="card h-100">
+				<div class=card-body>
+					<h2 class="card-title h6">{$blockName}</h2>
+					<p class="card-text text-danger mb-0">{$block}</p>
+				</div>
+			</div>
+		{else}
+			<a class="card h-100 text-decoration-none text-reset"
+				n:href="Workflow:step, name: $name, at: $at, type: run, block: $blockName">
+				<div class=card-body>
+					<h2 class="card-title h6">{$blockName}</h2>
+					<p n:if="$block->description" class="card-text small">{$block->description}</p>
+					<p class="card-text text-muted small mb-0">
+						<code>{$block->command}</code>
+						{var $count = count($block->inputs)}
+						· {if $count === 0}no inputs{else}{$count} {$count === 1 ? 'input' : 'inputs'}{/if}
+					</p>
+				</div>
+			</a>
+		{/if}
+	</div>
+</div>
+{/block}

@@ -237,6 +237,60 @@ final class WorkflowPresenter extends Presenter
 
 
 	/**
+	 * Which block will the new run step call? A run step cannot be created
+	 * without one — the whole input list comes from the block, so the form
+	 * has to know it before it is built.
+	 */
+	public function renderPickBlock(string $name, string $at): void
+	{
+		/** @var WorkflowPickBlockTemplate $template */
+		$template = $this->template;
+		$template->name = $name;
+		$template->at = $at;
+		$template->dir = $this->blockDir();
+
+		// The page only builds links, but a path that belongs elsewhere would
+		// produce links that fail one click later — with the message about
+		// the step form, not about the address that was wrong.
+		try {
+			if (StepPath::parse($at)->workflowName() !== $name) {
+				throw new \InvalidArgumentException("Path \"{$at}\" does not belong to workflow \"{$name}\".");
+			}
+		} catch (\InvalidArgumentException $e) {
+			$this->error($e->getMessage(), IResponse::S400_BadRequest);
+		}
+
+		try {
+			$repository = new BlockRepository($this->blockDir());
+
+		} catch (ParseException $e) {
+			// The only error the constructor lets through is a missing
+			// directory, same as on Block:default — so the hint always applies.
+			$template->blocks = [];
+			$template->error = $e->getMessage() . ' ' . ProfileDir::hint();
+
+			return;
+		}
+
+		$blocks = [];
+
+		foreach ($repository->getNames() as $blockName) {
+			try {
+				$blocks[$blockName] = $repository->get($blockName);
+
+			} catch (ParseException $e) {
+				// A broken file must not hide the others — the same rule as
+				// `donut --list`.
+				$blocks[$blockName] = $e->getMessage();
+			}
+		}
+
+		$template->blocks = $blocks;
+		$template->error = null;
+	}
+
+
+	/**
 	 * Block names for the dropdown list. A missing blocks directory isn't
 	 * a reason to crash the page — the list simply stays empty.
 	 *

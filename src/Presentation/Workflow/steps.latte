@@ -150,7 +150,11 @@
 	{/foreach}
 
 	<div class="add">+ step:
-		{foreach ['run', 'set', 'if', 'foreach'] as $newType}
+		{* run goes through the block picker: the form cannot be built without
+		   knowing which block the step calls. The other three types have
+		   nothing to pick. *}
+		<a href="{plink Workflow:pickBlock, name: $name, at: (string) $path->index(count($steps))}">run</a>
+		{foreach ['set', 'if', 'foreach'] as $newType}
 			<a href="{plink Workflow:step, name: $name, at: (string) $path->index(count($steps)), type: $newType}">{$newType}</a>{sep} {/sep}
 		{/foreach}
 	</div>

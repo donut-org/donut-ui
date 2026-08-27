@@ -346,7 +346,19 @@ final class WorkflowPresenter extends Presenter
 			$block = $this->block;
 
 			if ($block === null) {
-				throw new \LogicException('unreachable — actionStep() ends the request without a block');
+				// Reachable, even though actionStep() has already answered:
+				// its ParseException arm keeps the page (a broken block file
+				// or a missing blocks/ has to stay readable, or the message
+				// saying what to fix would be the thing that disappears) and
+				// only leaves $template->error behind.
+				//
+				// On a GET that is enough — step.latte wraps the form in
+				// {if !$error} and never asks for it. A POST never reaches
+				// the template: processSignal() resolves this component
+				// first, so the request has to end here instead. Same answer
+				// as for a block that isn't there at all — from the form's
+				// side the two are one case, there is nothing to build from.
+				$this->error('The block this step calls cannot be read, so the step form cannot be built.');
 			}
 
 			$in = $form->addContainer('in');
@@ -489,7 +501,11 @@ final class WorkflowPresenter extends Presenter
 			$block = $this->block;
 
 			if ($block === null) {
-				throw new \LogicException('unreachable — actionStep() ends the request without a block');
+				// Unreachable, unlike its twin in createComponentStepForm():
+				// onSuccess only fires for a form that was built, and
+				// building it is what ends the request when the block cannot
+				// be read. This guard is here for the type, not for the case.
+				throw new \LogicException('unreachable — createComponentStepForm() ends the request without a block');
 			}
 
 			// The block comes from the server, same as the type: the form

@@ -366,4 +366,95 @@ runWorkflowPresenterIn(
 
 Assert::same(['filter', 'stdin'], array_keys($leftover()[0]->in), 'cleared, the key is gone');
 
+// --- a new run step keeps the block it was picked with ---
+//
+// The other source of the block: not the step being edited, but the `block`
+// query parameter the Task 2 picker sends. This is the flow that creates
+// every run step, and the block travels only in the form's action URL — the
+// POST body never mentions it. Its own workflow, so the indexes of w.json
+// stay put.
+
+FileSystem::write($project . '/workflows/fresh.json', json_encode([
+	'name' => 'fresh', 'steps' => [],
+]));
+
+runWorkflowPresenterIn(
+	$project,
+	[
+		'action' => 'step', 'name' => 'fresh', 'at' => 'fresh.json:steps[0]',
+		'type' => 'run', 'block' => 'jq', 'do' => 'stepForm-submit',
+	],
+	[
+		'type' => 'run', 'name' => '',
+		'in' => [0 => ['value' => '.x'], 1 => ['value' => ''], 2 => ['value' => 'y']],
+		'out' => [], 'timeout' => '',
+		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
+	],
+);
+
+$fresh = (new WorkflowParser)->parseFile($project . '/workflows/fresh.json')->steps;
+Assert::count(1, $fresh, 'the new step was inserted');
+Assert::type(RunStep::class, $fresh[0]);
+Assert::same('jq', $fresh[0]->block, 'a new step keeps the block it was picked with');
+Assert::same(['filter', 'stdin'], array_keys($fresh[0]->in));
+Assert::same('.x', $fresh[0]->in['filter']->getSource());
+Assert::same('y', $fresh[0]->in['stdin']->getSource());
+
+// --- a block that cannot be read: the page survives a GET, a POST is a 4xx ---
+//
+// actionStep()'s ParseException arm keeps the page on purpose — the message
+// is the only way to see what to fix. But a POST never reaches the template:
+// processSignal() resolves stepForm before rendering, so the form gets built
+// with no block at all. That must end the request, not crash it.
+
+$broken = TEMP_DIR . '/broken';
+FileSystem::createDir($broken . '/blocks');
+FileSystem::createDir($broken . '/workflows');
+FileSystem::write($broken . '/blocks/jq.json', '{ this is not json');
+FileSystem::write($broken . '/workflows/w.json', json_encode([
+	'name' => 'w',
+	'steps' => [['type' => 'run', 'block' => 'jq', 'in' => ['filter' => '.id']]],
+]));
+
+[, $html] = runWorkflowPresenterIn($broken, [
+	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
+]);
+
+Assert::contains('alert alert-danger', $html, 'the GET keeps the page and says what is broken');
+Assert::notContains('<form', $html, 'and builds no form, because there is nothing to build it from');
+
+$brokenPost = [
+	'type' => 'run', 'name' => '',
+	'in' => [0 => ['value' => '.id']], 'out' => [], 'timeout' => '',
+	'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
+];
+
+$e = Assert::exception(
+	fn() => createWorkflowPresenter($brokenPost, true, new Profile(\basename($broken), $broken))
+		->run(new NetteRequest('Workflow', 'POST', [
+			'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
+			'do' => 'stepForm-submit',
+		], $brokenPost)),
+	BadRequestException::class,
+);
+// A 4xx, not a LogicException and not a 500. Same answer as for a block that
+// isn't there at all — from the form's side the two are one case.
+Assert::same(404, $e->getHttpCode());
+Assert::contains('cannot be read', $e->getMessage());
+
+// The other way the block can fail to resolve: BlockRepository reports a
+// missing blocks/ directory the same way it reports a broken file, so the
+// same POST must end the same way.
+FileSystem::delete($broken . '/blocks');
+
+$e = Assert::exception(
+	fn() => createWorkflowPresenter($brokenPost, true, new Profile(\basename($broken), $broken))
+		->run(new NetteRequest('Workflow', 'POST', [
+			'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
+			'do' => 'stepForm-submit',
+		], $brokenPost)),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+
 FileSystem::delete(TEMP_DIR);

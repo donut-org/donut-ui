@@ -32,6 +32,13 @@ Assert::contains('/assets/netteForms.min.js', $html);
 Assert::contains('container-fluid', $html);
 Assert::match('~<main[^>]*class="[^"]*\bcol\b~', $html, 'content is the right column');
 
+// The row the columns sit in reaches the bottom of the window. A flex line
+// is only as tall as what it holds, so without this the sidebar's background
+// stopped where the content did and the page colour showed below it. The
+// height itself is donut.css's (and scoped to md up, where the nav is a
+// column at all); the suite can only pin that the hook is still here.
+Assert::match('~<div class="row fill-window"~', $html);
+
 // left column is one element: offcanvas below md, plain column from md up
 Assert::match('~<nav[^>]*class="[^"]*\boffcanvas-md\b~', $html);
 Assert::match('~<nav[^>]*class="[^"]*\bcol-md-3\b~', $html);

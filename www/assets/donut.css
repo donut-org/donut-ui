@@ -94,3 +94,17 @@ textarea.form-control { field-sizing: content }
    would be worse than the text input it replaced. resize keeps it usable
    there and does no harm where field-sizing works. */
 textarea.form-control { resize: vertical }
+
+/* From md up the nav is a column of the page's row, and a flex line is only
+   as tall as what it holds — so on a short page the sidebar's background
+   stopped mid-window with the page colour below it. A viewport minimum makes
+   the line fill the window and the column stretches into it; on a long page
+   it is just a floor and changes nothing.
+
+   Scoped to md up on purpose: below it the nav is a fixed offcanvas, out of
+   flow, so the rule would only stretch <main> — and 100vh on a phone with a
+   dynamic toolbar is taller than what you can see, which buys a scrollbar
+   for nothing. dvh where it is understood, vh as the fallback. */
+@media (min-width: 768px) {
+	.fill-window { min-height: 100vh; min-height: 100dvh }
+}

@@ -84,3 +84,13 @@ details.block > .block-body { padding: .6rem; border-top: 1px solid var(--bs-bor
 /* + step at the end of the chain */
 .add { border: 1px dashed var(--bs-border-color); border-radius: var(--bs-border-radius);
 	padding: .5rem .75rem; font-size: .875rem }
+
+/* The step form's value fields are textareas so a message or a list stays
+   readable, but they start as one row and grow with what is in them.
+   field-sizing is the native way to do that — no script, no measuring. */
+textarea.form-control { field-sizing: content }
+
+/* Firefox has no field-sizing yet, and a one-row textarea it cannot grow
+   would be worse than the text input it replaced. resize keeps it usable
+   there and does no harm where field-sizing works. */
+textarea.form-control { resize: vertical }

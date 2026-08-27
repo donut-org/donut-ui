@@ -32,9 +32,9 @@ $jq = new Block(
 $slots = BlockInputs::slots($jq, null);
 
 Assert::same(
-	['filter', 'compact', 'stdin'],
+	['stdin', 'filter', 'compact'],
 	array_map(fn($slot): string => $slot->name, $slots),
-	'declaration order, with stdin last — not alphabetical'
+	'stdin first, then declaration order — not alphabetical'
 );
 Assert::same(['', '', ''], array_map(fn($slot): string => $slot->value, $slots));
 Assert::same([true, true, true], array_map(fn($slot): bool => $slot->declared, $slots));
@@ -55,22 +55,22 @@ $step = new RunStep(
 $slots = BlockInputs::slots($jq, $step);
 
 Assert::same(
-	['filter', 'compact', 'stdin', 'filtr'],
+	['stdin', 'filter', 'compact', 'filtr'],
 	array_map(fn($slot): string => $slot->name, $slots),
-	'undeclared keys go last, in the order the step has them'
+	'stdin first, undeclared keys last in the order the step has them'
 );
-Assert::same(['.id', '', '{%body%}', '.old'], array_map(fn($slot): string => $slot->value, $slots));
+Assert::same(['{%body%}', '.id', '', '.old'], array_map(fn($slot): string => $slot->value, $slots));
 Assert::same([true, true, true, false], array_map(fn($slot): bool => $slot->declared, $slots));
 
-// required: "filter" is required and has no default; "compact" is required
-// but has one, so it is never missing; stdin follows stdin.required; an
+// required: stdin follows stdin.required; "filter" is required and has no
+// default; "compact" is required but has one, so it is never missing; an
 // undeclared key is never required — it has to be emptied.
-Assert::same([true, false, true, false], array_map(fn($slot): bool => $slot->required, $slots));
+Assert::same([true, true, false, false], array_map(fn($slot): bool => $slot->required, $slots));
 
 // the declaration travels with the slot, so the form can show it
-Assert::same([null, '-c', null, null], array_map(fn($slot): ?string => $slot->default, $slots));
+Assert::same([null, null, '-c', null], array_map(fn($slot): ?string => $slot->default, $slots));
 Assert::same(
-	['jq expression', null, 'JSON to filter', null],
+	['JSON to filter', 'jq expression', null, null],
 	array_map(fn($slot): ?string => $slot->description, $slots)
 );
 
@@ -108,15 +108,15 @@ $slots = BlockInputs::slots($jq, null);
 
 Assert::same(
 	[
-		['key' => 'filter', 'value' => '.id'],
 		['key' => 'stdin', 'value' => '{%body%}'],
+		['key' => 'filter', 'value' => '.id'],
 	],
 	BlockInputs::rows($slots, [
-		0 => ['value' => '.id'],
-		1 => ['value' => ''],
-		2 => ['value' => '{%body%}'],
+		0 => ['value' => '{%body%}'],
+		1 => ['value' => '.id'],
+		2 => ['value' => ''],
 	]),
-	'index 1 is "compact" and it is empty, so it is not written at all'
+	'index 2 is "compact" and it is empty, so it is not written at all'
 );
 
 // An empty value must not become an empty template. A key present with an

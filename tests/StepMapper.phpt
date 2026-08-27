@@ -123,9 +123,20 @@ $walkIn = function (array $steps) use (&$walkIn, $blocks, &$runs): void {
 				'allowFailure' => 'inherit', 'allowFailureCodes' => '',
 			]);
 
+			// `in` is a map: the runner looks values up by name
+			// (CommandLine::resolveValues()), so key order carries no
+			// meaning to it. It does change here — the form writes the keys
+			// in slot order, which since stdin leads puts stdin first — so
+			// the round trip is compared as a map. That the order is the
+			// slot order is pinned in BlockInputs.phpt, where it belongs.
+			$expected = $step->in;
+			$actual = $rebuilt->in;
+			\ksort($expected);
+			\ksort($actual);
+
 			Assert::same(
-				\serialize($step->in),
-				\serialize($rebuilt->in),
+				\serialize($expected),
+				\serialize($actual),
 				"in round-trip through the slots, block {$step->block}"
 			);
 		}

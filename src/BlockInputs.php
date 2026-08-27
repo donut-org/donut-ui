@@ -19,9 +19,13 @@ use Donut\Format\RunStep;
 final class BlockInputs
 {
 	/**
-	 * Slots in the order they are shown: declared inputs as the block
-	 * declares them, then stdin, then whatever the step fills in that the
-	 * block does not declare.
+	 * Slots in the order they are shown: stdin first, then the declared
+	 * inputs as the block declares them, then whatever the step fills in
+	 * that the block does not declare.
+	 *
+	 * stdin leads because it is usually the payload — the message being
+	 * formatted, the JSON being filtered — while the declared inputs are
+	 * mostly flags about it.
 	 *
 	 * @return array<int, BlockInputSlot>
 	 */
@@ -36,23 +40,6 @@ final class BlockInputs
 		$slots = [];
 		$taken = [];
 
-		foreach ($block->inputs as $name => $input) {
-			$taken[$name] = true;
-			$template = $in[$name] ?? null;
-
-			$slots[] = new BlockInputSlot(
-				name: $name,
-				// The same rule the validator applies to an unfilled input
-				// (Validator::checkRunStep()): an input with a default is
-				// never missing, whatever it says about being required.
-				required: $input->required && $input->default === null,
-				default: $input->default,
-				description: $input->description,
-				value: $template === null ? '' : $template->getSource(),
-				declared: true,
-			);
-		}
-
 		// A block declaring an input literally named "stdin" is an error the
 		// validator reports; without this guard the page would render two
 		// slots with the same name and the second would overwrite the first
@@ -66,6 +53,23 @@ final class BlockInputs
 				required: $block->stdin->required,
 				default: null,
 				description: $block->stdin->description,
+				value: $template === null ? '' : $template->getSource(),
+				declared: true,
+			);
+		}
+
+		foreach ($block->inputs as $name => $input) {
+			$taken[$name] = true;
+			$template = $in[$name] ?? null;
+
+			$slots[] = new BlockInputSlot(
+				name: $name,
+				// The same rule the validator applies to an unfilled input
+				// (Validator::checkRunStep()): an input with a default is
+				// never missing, whatever it says about being required.
+				required: $input->required && $input->default === null,
+				default: $input->default,
+				description: $input->description,
 				value: $template === null ? '' : $template->getSource(),
 				declared: true,
 			);

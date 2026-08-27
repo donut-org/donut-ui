@@ -388,7 +388,17 @@ final class WorkflowPresenter extends Presenter
 				// names the input, but <th> names the cell, not the <input>
 				// inside it — a screen reader would otherwise just read
 				// "textbox".
-				$value = $row->addText('value')
+				// A textarea, not a text input: an input's value is often a
+				// whole message or a list, and a single line makes those
+				// unreadable. rows=1 keeps it looking like a text input until
+				// there is something to show; donut.css grows it from there.
+				//
+				// Known and accepted: HTML eats one newline right after the
+				// opening tag, so a value that starts with a blank line loses
+				// it when the step is opened and saved. Deliberately not
+				// worked around — nobody starts an input with a blank line.
+				$value = $row->addTextArea('value')
+					->setHtmlAttribute('rows', 1)
 					->setHtmlAttribute('aria-label', $slot->name)
 					->setDefaultValue($slot->value);
 
@@ -439,7 +449,10 @@ final class WorkflowPresenter extends Presenter
 
 		} elseif ($this->stepType === 'set') {
 			$form->addText('key', 'Key')->setRequired('Key is required.');
-			$form->addText('value', 'Value');
+			// A textarea for the same reason as the run step's inputs: what a
+			// set step writes into the map is often a whole message. The key
+			// stays a text input — it is a single map key.
+			$form->addTextArea('value', 'Value')->setHtmlAttribute('rows', 1);
 
 		} elseif ($this->stepType === 'if') {
 			$form->addText('left', 'Left');

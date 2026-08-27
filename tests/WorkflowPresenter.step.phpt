@@ -66,8 +66,9 @@ Assert::match('~<a[^>]*href="[^"]*presenter=Block[^"]*"[^>]*>jq</a>~', $html);
 Assert::match('~<a[^>]*href="[^"]*action=detail[^"]*"[^>]*>jq</a>~', $html);
 Assert::match('~<a[^>]*href="[^"]*name=jq[^"]*"[^>]*>jq</a>~', $html);
 
-// one row per declared input, in the block's order, stdin last
-Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html);
+// stdin first, then one row per declared input in the block's order. A
+// textarea carries its value between the tags, not in an attribute.
+Assert::match('~name="in\[1\]\[value\]"[^>]*>\.id</textarea>~', $html);
 Assert::contains('>filter<', $html);
 Assert::contains('>compact<', $html);
 Assert::contains('>stdin<', $html);
@@ -76,8 +77,8 @@ Assert::contains('>stdin<', $html);
 // text, while a Nette component name has to match [a-zA-Z0-9_]+
 Assert::notContains('name="in[0][key]"', $html);
 
-// required exactly where the validator would complain: filter has no
-// default, compact has one, stdin follows stdin.required
+// required exactly where the validator would complain: stdin follows
+// stdin.required, filter has no default, compact has one
 //
 // The word "required" also occurs inside the data-nette-rules message
 // (`Fill in the required input "filter".`), and [^>]* reaches it — so a rule
@@ -88,14 +89,14 @@ Assert::notContains('name="in[0][key]"', $html);
 // directions.
 $attrs = preg_replace("~ data-nette-rules='[^']*'~", '', $html);
 Assert::match('~name="in\[0\]\[value\]"[^>]*required~', $attrs);
-Assert::notMatch('~name="in\[1\]\[value\]"[^>]*required~', $attrs);
-Assert::match('~name="in\[2\]\[value\]"[^>]*required~', $attrs);
+Assert::match('~name="in\[1\]\[value\]"[^>]*required~', $attrs);
+Assert::notMatch('~name="in\[2\]\[value\]"[^>]*required~', $attrs);
 
 // the description from the block declaration is shown under the input name
 Assert::contains('jq expression', $html);
 
 // the declaration is shown, not hidden: the default as a placeholder
-Assert::match('~name="in\[1\]\[value\]"[^>]*placeholder="-c"~', $html);
+Assert::match('~name="in\[2\]\[value\]"[^>]*placeholder="-c"~', $html);
 Assert::contains('<form', $html);
 // The step name label — pins WorkflowPresenter::createComponentStepForm()'s
 // 'Step name' caption, since no other assertion in the suite renders it.
@@ -121,7 +122,7 @@ Assert::contains('>Step name<', $html);
 Assert::false($response instanceof RedirectResponse, 'the delete failed, the page redrew');
 Assert::count(2, $steps(), 'an invalid path must not delete anything');
 Assert::contains('>jq</a>', $html, 'the block must not be lost');
-Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html, "the step's inputs must not be lost");
+Assert::match('~name="in\[1\]\[value\]"[^>]*>\.id</textarea>~', $html, "the step's inputs must not be lost");
 Assert::match('~name="out\[stdout\]"[^>]*value="id"~', $html, "the step's outputs must not be lost");
 
 // --- saving the edit ---
@@ -131,11 +132,11 @@ Assert::match('~name="out\[stdout\]"[^>]*value="id"~', $html, "the step's output
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
 		'type' => 'run', 'name' => 'named',
-		// Index 1 is "compact" and stays empty: an empty slot is not written
-		// to `in` at all, or it would suppress the block's default. Index 2
-		// is stdin — the server knows that from the block, the POST does not
-		// say it anywhere.
-		'in' => [0 => ['value' => '.title'], 1 => ['value' => ''], 2 => ['value' => '{%x%}']],
+		// Index 0 is stdin, which leads — the server knows that from the
+		// block, the POST does not say it anywhere. Index 2 is "compact" and
+		// stays empty: an empty slot is not written to `in` at all, or it
+		// would suppress the block's default.
+		'in' => [0 => ['value' => '{%x%}'], 1 => ['value' => '.title'], 2 => ['value' => '']],
 		'out' => ['stdout' => 'title', 'stderr' => '', 'exit_code' => ''],
 		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
 		'save' => 'Save',
@@ -151,9 +152,9 @@ Assert::same('named', $run->name);
 // step it is editing. Without this the step would be saved with an empty
 // block.
 Assert::same('jq', $run->block, 'the block survives a save that never mentions it');
-Assert::same(['filter', 'stdin'], array_keys($run->in), 'the empty slot is not written');
+Assert::same(['stdin', 'filter'], array_keys($run->in), 'the empty slot is not written, and stdin leads');
 Assert::same('.title', $run->in['filter']->getSource());
-Assert::same('{%x%}', $run->in['stdin']->getSource(), 'index 2 is stdin, by position');
+Assert::same('{%x%}', $run->in['stdin']->getSource(), 'index 0 is stdin, by position');
 Assert::same(['stdout' => 'title'], $run->out);
 
 // The rest of the workflow stayed — editing a step must not touch its neighbors.
@@ -172,6 +173,16 @@ Assert::count(3, $steps());
 Assert::type(SetStep::class, $steps()[1]);
 Assert::same('branch', $steps()[1]->key);
 Assert::type(IfStep::class, $steps()[2]);
+
+// What a set step writes into the map is a value like a run step's input —
+// often a whole message — so it is a textarea too, and carries its value
+// between the tags. The key stays a text input: it is a single map key.
+[, $setHtml] = runWorkflowPresenterIn($project, [
+	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[1]',
+]);
+
+Assert::match('~<textarea[^>]*name="value"[^>]*>f/\{%id%}</textarea>~', $setHtml);
+Assert::match('~<input[^>]*name="key"[^>]*>~', $setHtml);
 
 // --- a new step into an empty branch ---
 
@@ -277,7 +288,7 @@ runWorkflowPresenterIn(
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
 		'type' => 'run', 'name' => '',
-		'in' => [0 => ['value' => '{%nope%}'], 1 => ['value' => ''], 2 => ['value' => 'x']],
+		'in' => [0 => ['value' => 'x'], 1 => ['value' => '{%nope%}'], 2 => ['value' => '']],
 		'out' => [], 'timeout' => '',
 		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
@@ -344,7 +355,7 @@ FileSystem::write($project . '/workflows/leftover.json', json_encode([
 
 Assert::contains('>filtr<', $html, 'the undeclared key is visible');
 Assert::contains('does not declare this input', $html);
-Assert::match('~name="in\[3\]\[value\]"[^>]*value="\.old"~', $html, 'undeclared keys go last');
+Assert::match('~name="in\[3\]\[value\]"[^>]*>\.old</textarea>~', $html, 'undeclared keys go last');
 
 // saving with the field still filled in is refused
 $leftover = fn(): array => (new WorkflowParser)
@@ -355,7 +366,7 @@ $leftover = fn(): array => (new WorkflowParser)
 	['action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
 		'type' => 'run', 'name' => '',
-		'in' => [0 => ['value' => '.id'], 1 => ['value' => ''], 2 => ['value' => 'x'], 3 => ['value' => '.old']],
+		'in' => [0 => ['value' => 'x'], 1 => ['value' => '.id'], 2 => ['value' => ''], 3 => ['value' => '.old']],
 		'out' => [], 'timeout' => '',
 		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
@@ -377,13 +388,13 @@ runWorkflowPresenterIn(
 	['action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
 		'type' => 'run', 'name' => '',
-		'in' => [0 => ['value' => '.id'], 1 => ['value' => ''], 2 => ['value' => 'x'], 3 => ['value' => '']],
+		'in' => [0 => ['value' => 'x'], 1 => ['value' => '.id'], 2 => ['value' => ''], 3 => ['value' => '']],
 		'out' => [], 'timeout' => '',
 		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
 );
 
-Assert::same(['filter', 'stdin'], array_keys($leftover()[0]->in), 'cleared, the key is gone');
+Assert::same(['stdin', 'filter'], array_keys($leftover()[0]->in), 'cleared, the key is gone');
 
 // --- a new run step keeps the block it was picked with ---
 //
@@ -405,7 +416,7 @@ runWorkflowPresenterIn(
 	],
 	[
 		'type' => 'run', 'name' => '',
-		'in' => [0 => ['value' => '.x'], 1 => ['value' => ''], 2 => ['value' => 'y']],
+		'in' => [0 => ['value' => 'y'], 1 => ['value' => '.x'], 2 => ['value' => '']],
 		'out' => [], 'timeout' => '',
 		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
@@ -415,7 +426,7 @@ $fresh = (new WorkflowParser)->parseFile($project . '/workflows/fresh.json')->st
 Assert::count(1, $fresh, 'the new step was inserted');
 Assert::type(RunStep::class, $fresh[0]);
 Assert::same('jq', $fresh[0]->block, 'a new step keeps the block it was picked with');
-Assert::same(['filter', 'stdin'], array_keys($fresh[0]->in));
+Assert::same(['stdin', 'filter'], array_keys($fresh[0]->in));
 Assert::same('.x', $fresh[0]->in['filter']->getSource());
 Assert::same('y', $fresh[0]->in['stdin']->getSource());
 

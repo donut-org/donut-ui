@@ -99,8 +99,11 @@ Assert::contains('&#123;%key%}', $stepHtml);
 // carries it as its accessible name.
 Assert::notContains('<tbody id=in>', $stepHtml);
 Assert::notContains('data-add=in', $stepHtml);
-Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="filter"~', $stepHtml);
-Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $stepHtml);
+// stdin leads, so the block's first declared input is row 1. The field is a
+// textarea, which carries its value between the tags, not in an attribute.
+Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="stdin"~', $stepHtml);
+Assert::match('~name="in\[1\]\[value\]"[^>]*aria-label="filter"~', $stepHtml);
+Assert::match('~name="in\[1\]\[value\]"[^>]*>\.id</textarea>~', $stepHtml);
 
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 

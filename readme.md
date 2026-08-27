@@ -89,10 +89,11 @@ soubory odtamtud. Žádný build krok, žádný `npm`.
   jde krok daného typu přidat, přesunout nahoru/dolů nebo smazat (mazání
   krokem s podstromem se ptá na potvrzení)
 - **krok `run` zná svůj kámen** — nový `run` se zakládá přes výběr kamene
-  z karet, takže formulář má **pevný seznam vstupů**: jeden řádek na vstup,
-  který kámen deklaruje, plus `stdin`, když ho kámen čte. Povinné vstupy
-  formulář vynutí podle stejného pravidla jako validátor. Prázdný vstup se do
-  souboru nezapíše — prázdná hodnota by umlčela default kamene, chybějící
+  z karet, takže formulář má **pevný seznam vstupů**: nejdřív `stdin`, když
+  ho kámen čte (bývá to hlavní obsah, ne přepínač), pak jeden řádek na každý
+  vstup, který kámen deklaruje. Hodnoty se píšou do pole, které roste podle
+  toho, kolik řádků do něj napíšeš. Povinné vstupy formulář vynutí podle
+  stejného pravidla jako validátor. Prázdný vstup se do souboru nezapíše — prázdná hodnota by umlčela default kamene, chybějící
   klíč ho pustí ke slovu. Klíč, který kámen nedeklaruje, je vidět s hláškou
   a uložit jde až po jeho vyprázdnění. Kámen se v editaci nepřepíná: jiný
   kámen znamená jiný krok. Výstupy do mapy jsou tři pole (`stdout`, `stderr`,

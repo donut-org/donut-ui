@@ -78,7 +78,7 @@ $run = StepMapper::toStep([
 		0 => ['key' => 'stdin', 'value' => '{%payload%}'],
 		2 => ['key' => 'filter', 'value' => '.id'],
 	],
-	'out' => [1 => ['channel' => 'result', 'value' => 'cardId']],
+	'out' => [1 => ['channel' => 'stdout', 'value' => 'cardId']],
 	'timeout' => '90',
 	'allowFailure' => 'list',
 	'allowFailureCodes' => '0, 1',
@@ -89,7 +89,7 @@ Assert::same('jq', $run->block);
 Assert::same('named-step', $run->name);
 Assert::same(['stdin', 'filter'], \array_keys($run->in));
 Assert::same('{%payload%}', $run->in['stdin']->getSource());
-Assert::same(['result' => 'cardId'], $run->out);
+Assert::same(['stdout' => 'cardId'], $run->out);
 Assert::same(90, $run->timeout);
 Assert::same([0, 1], $run->allowFailure);
 
@@ -114,7 +114,7 @@ $withEmpty = StepMapper::toStep([
 	// valid input, format spec section 6: an empty string and unfilled are
 	// the same thing.
 	'in' => [0 => ['key' => '', 'value' => 'nowhere'], 1 => ['key' => 'a', 'value' => 'x'], 2 => ['key' => 'b', 'value' => '']],
-	'out' => [0 => ['channel' => 'result', 'value' => '']],
+	'out' => [0 => ['channel' => 'stdout', 'value' => '']],
 ] + $base);
 
 Assert::same(['a', 'b'], \array_keys($withEmpty->in));
@@ -134,12 +134,12 @@ $reversed = StepMapper::toStep([
 	],
 	'out' => [
 		1 => ['channel' => 'stderr', 'value' => 'err'],
-		0 => ['channel' => 'result', 'value' => 'res'],
+		0 => ['channel' => 'stdout', 'value' => 'res'],
 	],
 ] + $base);
 
 Assert::same(['first', 'second'], \array_keys($reversed->in));
-Assert::same(['result' => 'res', 'stderr' => 'err'], $reversed->out);
+Assert::same(['stdout' => 'res', 'stderr' => 'err'], $reversed->out);
 
 // --- '' means unfilled ---
 
@@ -186,7 +186,7 @@ Assert::exception(
 $values = StepMapper::toValues(new RunStep(
 	block: 'jq',
 	in: ['stdin' => Template::parse('{%p%}')],
-	out: ['result' => 'id'],
+	out: ['stdout' => 'id'],
 	timeout: 30,
 	allowFailure: [0, 1],
 	name: 'the-name',
@@ -195,7 +195,7 @@ $values = StepMapper::toValues(new RunStep(
 Assert::same('run', $values['type']);
 Assert::same('jq', $values['block']);
 Assert::same([['key' => 'stdin', 'value' => '{%p%}']], $values['in']);
-Assert::same([['channel' => 'result', 'value' => 'id']], $values['out']);
+Assert::same([['channel' => 'stdout', 'value' => 'id']], $values['out']);
 Assert::same('30', $values['timeout']);
 Assert::same('list', $values['allowFailure']);
 Assert::same('0, 1', $values['allowFailureCodes']);

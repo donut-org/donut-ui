@@ -30,7 +30,7 @@ FileSystem::write($project . '/blocks/jq.json', json_encode([
 FileSystem::write($project . '/workflows/w.json', json_encode([
 	'name' => 'w',
 	'steps' => [
-		['type' => 'run', 'block' => 'jq', 'in' => ['filter' => '.id'], 'out' => ['result' => 'id']],
+		['type' => 'run', 'block' => 'jq', 'in' => ['filter' => '.id'], 'out' => ['stdout' => 'id']],
 		['type' => 'if', 'condition' => ['left' => '{%id%}', 'op' => 'not_empty'], 'then' => []],
 	],
 ]));
@@ -83,7 +83,7 @@ Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's ou
 		'type' => 'run', 'name' => 'named', 'block' => 'jq',
 		// gap in numbering deliberately
 		'in' => [0 => ['key' => 'filter', 'value' => '.title'], 2 => ['key' => 'stdin', 'value' => '{%x%}']],
-		'out' => [0 => ['channel' => 'result', 'value' => 'title']],
+		'out' => [0 => ['channel' => 'stdout', 'value' => 'title']],
 		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
 		'save' => 'Save',
 	],
@@ -96,7 +96,7 @@ Assert::type(RunStep::class, $run);
 Assert::same('named', $run->name);
 Assert::same(['filter', 'stdin'], array_keys($run->in));
 Assert::same('.title', $run->in['filter']->getSource());
-Assert::same(['result' => 'title'], $run->out);
+Assert::same(['stdout' => 'title'], $run->out);
 
 // The rest of the workflow stayed — editing a step must not touch its neighbors.
 Assert::count(2, $steps());

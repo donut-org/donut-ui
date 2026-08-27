@@ -19,7 +19,7 @@ $workflow = $parser->parseArray([
 		[
 			'type' => 'run', 'block' => 'echo',
 			'in' => ['text' => '{%fromSet%} and {%input%}'],
-			'out' => ['result' => 'fromOutput', 'exit_code' => 'code'],
+			'out' => ['stdout' => 'fromOutput', 'exit_code' => 'code'],
 		],
 		[
 			'type' => 'if',
@@ -145,7 +145,7 @@ $dupWrite = KeyMap::of($parser->parseArray([
 		[
 			'type' => 'run', 'block' => 'echo',
 			'in' => [],
-			'out' => ['result' => 'y', 'stderr' => 'y'],
+			'out' => ['stdout' => 'y', 'stderr' => 'y'],
 		],
 	],
 ], 'w.json'));

@@ -75,7 +75,7 @@ FileSystem::write($step . '/workflows/w.json', \json_encode([
 		'type' => 'run',
 		'block' => 'jq',
 		'in' => ['filter' => '.id'],
-		'out' => ['result' => 'id'],
+		'out' => ['stdout' => 'id'],
 	]],
 ]));
 

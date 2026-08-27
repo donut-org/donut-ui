@@ -121,7 +121,7 @@ Assert::contains('card-dev', $html);
 Assert::contains('reads', $html);
 Assert::contains('writes', $html);
 Assert::notContains('Selected key', $html);
-Assert::contains('result →', $html, 'run must show which key it writes to');
+Assert::contains('stdout →', $html, 'run must show which key it writes to');
 
 $html = renderDetailIn($root, 'sync');
 Assert::contains('sync', $html);

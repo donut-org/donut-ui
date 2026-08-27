@@ -35,6 +35,17 @@ Assert::contains('Prints text', $html);
 Assert::contains('{%text%}', $html);
 Assert::contains('value="5"', $html);
 
+// --- inputs come before arguments ---
+//
+// An argument is written in terms of the inputs ({%name%}), so the list they
+// come from has to be readable first. Nothing else pins the order of the
+// cards, so a later edit to the template could quietly put it back.
+
+Assert::true(
+	strpos($html, '>Inputs<') < strpos($html, '>Arguments<'),
+	'the Inputs card is rendered before the Arguments card'
+);
+
 // --- stdin is one field with three options, not two checkboxes ---
 //
 // The pair it replaced could say "does not read stdin" and "stdin is

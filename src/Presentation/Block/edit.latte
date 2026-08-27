@@ -39,32 +39,10 @@
 			</div>
 		</div>
 
-		<div class="card mb-3">
-			<div class="card-header">Arguments</div>
-			<div class="card-body">
-				<p class=keys>A group where a variable evaluates to empty is dropped whole.</p>
-
-				{* Horizontal group shape: form-control from FormFactory is
-				   display:block full width, so without this the arguments would
-				   be a vertical column of identical-looking fields and the group
-				   boundary would disappear. The class is written out in full
-				   including form-control — the guard in FormFactory (adds the
-				   class only where none is present) doesn't apply here, because
-				   {input} with a class => … attribute overwrites the whole class;
-				   if form-control were missing from this string, it would be
-				   missing from the HTML too. *}
-				<div id=args>
-					<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
-						<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>
-						<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
-						<button type=button class="btn btn-sm btn-outline-danger del-group">× group</button>
-					</div>
-				</div>
-
-				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ group</button>
-			</div>
-		</div>
-
+		{* Inputs before Arguments: an argument is written in terms of the
+		   inputs ({%name%}), so the list they come from has to be readable
+		   first. The other way round the reader meets the placeholders
+		   before anything that says what they are. *}
 		<div class="card mb-3">
 			<div class="card-header">Inputs</div>
 			<div class="card-body">
@@ -99,6 +77,32 @@
 					The default value is used when the caller does not pass one.
 					On the command line an input is given as <code>--name=value</code>.
 				</p>
+			</div>
+		</div>
+
+		<div class="card mb-3">
+			<div class="card-header">Arguments</div>
+			<div class="card-body">
+				<p class=keys>A group where a variable evaluates to empty is dropped whole.</p>
+
+				{* Horizontal group shape: form-control from FormFactory is
+				   display:block full width, so without this the arguments would
+				   be a vertical column of identical-looking fields and the group
+				   boundary would disappear. The class is written out in full
+				   including form-control — the guard in FormFactory (adds the
+				   class only where none is present) doesn't apply here, because
+				   {input} with a class => … attribute overwrites the whole class;
+				   if form-control were missing from this string, it would be
+				   missing from the HTML too. *}
+				<div id=args>
+					<div class="arg-group d-flex flex-wrap align-items-center gap-2 mb-2 border rounded p-2" n:foreach="$form['args']->getComponents() as $group">
+						<span n:foreach="$group->getComponents() as $arg">{input $arg, class => 'form-control w-auto'}</span>
+						<button type=button class="btn btn-sm btn-secondary add-arg">+ argument</button>
+						<button type=button class="btn btn-sm btn-outline-danger del-group">× group</button>
+					</div>
+				</div>
+
+				<button type=button class="btn btn-sm btn-secondary" id=add-group>+ group</button>
 			</div>
 		</div>
 

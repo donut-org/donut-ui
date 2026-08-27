@@ -18,4 +18,13 @@ use Nette\Bridges\ApplicationLatte\Template;
 abstract class LayoutTemplate extends Template
 {
 	public string $profile = '';
+
+	/**
+	 * Set by Presenter::flashMessage(); declared here because these template
+	 * classes are typed, and Nette would otherwise be creating a dynamic
+	 * property. The layout renders it, so this is where it belongs.
+	 *
+	 * @var array<int, \stdClass>
+	 */
+	public array $flashes = [];
 }

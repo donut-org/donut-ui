@@ -429,6 +429,7 @@ final class WorkflowPresenter extends Presenter
 			return;
 		}
 
+		$this->flashMessage('Step saved.', 'success');
 		$this->redirect('detail', ['name' => $name]);
 	}
 
@@ -555,6 +556,7 @@ final class WorkflowPresenter extends Presenter
 			return;
 		}
 
+		$this->flashMessage("Workflow \"{$workflow->name}\" saved.", 'success');
 		$this->redirect('detail', ['name' => $workflow->name]);
 	}
 
@@ -598,6 +600,9 @@ final class WorkflowPresenter extends Presenter
 			return;
 		}
 
+		// Named deliberately: the overview the user lands on no longer
+		// mentions the workflow anywhere.
+		$this->flashMessage("Workflow \"{$name}\" deleted.", 'success');
 		$this->redirect('default');
 	}
 

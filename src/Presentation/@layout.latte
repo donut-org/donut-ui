@@ -49,6 +49,10 @@
 				</nav>
 			</div>
 
+			{* Every write redirects, so this is the only place a confirmation
+			   can appear — the page that set it is already gone. *}
+			<div n:foreach="$flashes as $flash" n:class="alert, 'alert-' . $flash->type" role=status>{$flash->message}</div>
+
 			{include content}
 		</main>
 	</div>

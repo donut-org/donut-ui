@@ -306,6 +306,9 @@ final class BlockPresenter extends Presenter
 			return;
 		}
 
+		// The redirect is silent on its own — this is the only confirmation
+		// that the write happened, so it names what was written.
+		$this->flashMessage("Block \"{$block->name}\" saved.", 'success');
 		$this->redirect('edit', ['name' => $block->name]);
 	}
 
@@ -377,6 +380,9 @@ final class BlockPresenter extends Presenter
 			return;
 		}
 
+		// Named deliberately: the overview the user lands on no longer
+		// mentions the block anywhere.
+		$this->flashMessage("Block \"{$name}\" deleted.", 'success');
 		$this->redirect('default');
 	}
 

@@ -22,6 +22,8 @@ use Nette\Http\Response as HttpResponse;
 use Nette\Http\UrlScript;
 use Tester\Assert;
 
+require_once __DIR__ . '/session.php';
+
 
 /**
  * A WorkflowPresenter outside the DI container. Copies the setup from
@@ -69,6 +71,8 @@ function createWorkflowPresenter(array $post, bool $sameOrigin, Profile $profile
 	};
 
 	$presenter = new WorkflowPresenter($profile);
+	$httpResponse = new HttpResponse;
+
 	$presenter->injectPrimary(
 		new HttpRequest(
 			new UrlScript('http://localhost/'),
@@ -85,9 +89,13 @@ function createWorkflowPresenter(array $post, bool $sameOrigin, Profile $profile
 			headers: $sameOrigin ? ['sec-fetch-site' => 'same-origin'] : [],
 			method: $post === [] ? 'GET' : 'POST',
 		),
-		new HttpResponse,
+		$httpResponse,
 		presenterFactory: $presenterFactory,
 		router: new SimpleRouter('Workflow:default'),
+		// Only flash messages need it. A session that never reaches PHP's
+		// session module keeps Tester's output handler out of the way; see
+		// inc/session.php.
+		session: new MemorySession($httpResponse),
 		templateFactory: new TemplateFactory($latteFactory),
 	);
 

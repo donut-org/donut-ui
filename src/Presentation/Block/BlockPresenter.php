@@ -199,8 +199,23 @@ final class BlockPresenter extends Presenter
 			$row->addText('description')->setHtmlAttribute('aria-label', 'Description');
 		}
 
-		$form->addCheckbox('hasStdin', 'Block reads stdin');
-		$form->addCheckbox('stdinRequired', 'stdin is required');
+		// One field, three options — the three states the file has. Two
+		// checkboxes could also say "does not read stdin, but stdin is
+		// required", which no block file can mean: the required flag lives
+		// inside the stdin object, so without the object there is nothing to
+		// be required. That combination was accepted by the form and thrown
+		// away on save.
+		$form->addSelect('stdin', 'Stdin', [
+			'no' => 'does not read stdin',
+			'optional' => 'reads stdin, optional',
+			'required' => 'requires stdin',
+		])
+			// A description for a channel the block does not read is not
+			// wrong, it is meaningless — so it is hidden rather than
+			// disabled. netteForms.js does the hiding; @layout.latte loads it.
+			->addCondition(Form::NotEqual, 'no')
+				->toggle('stdin-description');
+
 		$form->addText('stdinDescription', 'Stdin description');
 
 		$form->addText('timeout', 'Timeout (s)')

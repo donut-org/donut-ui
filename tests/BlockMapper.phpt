@@ -52,8 +52,7 @@ $withGap = $mapper->toBlock([
 	'inputs' => [
 		1 => ['name' => 'url', 'required' => true, 'default' => '', 'description' => ''],
 	],
-	'hasStdin' => false,
-	'stdinRequired' => false,
+	'stdin' => 'no',
 	'stdinDescription' => '',
 	'timeout' => '',
 	'allowFailure' => 'none',
@@ -88,8 +87,7 @@ $swapped = $mapper->toBlock([
 		1 => ['name' => 'zulu', 'required' => true, 'default' => '', 'description' => ''],
 		0 => ['name' => 'alpha', 'required' => true, 'default' => '', 'description' => ''],
 	],
-	'hasStdin' => false,
-	'stdinRequired' => false,
+	'stdin' => 'no',
 	'stdinDescription' => '',
 	'timeout' => '',
 	'allowFailure' => 'none',
@@ -120,8 +118,7 @@ $withEmpties = $mapper->toBlock([
 		0 => ['name' => '', 'required' => true, 'default' => '', 'description' => 'nobody'],
 		1 => ['name' => 'who', 'required' => true, 'default' => '', 'description' => ''],
 	],
-	'hasStdin' => false,
-	'stdinRequired' => false,
+	'stdin' => 'no',
 	'stdinDescription' => '',
 	'timeout' => '',
 	'allowFailure' => 'none',
@@ -145,22 +142,37 @@ Assert::null($withEmpties->timeout);
 Assert::null($withEmpties->inputs['who']->default);
 Assert::null($withEmpties->inputs['who']->description);
 
-// --- stdin appears and disappears with the checkbox ---
+// --- stdin has three states, and they are the three the format has ---
+//
+// The file says stdin is absent, or an object with required false, or one
+// with required true. One field with three options says exactly that; the
+// two checkboxes it replaced could also say "not read, but required", which
+// is nothing the file can hold.
 
 $base = [
 	'name' => 'x', 'description' => '', 'command' => 'cat',
 	'args' => [], 'inputs' => [],
-	'hasStdin' => true, 'stdinRequired' => false, 'stdinDescription' => 'Body',
+	'stdin' => 'optional', 'stdinDescription' => 'Body',
 	'timeout' => '', 'allowFailure' => 'none', 'allowFailureCodes' => '',
 ];
 
-$withStdin = $mapper->toBlock($base);
-Assert::type(StdinSpec::class, $withStdin->stdin);
-Assert::false($withStdin->stdin->required);
-Assert::same('Body', $withStdin->stdin->description);
+$optional = $mapper->toBlock($base);
+Assert::type(StdinSpec::class, $optional->stdin);
+Assert::false($optional->stdin->required);
+Assert::same('Body', $optional->stdin->description);
 
-// Unchecked = no object, even if the description stayed filled in the form.
-Assert::null($mapper->toBlock(['hasStdin' => false] + $base)->stdin);
+$required = $mapper->toBlock(['stdin' => 'required'] + $base);
+Assert::type(StdinSpec::class, $required->stdin);
+Assert::true($required->stdin->required);
+Assert::same('Body', $required->stdin->description);
+
+// "no" = no object, even if the description stayed filled in the form.
+Assert::null($mapper->toBlock(['stdin' => 'no'] + $base)->stdin);
+
+// Anything else is "no" too: the select offers exactly three values, so a
+// fourth came from a hand-built POST.
+Assert::null($mapper->toBlock(['stdin' => 'yes please'] + $base)->stdin);
+Assert::null($mapper->toBlock(\array_diff_key($base, ['stdin' => null]))->stdin, 'no key at all');
 
 // --- allow_failure has three states ---
 
@@ -204,8 +216,7 @@ Assert::same(
 	[['name' => 'url', 'required' => false, 'default' => '/tmp/x', 'description' => 'Address']],
 	$values['inputs'],
 );
-Assert::true($values['hasStdin']);
-Assert::true($values['stdinRequired']);
+Assert::same('required', $values['stdin']);
 Assert::same('Body', $values['stdinDescription']);
 Assert::same('30', $values['timeout']);
 Assert::same('list', $values['allowFailure']);
@@ -215,5 +226,11 @@ Assert::same('0, 1', $values['allowFailureCodes']);
 $bare = $mapper->toValues(new Block(name: 'bare', command: 'echo', args: []));
 Assert::same('', $bare['description']);
 Assert::same('', $bare['timeout']);
-Assert::false($bare['hasStdin']);
+// A block that does not read stdin opens as "no". It used to open as "does
+// not read stdin" AND "stdin is required" at once — the required flag fell
+// back to StdinSpec's default of true even though there was no spec — which
+// said something the file could not mean, and was silently discarded on
+// save.
+Assert::same('no', $bare['stdin']);
+Assert::same('', $bare['stdinDescription']);
 Assert::same('none', $bare['allowFailure']);

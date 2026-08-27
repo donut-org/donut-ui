@@ -105,9 +105,10 @@
 		<div class="card mb-3">
 			<div class="card-header">Stdin</div>
 			<div class="card-body">
-				<p>{input hasStdin} {label hasStdin /}</p>
-				<p>{input stdinRequired} {label stdinRequired /}</p>
-				<p>{label stdinDescription /} {input stdinDescription}</p>
+				<p>{label stdin /} {input stdin}</p>
+				{* The id is what the select's toggle() addresses; without it
+				   netteForms.js has nothing to show or hide. *}
+				<p id=stdin-description>{label stdinDescription /} {input stdinDescription}</p>
 			</div>
 		</div>
 

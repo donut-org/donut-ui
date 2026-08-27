@@ -78,6 +78,11 @@ ručně z `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/`; aktualizace
 znamená nahradit `bootstrap.min.css` a `bootstrap.bundle.min.js` novými
 soubory odtamtud. Žádný build krok, žádný `npm`.
 
+`netteForms.min.js` je zkopírovaný z `gui/vendor/nette/forms/src/assets/`;
+po `composer update` ho zkopíruj znovu. Zapíná klientskou validaci pro
+všechny formuláře a je to i to, co dává smysl `toggle()` — bez něj se
+pravidla vykreslí a nikdo je nezpracuje.
+
 
 ## Co je vidět
 

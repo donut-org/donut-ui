@@ -23,6 +23,10 @@ Assert::contains('/assets/bootstrap.min.css', $html);
 Assert::contains('/assets/donut.css', $html);
 Assert::contains('/assets/bootstrap.bundle.min.js', $html);
 Assert::contains('/assets/rows.js', $html);
+// Nette's own script: without it a control's toggle() renders its rules and
+// nothing acts on them, so the block form's stdin description would never
+// hide. It also turns on client-side validation for every form in the GUI.
+Assert::contains('/assets/netteForms.min.js', $html);
 
 // two-column frame
 Assert::contains('container-fluid', $html);

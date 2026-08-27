@@ -35,6 +35,43 @@ Assert::contains('Prints text', $html);
 Assert::contains('{%text%}', $html);
 Assert::contains('value="5"', $html);
 
+// --- stdin is one field with three options, not two checkboxes ---
+//
+// The pair it replaced could say "does not read stdin" and "stdin is
+// required" at once, which no block file can mean — the required flag lives
+// inside the stdin object. Worse, that was the state every block without
+// stdin opened in, because the flag fell back to StdinSpec's default of
+// true with no spec to read it from. And it was thrown away on save.
+
+Assert::notContains('name="hasStdin"', $html);
+Assert::notContains('name="stdinRequired"', $html);
+Assert::match('~<select[^>]*name="stdin"~', $html);
+Assert::contains('does not read stdin', $html);
+Assert::contains('reads stdin, optional', $html);
+Assert::contains('requires stdin', $html);
+
+// echo does not read stdin, so that is the option standing — and nothing
+// else claims otherwise.
+Assert::match('~<option value="no" selected~', $html);
+
+// The description hides when the block reads nothing. netteForms.js does
+// the hiding and addresses the row by this id; the toggle rule travels in
+// the select's own attribute.
+Assert::contains('id=stdin-description', $html);
+Assert::match('~name="stdin"[^>]*data-nette-rules=[^>]*stdin-description~', $html);
+
+$stdinBlock = TEMP_DIR . '/edit-stdin';
+FileSystem::createDir($stdinBlock . '/blocks');
+FileSystem::createDir($stdinBlock . '/workflows');
+FileSystem::write($stdinBlock . '/blocks/cat.json', json_encode([
+	'name' => 'cat', 'command' => 'cat', 'args' => [],
+	'stdin' => ['required' => false, 'description' => 'Anything'],
+]));
+
+[, $catHtml] = runBlockPresenterIn($stdinBlock, ['action' => 'edit', 'name' => 'cat']);
+Assert::match('~<option value="optional" selected~', $catHtml, 'required false is the middle option');
+Assert::contains('value="Anything"', $catHtml);
+
 // --- creating a new one: an empty form, no crash ---
 
 [, $new] = runBlockPresenterIn($project, ['action' => 'edit']);
@@ -70,6 +107,7 @@ $post = [
 		1 => ['name' => 'url', 'required' => '1', 'default' => '', 'description' => 'Address'],
 	],
 	'timeout' => '',
+	'stdin' => 'no',
 	'allowFailure' => 'none',
 	'allowFailureCodes' => '',
 	'save' => 'Save',
@@ -156,6 +194,7 @@ Assert::same($echoBefore, FileSystem::read($project . '/blocks/echo.json'));
 		'args' => [0 => [0 => '{%text%}']],
 		'inputs' => [0 => ['name' => 'text', 'required' => '1', 'default' => '', 'description' => '']],
 		'timeout' => '5',
+		'stdin' => 'no',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
 		'save' => 'Save',
@@ -186,6 +225,7 @@ FileSystem::createDir($noBlocksDir);
 		'args' => [],
 		'inputs' => [],
 		'timeout' => '',
+		'stdin' => 'no',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
 		'save' => 'Save',
@@ -216,6 +256,7 @@ FileSystem::write($blockedDir . '/blocks', 'not a directory');
 		'args' => [],
 		'inputs' => [],
 		'timeout' => '',
+		'stdin' => 'no',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
 		'save' => 'Save',
@@ -280,6 +321,7 @@ $before = FileSystem::read($project . '/blocks/echo.json');
 		'args' => [],
 		'inputs' => [],
 		'timeout' => '',
+		'stdin' => 'no',
 		'allowFailure' => 'none',
 		'allowFailureCodes' => '',
 		'save' => 'Save',

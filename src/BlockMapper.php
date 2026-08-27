@@ -30,12 +30,24 @@ final class BlockMapper
 			command: \trim(self::toStr($values['command'] ?? '')),
 			args: $this->toArgs($values['args'] ?? []),
 			inputs: InputMapper::toInputs($values['inputs'] ?? []),
-			stdin: ($values['hasStdin'] ?? false)
-				? new StdinSpec(
-					required: (bool) ($values['stdinRequired'] ?? false),
+			// The three states the format has: no key, an object with
+			// required false, an object with required true. One field says
+			// exactly that — the two checkboxes this replaced could also say
+			// "not read, but required", which the file cannot hold and which
+			// was thrown away on save without a word.
+			stdin: match (self::toStr($values['stdin'] ?? 'no')) {
+				'required' => new StdinSpec(
+					required: true,
 					description: self::orNull($values['stdinDescription'] ?? ''),
-				)
-				: null,
+				),
+				'optional' => new StdinSpec(
+					required: false,
+					description: self::orNull($values['stdinDescription'] ?? ''),
+				),
+				// Anything else came from a hand-built POST — the select
+				// offers those two and "no".
+				default => null,
+			},
 			timeout: ($t = \trim(self::toStr($values['timeout'] ?? ''))) === '' ? null : (int) $t,
 			allowFailure: $this->toAllowFailure($values),
 			description: self::orNull($values['description'] ?? ''),
@@ -65,8 +77,11 @@ final class BlockMapper
 			'command' => $block->command,
 			'args' => $args,
 			'inputs' => $inputs,
-			'hasStdin' => $block->stdin !== null,
-			'stdinRequired' => $block->stdin->required ?? true,
+			'stdin' => match (true) {
+				$block->stdin === null => 'no',
+				$block->stdin->required => 'required',
+				default => 'optional',
+			},
 			'stdinDescription' => $block->stdin->description ?? '',
 			'timeout' => $block->timeout === null ? '' : (string) $block->timeout,
 			'allowFailure' => match (true) {

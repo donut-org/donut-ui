@@ -26,7 +26,11 @@
 				<p>{label name /} {input name}</p>
 
 				{if $type === 'run'}
-					<p>{label block /} {input block}</p>
+					{* Not a dropdown: switching the block would leave the
+					   inputs of the old one standing, and the form has no way
+					   of telling which values belong to the new block. A
+					   different block is a different step. *}
+					<p>Block <a n:href="Block:detail, name: $block">{$block}</a></p>
 
 				{elseif $type === 'set'}
 					<p>{label key /} {input key}</p>
@@ -47,28 +51,34 @@
 			<div class="card mb-3">
 				<div class="card-header">Block inputs</div>
 				<div class="card-body">
+					<p n:if="!$slots" class="text-muted mb-0">The block has no inputs.</p>
+
 					{* table-responsive and aria-label literally like in
-					   Workflow/edit.latte. *}
-					<div class=table-responsive>
+					   Workflow/edit.latte. There is no add or delete button:
+					   the list is the block's, not the user's. *}
+					<div class=table-responsive n:if="$slots">
 						<table class="table table-sm align-middle">
 							<thead>
 								<tr>
 									<th scope=col>Block input</th>
 									<th scope=col>Value or <code>{='{%key%}'}</code></th>
-									<th scope=col><span class=visually-hidden>Delete row</span></th>
 								</tr>
 							</thead>
-							<tbody id=in>
-								<tr class=js-row n:foreach="$form['in']->getComponents() as $row">
-									<td>{input $row['key']}</td>
-									<td>{input $row['value']}</td>
-									<td><button type=button class="btn btn-sm btn-outline-danger js-del-row" aria-label="Delete row">×</button></td>
+							<tbody>
+								<tr n:foreach="$slots as $i => $slot">
+									<td>
+										<span n:class="!$slot->declared ? 'text-danger' : null">{$slot->name}</span>
+										{if $slot->required}<span class="text-danger" aria-hidden=true>*</span>{/if}
+										<div n:if="$slot->description" class="text-muted small">{$slot->description}</div>
+										<div n:if="!$slot->declared" class="text-danger small">
+											The block does not declare this input. Clear the field to drop it.
+										</div>
+									</td>
+									<td>{input $form['in'][$i]['value']}</td>
 								</tr>
 							</tbody>
 						</table>
 					</div>
-
-					<button type=button class="btn btn-sm btn-secondary" data-add=in>+ input</button>
 				</div>
 			</div>
 

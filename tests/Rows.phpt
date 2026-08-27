@@ -93,27 +93,30 @@ Assert::contains('<th scope=col>Map key</th>', $stepHtml);
 // the literal {%key%} in the header — Latte can only output it via {='…'}
 Assert::contains('&#123;%key%}', $stepHtml);
 
-Assert::contains('<tbody id=in>', $stepHtml);
+// The in table has no add/delete buttons: its rows are the block's, not the
+// user's. The name of the input is text in the first column, and the field
+// carries it as its accessible name.
+Assert::notContains('<tbody id=in>', $stepHtml);
+Assert::notContains('data-add=in', $stepHtml);
+Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="filter"~', $stepHtml);
+Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $stepHtml);
+
 Assert::contains('<tbody id=out>', $stepHtml);
-Assert::contains('data-add=in', $stepHtml);
 Assert::contains('data-add=out', $stepHtml);
 Assert::notMatch('~<div class=row[ >]~', $stepHtml);
 
 // the delete button has an accessible name too — without aria-label a
-// screen reader would just hear "button ×"; both tables have two rows each
-// (the filled one plus an extra empty one), so four delete buttons total
-Assert::same(4, \substr_count($stepHtml, 'js-del-row" aria-label="Delete row"'));
+// screen reader would just hear "button ×"; only the out table has them now,
+// and it has two rows (the filled one plus an extra empty one)
+Assert::same(2, \substr_count($stepHtml, 'js-del-row" aria-label="Delete row"'));
 
 // the fields of both tables have an accessible name, and both tables
 // scroll on a narrow window
-Assert::match('~name="in\[0\]\[key\]"[^>]*aria-label="Block input"~', $stepHtml);
-Assert::match('~name="in\[0\]\[value\]"[^>]*aria-label="Value"~', $stepHtml);
 Assert::match('~name="out\[0\]\[channel\]"[^>]*aria-label="Block output"~', $stepHtml);
 Assert::match('~name="out\[0\]\[value\]"[^>]*aria-label="Map key"~', $stepHtml);
 Assert::same(2, \substr_count($stepHtml, '<div class=table-responsive>'));
 
 // the step's values stay in the tables
-Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $stepHtml);
 Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $stepHtml);
 
 

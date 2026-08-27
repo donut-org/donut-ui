@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Donut\Gui\Presentation\Workflow;
 
 use Donut\BlockRepository;
+use Donut\Format\Block;
 use Donut\Format\Condition;
 use Donut\Format\RunStep;
 use Donut\Format\Step;
 use Donut\Format\Workflow;
+use Donut\Gui\BlockInputs;
+use Donut\Gui\BlockInputSlot;
 use Donut\Gui\FormFactory;
 use Donut\Gui\KeyMap;
 use Donut\Gui\Presentation\LayoutTemplate;
@@ -44,6 +47,11 @@ final class WorkflowPresenter extends Presenter
 	private ?StepPath $stepAt = null;
 
 	private string $stepType = '';
+
+	private ?Block $block = null;
+
+	/** @var array<int, BlockInputSlot> */
+	private array $slots = [];
 
 	private ?Workflow $editedWorkflow = null;
 
@@ -121,7 +129,7 @@ final class WorkflowPresenter extends Presenter
 
 		} catch (ParseException $e) {
 			// Missing or broken blocks aren't a reason to hide the whole detail —
-			// same rule as in blockNames(). Without the validator only the
+			// same rule as on the block picker. Without the validator only the
 			// error itself is reported, but the header, the link to the
 			// envelope and the step tree stay; otherwise a fresh project
 			// without blocks/ would have a workflow that nothing more can be
@@ -218,11 +226,18 @@ final class WorkflowPresenter extends Presenter
 				// A block that cannot be read leaves nothing to render: the
 				// whole input list comes from it. Unlike a broken workflow,
 				// there is no page to keep, so this ends the request.
-				//
-				// The resolved block itself isn't kept yet — nothing reads
-				// it until createComponentStepForm() is rebuilt to use it —
-				// so it stays local to this validation for now.
-				(new BlockRepository($this->blockDir()))->get($blockName);
+				$block = (new BlockRepository($this->blockDir()))->get($blockName);
+				$this->block = $block;
+
+				// The slots are built here, not in createComponentStepForm():
+				// the template needs them too, and Latte builds the form only
+				// at {form stepForm} — that is, after renderStep(). Built
+				// here they exist before both, and the order of rendering
+				// stops mattering.
+				$this->slots = BlockInputs::slots(
+					$block,
+					$this->editedStep instanceof RunStep ? $this->editedStep : null,
+				);
 			}
 
 		// Everything below arrives from the query string, so each failure is a
@@ -257,7 +272,13 @@ final class WorkflowPresenter extends Presenter
 		// resolved it, and for editing an existing step derived it from the
 		// step itself, not from the address.
 		$template->type = $this->stepType;
-		$template->blocks = $this->blockNames();
+
+		// Split into a variable: $this->block?->name ?? '' reports
+		// nullsafe.neverNull to PHPStan (level max) — `name` itself is never
+		// null, only the block is.
+		$blockName = $this->block?->name;
+		$template->block = $blockName ?? '';
+		$template->slots = $this->slots;
 	}
 
 
@@ -315,25 +336,6 @@ final class WorkflowPresenter extends Presenter
 	}
 
 
-	/**
-	 * Block names for the dropdown list. A missing blocks directory isn't
-	 * a reason to crash the page — the list simply stays empty.
-	 *
-	 * @return array<string, string>
-	 */
-	private function blockNames(): array
-	{
-		try {
-			$names = (new BlockRepository($this->blockDir()))->getNames();
-
-		} catch (ParseException) {
-			return [];
-		}
-
-		return \array_combine($names, $names);
-	}
-
-
 	protected function createComponentStepForm(): Form
 	{
 		$form = FormFactory::create();
@@ -341,29 +343,46 @@ final class WorkflowPresenter extends Presenter
 		$form->addText('name', 'Step name');
 
 		if ($this->stepType === 'run') {
-			$form->addSelect('block', 'Block', $this->blockNames())
-				->setRequired('Choose a block.');
+			$block = $this->block;
 
-			$shape = $this->rowShape();
+			if ($block === null) {
+				throw new \LogicException('unreachable — actionStep() ends the request without a block');
+			}
 
 			$in = $form->addContainer('in');
 
-			foreach ($shape['in'] as $i) {
+			foreach ($this->slots as $i => $slot) {
 				$row = $in->addContainer((string) $i);
-				// aria-label instead of a caption: the table header says what
-				// belongs in the column, but <th> names the cell, not the
-				// <input> inside it — a screen reader would otherwise just read
-				// "textbox". This also matches where labels live in this GUI
-				// (at addText()). A checkbox needs it set this way: {input,
-				// 'aria-label' => …} puts the attribute on the wrapping
-				// <label>, where it gets lost.
-				$row->addText('key')->setHtmlAttribute('aria-label', 'Block input');
-				$row->addText('value')->setHtmlAttribute('aria-label', 'Value');
+
+				// aria-label instead of a caption: the table's first column
+				// names the input, but <th> names the cell, not the <input>
+				// inside it — a screen reader would otherwise just read
+				// "textbox".
+				$value = $row->addText('value')
+					->setHtmlAttribute('aria-label', $slot->name)
+					->setDefaultValue($slot->value);
+
+				if ($slot->default !== null) {
+					$value->setHtmlAttribute('placeholder', $slot->default);
+				}
+
+				if (!$slot->declared) {
+					// Not dropped silently: the value stays visible until the
+					// user clears it themselves. An empty slot is not written
+					// to `in` at all, so clearing the field removes the key.
+					$value->addRule(
+						Form::Blank,
+						"Block \"{$block->name}\" does not declare the input \"{$slot->name}\" — clear the field to drop it."
+					);
+
+				} elseif ($slot->required) {
+					$value->setRequired("Fill in the required input \"{$slot->name}\".");
+				}
 			}
 
 			$out = $form->addContainer('out');
 
-			foreach ($shape['out'] as $i) {
+			foreach ($this->rowShape()['out'] as $i) {
 				$row = $out->addContainer((string) $i);
 				$row->addSelect('channel', null, \array_combine(RunStep::Channels, RunStep::Channels))
 					->setPrompt('—')
@@ -419,24 +438,24 @@ final class WorkflowPresenter extends Presenter
 
 
 	/**
-	 * @return array{in: array<int, int>, out: array<int, int>}
+	 * How many rows the `out` container has. The `in` container is not
+	 * variable any more — its rows come from the block, see BlockInputs.
+	 *
+	 * @return array{out: array<int, int>}
 	 */
 	private function rowShape(): array
 	{
-		// A different signal carries no in/out at all — without this
-		// condition the form would be built with zero rows and the page would
-		// show an empty step that in fact isn't empty.
+		// A different signal carries no out at all — without this condition
+		// the form would be built with zero rows and the page would show an
+		// empty step that in fact isn't empty.
 		$post = $this->isFormPost('stepForm-submit')
 			? $this->getHttpRequest()->getPost()
 			: null;
 
-		$in = \is_array($post) ? ($post['in'] ?? null) : null;
 		$out = \is_array($post) ? ($post['out'] ?? null) : null;
-
 		$step = $this->editedStep;
 
 		return [
-			'in' => RowShape::of($in, $step instanceof RunStep ? \count($step->in) : 0),
 			'out' => RowShape::of($out, $step instanceof RunStep ? \count($step->out) : 0),
 		];
 	}
@@ -465,6 +484,28 @@ final class WorkflowPresenter extends Presenter
 	{
 		/** @var array<string, mixed> $values */
 		$values = $form->getValues('array');
+
+		if ($this->stepType === 'run') {
+			$block = $this->block;
+
+			if ($block === null) {
+				throw new \LogicException('unreachable — actionStep() ends the request without a block');
+			}
+
+			// The block comes from the server, same as the type: the form
+			// stopped offering it when the dropdown went away, so the POST
+			// says nothing about it — and must not. Without this the step
+			// would be written with an empty block and the next edit of it
+			// would be a 400.
+			$values['block'] = $block->name;
+
+			// The name of each input comes from the slots, not from the POST:
+			// $values['in'][$i] belongs to $this->slots[$i]. An empty value is
+			// dropped rather than written as an empty template — see
+			// BlockInputs::rows().
+			$values['in'] = BlockInputs::rows($this->slots, $values['in'] ?? null);
+		}
+
 		$rawName = $this->getParameter('name');
 		$name = \is_string($rawName) ? $rawName : '';
 

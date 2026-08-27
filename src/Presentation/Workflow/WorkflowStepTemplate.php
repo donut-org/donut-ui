@@ -17,6 +17,8 @@ final class WorkflowStepTemplate extends LayoutTemplate
 
 	public string $type = '';
 
-	/** @var array<string, string> */
-	public array $blocks = [];
+	public string $block = '';
+
+	/** @var array<int, \Donut\Gui\BlockInputSlot> */
+	public array $slots = [];
 }

@@ -30,6 +30,13 @@ $checked = 0;
 // from the overview. toStep() therefore returns a step with empty branches,
 // and for these the round-trip must be compared against a step stripped of
 // its children.
+//
+// A RunStep's `in` is the same kind of omission: toValues() deliberately
+// stops building the in rows, because the container they belong to is keyed
+// by position now and its names come from the block (BlockInputs::slots()),
+// not from this method. So the round-trip is compared against a step
+// stripped of its inputs; that toValues() really omits them is asserted
+// below, and that toStep() still reads in rows is asserted right after it.
 $bare = function (Donut\Format\Step $step): Donut\Format\Step {
 	if ($step instanceof IfStep) {
 		return new IfStep($step->condition, [], [], $step->name);
@@ -37,6 +44,17 @@ $bare = function (Donut\Format\Step $step): Donut\Format\Step {
 
 	if ($step instanceof ForeachStep) {
 		return new ForeachStep($step->over, $step->as, [], $step->name);
+	}
+
+	if ($step instanceof RunStep) {
+		return new RunStep(
+			$step->block,
+			[],
+			$step->out,
+			$step->timeout,
+			$step->allowFailure,
+			$step->name,
+		);
 	}
 
 	return $step;
@@ -194,7 +212,10 @@ $values = StepMapper::toValues(new RunStep(
 
 Assert::same('run', $values['type']);
 Assert::same('jq', $values['block']);
-Assert::same([['key' => 'stdin', 'value' => '{%p%}']], $values['in']);
+// `in` is not among the values any more: the inputs travel with the slots,
+// see BlockInputs. Asserting its absence is what keeps a half-finished
+// revert from passing.
+Assert::false(array_key_exists('in', $values), 'toValues() does not build the in rows');
 Assert::same([['channel' => 'stdout', 'value' => 'id']], $values['out']);
 Assert::same('30', $values['timeout']);
 Assert::same('list', $values['allowFailure']);

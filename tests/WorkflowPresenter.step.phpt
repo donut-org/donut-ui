@@ -21,9 +21,19 @@ $project = TEMP_DIR . '/step';
 FileSystem::createDir($project . '/blocks');
 FileSystem::createDir($project . '/workflows');
 
+// The inputs are deliberately NOT in alphabetical order: declaration order
+// is filter, compact, while sorted order would be compact, filter. With an
+// alphabetical fixture an implementation that sorted the slots would pass
+// and nobody would notice.
+//
+// "compact" is required AND has a default — the validator never reports such
+// an input as unfilled, so the form must not mark it required either.
 FileSystem::write($project . '/blocks/jq.json', json_encode([
-	'name' => 'jq', 'command' => 'jq', 'args' => [],
-	'inputs' => ['filter' => ['required' => true]],
+	'name' => 'jq', 'command' => 'jq', 'args' => [['{%filter%}'], ['{%compact%}']],
+	'inputs' => [
+		'filter' => ['required' => true],
+		'compact' => ['required' => true, 'default' => '-c'],
+	],
 	'stdin' => ['required' => true],
 ]));
 
@@ -43,8 +53,34 @@ $steps = fn(): array => (new WorkflowParser)->parseFile($project . '/workflows/w
 	'action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]',
 ]);
 
-Assert::contains('value="jq"', $html);
-Assert::contains('.id', $html);
+// The block is not a dropdown any more: switching it would leave the inputs
+// of the old one standing, and the form has no way of telling which values
+// belong to the new block. It is text with a link to the block itself.
+Assert::notContains('name="block"', $html);
+// The order of the query parameters is the router's, so each one is pinned
+// on its own rather than in one fixed sequence.
+Assert::match('~<a[^>]*href="[^"]*presenter=Block[^"]*"[^>]*>jq</a>~', $html);
+Assert::match('~<a[^>]*href="[^"]*action=detail[^"]*"[^>]*>jq</a>~', $html);
+Assert::match('~<a[^>]*href="[^"]*name=jq[^"]*"[^>]*>jq</a>~', $html);
+
+// one row per declared input, in the block's order, stdin last
+Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html);
+Assert::contains('>filter<', $html);
+Assert::contains('>compact<', $html);
+Assert::contains('>stdin<', $html);
+
+// the name of the input never travels through the POST — it is arbitrary
+// text, while a Nette component name has to match [a-zA-Z0-9_]+
+Assert::notContains('name="in[0][key]"', $html);
+
+// required exactly where the validator would complain: filter has no
+// default, compact has one, stdin follows stdin.required
+Assert::match('~name="in\[0\]\[value\]"[^>]*required~', $html);
+Assert::notMatch('~name="in\[1\]\[value\]"[^>]*required~', $html);
+Assert::match('~name="in\[2\]\[value\]"[^>]*required~', $html);
+
+// the declaration is shown, not hidden: the default as a placeholder
+Assert::match('~name="in\[1\]\[value\]"[^>]*placeholder="-c"~', $html);
 Assert::contains('<form', $html);
 // The step name label — pins WorkflowPresenter::createComponentStepForm()'s
 // 'Step name' caption, since no other assertion in the suite renders it.
@@ -69,9 +105,8 @@ Assert::contains('>Step name<', $html);
 
 Assert::false($response instanceof RedirectResponse, 'the delete failed, the page redrew');
 Assert::count(2, $steps(), 'an invalid path must not delete anything');
-Assert::contains('value="jq"', $html, 'the chosen block must not be lost');
-Assert::match('~name="in\[0\]\[key\]"[^>]*value="filter"~', $html, "the step's inputs must not be lost");
-Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html);
+Assert::contains('>jq</a>', $html, 'the block must not be lost');
+Assert::match('~name="in\[0\]\[value\]"[^>]*value="\.id"~', $html, "the step's inputs must not be lost");
 Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's outputs must not be lost");
 
 // --- saving the edit ---
@@ -80,9 +115,12 @@ Assert::match('~name="out\[0\]\[value\]"[^>]*value="id"~', $html, "the step's ou
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
-		'type' => 'run', 'name' => 'named', 'block' => 'jq',
-		// gap in numbering deliberately
-		'in' => [0 => ['key' => 'filter', 'value' => '.title'], 2 => ['key' => 'stdin', 'value' => '{%x%}']],
+		'type' => 'run', 'name' => 'named',
+		// Index 1 is "compact" and stays empty: an empty slot is not written
+		// to `in` at all, or it would suppress the block's default. Index 2
+		// is stdin — the server knows that from the block, the POST does not
+		// say it anywhere.
+		'in' => [0 => ['value' => '.title'], 1 => ['value' => ''], 2 => ['value' => '{%x%}']],
 		'out' => [0 => ['channel' => 'stdout', 'value' => 'title']],
 		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
 		'save' => 'Save',
@@ -94,8 +132,13 @@ Assert::type(RedirectResponse::class, $response);
 $run = $steps()[0];
 Assert::type(RunStep::class, $run);
 Assert::same('named', $run->name);
-Assert::same(['filter', 'stdin'], array_keys($run->in));
+// The POST carries no block at all any more — the server takes it from the
+// step it is editing. Without this the step would be saved with an empty
+// block.
+Assert::same('jq', $run->block, 'the block survives a save that never mentions it');
+Assert::same(['filter', 'stdin'], array_keys($run->in), 'the empty slot is not written');
 Assert::same('.title', $run->in['filter']->getSource());
+Assert::same('{%x%}', $run->in['stdin']->getSource(), 'index 2 is stdin, by position');
 Assert::same(['stdout' => 'title'], $run->out);
 
 // The rest of the workflow stayed — editing a step must not touch its neighbors.
@@ -204,26 +247,28 @@ Assert::contains('does not exist', $e->getMessage());
 
 // --- an invalid workflow still gets saved: validation doesn't block ---
 //
-// The jq block requires both the filter and stdin inputs; a step that fills
-// in neither is an error for the validator. It must still get saved.
+// The step reads {%nope%}, a key nothing in the workflow ever writes — a
+// hard error for the validator. It must still get saved: a workflow being
+// built is invalid most of the time, and a GUI that refused to save it
+// would be unusable.
 //
-// Note: the invalidity is deliberately not manufactured with a nonexistent
-// block name — the `block` field is an addSelect over the list of blocks,
-// and Nette rejects a value outside the list before saving is even reached.
-// That would test the form's behavior, not that workflow validation doesn't
-// block.
+// Note: this deliberately isn't manufactured by leaving a required input
+// empty any more. Required inputs now carry setRequired(), so the form
+// itself stops that — which is the point of Task 4, not a property of
+// saving.
 
 runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'w', 'at' => 'w.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
-		'type' => 'run', 'name' => '', 'block' => 'jq',
-		'in' => [], 'out' => [], 'timeout' => '',
+		'type' => 'run', 'name' => '',
+		'in' => [0 => ['value' => '{%nope%}'], 1 => ['value' => ''], 2 => ['value' => 'x']],
+		'out' => [], 'timeout' => '',
 		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
 	],
 );
 
-Assert::same([], $steps()[0]->in, 'a step without its required inputs still gets saved');
+Assert::same('{%nope%}', $steps()[0]->in['filter']->getSource(), 'an invalid step still gets saved');
 
 // --- a new run step needs to know its block ---
 //
@@ -262,5 +307,63 @@ Assert::same(404, $e->getHttpCode());
 ]);
 
 Assert::contains('<form', $html, 'the step is edited, the address is ignored');
+
+// --- a key the block does not declare is shown, and must be cleared ---
+//
+// The block used to declare it, or it is a typo. Either way the form must
+// not drop it silently: it renders as a slot with a rule that the field has
+// to be empty, so saving is possible only once the user has seen it and
+// cleared it themselves.
+
+FileSystem::write($project . '/workflows/leftover.json', json_encode([
+	'name' => 'leftover',
+	'steps' => [[
+		'type' => 'run', 'block' => 'jq',
+		'in' => ['filter' => '.id', 'filtr' => '.old'],
+	]],
+]));
+
+[, $html] = runWorkflowPresenterIn($project, [
+	'action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]',
+]);
+
+Assert::contains('>filtr<', $html, 'the undeclared key is visible');
+Assert::contains('does not declare this input', $html);
+Assert::match('~name="in\[3\]\[value\]"[^>]*value="\.old"~', $html, 'undeclared keys go last');
+
+// saving with the field still filled in is refused
+$leftover = fn(): array => (new WorkflowParser)
+	->parseFile($project . '/workflows/leftover.json')->steps;
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]', 'do' => 'stepForm-submit'],
+	[
+		'type' => 'run', 'name' => '',
+		'in' => [0 => ['value' => '.id'], 1 => ['value' => ''], 2 => ['value' => 'x'], 3 => ['value' => '.old']],
+		'out' => [], 'timeout' => '',
+		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
+	],
+);
+
+Assert::same(
+	['filter', 'filtr'],
+	array_keys($leftover()[0]->in),
+	'a filled-in undeclared field must not save'
+);
+
+// cleared, it saves and the key is gone
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]', 'do' => 'stepForm-submit'],
+	[
+		'type' => 'run', 'name' => '',
+		'in' => [0 => ['value' => '.id'], 1 => ['value' => ''], 2 => ['value' => 'x'], 3 => ['value' => '']],
+		'out' => [], 'timeout' => '',
+		'allowFailure' => 'inherit', 'allowFailureCodes' => '', 'save' => 'Save',
+	],
+);
+
+Assert::same(['filter', 'stdin'], array_keys($leftover()[0]->in), 'cleared, the key is gone');
 
 FileSystem::delete(TEMP_DIR);

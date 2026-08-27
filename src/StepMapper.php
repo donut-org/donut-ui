@@ -74,23 +74,21 @@ final class StepMapper
 	public static function toValues(Step $step): array
 	{
 		if ($step instanceof RunStep) {
-			$in = [];
-
-			foreach ($step->in as $key => $template) {
-				$in[] = ['key' => $key, 'value' => $template->getSource()];
-			}
-
 			$out = [];
 
 			foreach ($step->out as $channel => $value) {
 				$out[] = ['channel' => $channel, 'value' => $value];
 			}
 
+			// `in` is not returned: the values of the inputs travel with the
+			// slots (BlockInputs::slots()), and the container they belong to
+			// is keyed by position, not by the shape this method used to
+			// produce. Nette ignores keys it has no control for, so leaving
+			// it here would fail silently rather than loudly.
 			return [
 				'type' => 'run',
 				'name' => $step->name ?? '',
 				'block' => $step->block,
-				'in' => $in,
 				'out' => $out,
 				'timeout' => $step->timeout === null ? '' : (string) $step->timeout,
 				'allowFailure' => match (true) {

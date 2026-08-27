@@ -185,6 +185,12 @@ final class WorkflowPresenter extends Presenter
 	{
 		/** @var WorkflowStepTemplate $template */
 		$template = $this->template;
+		// basename() same as in renderDetail() and the rest of this file: the
+		// name comes from the query string. It is checked against the path's
+		// own workflow name below, and WorkflowRepository::get() looks it up
+		// among the files that exist — basename() keeps both true even if a
+		// file path is ever assembled by hand again.
+		$name = \basename($name);
 
 		try {
 			$this->stepAt = StepPath::parse($at);
@@ -270,7 +276,10 @@ final class WorkflowPresenter extends Presenter
 	{
 		/** @var WorkflowStepTemplate $template */
 		$template = $this->template;
-		$template->name = $name;
+		// basename() same as in actionStep(): render gets the name from the
+		// address a second time, and the breadcrumb must name the workflow
+		// the action actually resolved, not the raw parameter.
+		$template->name = \basename($name);
 		$template->at = $at;
 		// The type from the address isn't read again — actionStep() already
 		// resolved it, and for editing an existing step derived it from the

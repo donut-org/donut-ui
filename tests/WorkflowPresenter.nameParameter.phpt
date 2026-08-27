@@ -69,3 +69,17 @@ $e = Assert::exception(fn() => $presenter->renderDetail('../blocks/echo'), BadRe
 Assert::same(404, $e->getHttpCode());
 Assert::contains('does not exist', $e->getMessage());
 Assert::notContains('command', $e->getMessage());
+
+// The step form resolves the same workflow every other entry point would.
+// actionStep() takes `name` from the query string too, and used not to
+// basename() it: the path's own workflow name then failed to match and the
+// answer was a 400 about the address, instead of the 404 that says the
+// workflow isn't there. Same rule, same answer, whichever page is asked.
+$presenter = createPresenter($profile);
+$e = Assert::exception(
+	fn() => $presenter->actionStep('../blocks/echo', 'echo.json:steps[0]'),
+	BadRequestException::class,
+);
+Assert::same(404, $e->getHttpCode());
+Assert::contains('does not exist', $e->getMessage());
+Assert::notContains('command', $e->getMessage(), 'never the contents of a file outside workflows/');

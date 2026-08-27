@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use Donut\BlockRepository;
 use Donut\Format\Condition;
 use Donut\Format\ForeachStep;
 use Donut\Format\IfStep;
 use Donut\Format\RunStep;
 use Donut\Format\SetStep;
+use Donut\Gui\BlockInputs;
 use Donut\Gui\StepMapper;
 use Donut\Parser\WorkflowParser;
 use Donut\Template;
@@ -35,8 +37,11 @@ $checked = 0;
 // stops building the in rows, because the container they belong to is keyed
 // by position now and its names come from the block (BlockInputs::slots()),
 // not from this method. So the round-trip is compared against a step
-// stripped of its inputs; that toValues() really omits them is asserted
-// below, and that toStep() still reads in rows is asserted right after it.
+// stripped of its inputs. The two directions are asserted apart from each
+// other: that toValues() really omits `in` under "toValues gives the shape
+// the form expects" further down, and that toStep() still reads in rows
+// under "run: all optional fields" and "the order of keys from POST isn't
+// guaranteed" above it.
 $bare = function (Donut\Format\Step $step): Donut\Format\Step {
 	if ($step instanceof IfStep) {
 		return new IfStep($step->condition, [], [], $step->name);
@@ -85,6 +90,64 @@ foreach ($files === false ? [] : $files as $file) {
 }
 
 Assert::same(96, $checked, 'the reference workload has 96 steps');
+
+// --- the reference workload through the slots, not just through the mapper ---
+//
+// toValues() no longer carries `in`, so $bare() strips it from the round trip
+// above — and with it the only place `in` met the whole corpus. That breadth
+// is restored here: every real run step's inputs go out through
+// BlockInputs::slots() and come back through rows(), the way the form moves
+// them. Two things this buys that the hand-written fixtures
+// cannot: it is the only whole-corpus proof that opening and re-saving an
+// existing workflow through the new form is lossless, and it fails loudly the
+// day a block stops declaring an input that a workflow still passes it.
+
+$blocks = new BlockRepository(__DIR__ . '/../../docs/workflows/donut/blocks');
+$runs = 0;
+
+$walkIn = function (array $steps) use (&$walkIn, $blocks, &$runs): void {
+	foreach ($steps as $step) {
+		if ($step instanceof RunStep) {
+			$runs++;
+			$slots = BlockInputs::slots($blocks->get($step->block), $step);
+			$post = [];
+
+			foreach ($slots as $i => $slot) {
+				$post[$i] = ['value' => $slot->value];
+			}
+
+			$rebuilt = StepMapper::toStep([
+				'type' => 'run', 'name' => '', 'block' => $step->block,
+				'in' => BlockInputs::rows($slots, $post),
+				'out' => [], 'timeout' => '',
+				'allowFailure' => 'inherit', 'allowFailureCodes' => '',
+			]);
+
+			Assert::same(
+				\serialize($step->in),
+				\serialize($rebuilt->in),
+				"in round-trip through the slots, block {$step->block}"
+			);
+		}
+
+		if ($step instanceof IfStep) {
+			$walkIn($step->then);
+			$walkIn($step->else);
+		}
+
+		if ($step instanceof ForeachStep) {
+			$walkIn($step->steps);
+		}
+	}
+};
+
+foreach ($files === false ? [] : $files as $file) {
+	$walkIn($parser->parseFile($file)->steps);
+}
+
+// The guard that makes the walk fail loudly if the corpus stops being walked
+// at all — 75 of the 96 steps above are run steps.
+Assert::same(75, $runs, 'the reference workload has 75 run steps');
 
 // --- run: all optional fields ---
 $run = StepMapper::toStep([

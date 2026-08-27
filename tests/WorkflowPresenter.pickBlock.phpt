@@ -23,6 +23,12 @@ FileSystem::write($project . '/blocks/jq.json', json_encode([
 FileSystem::write($project . '/blocks/echo.json', json_encode([
 	'name' => 'echo', 'command' => 'echo', 'args' => [],
 ]));
+// Declares no `inputs`, but reads stdin — the step form will show one
+// required slot for it, so the card has to count it too.
+FileSystem::write($project . '/blocks/cat.json', json_encode([
+	'name' => 'cat', 'command' => 'cat', 'args' => [],
+	'stdin' => ['required' => true],
+]));
 // A broken file must not hide the working ones — the same rule as on
 // Block:default and in `donut --list`.
 FileSystem::write($project . '/blocks/broken.json', '{');
@@ -45,6 +51,15 @@ Assert::contains('>echo<', $html);
 Assert::match('~href="[^"]*block=jq[^"]*"~', $html);
 Assert::match('~href="[^"]*type=run[^"]*"~', $html);
 Assert::match('~href="[^"]*at=w\.json[^"]*"~', $html);
+
+// the card's input count is what the next page will show: echo declares
+// nothing at all, cat declares no `inputs` but does read stdin. Counting
+// only $block->inputs would make cat's card say "no inputs" and then open a
+// form with one required field. Matched against the command, which is unique
+// per fixture, so neither card can satisfy the other's assertion.
+Assert::match('~<code>echo</code>[^<]*no inputs~', $html);
+Assert::match('~<code>cat</code>[^<]*1 input~', $html);
+Assert::match('~<code>jq</code>[^<]*1 input~', $html);
 
 // the broken file is reported, and the working blocks are still there
 Assert::contains('broken', $html);
@@ -82,7 +97,20 @@ Assert::same(400, $e->getHttpCode());
 [, $detail] = runWorkflowPresenterIn($project, ['action' => 'detail', 'name' => 'w']);
 
 Assert::match('~<div class="add">[^<]*<a href="[^"]*action=pickBlock~', $detail);
-Assert::notMatch('~action=step[^"]*type=run~', $detail, 'run must not skip the picker');
+// The order of the query parameters is the router's here too, so this asks
+// about each link rather than about one fixed sequence: no href may carry
+// action=step and type=run together, whichever way round the router emits
+// them. `~action=step[^"]*type=run~` assumed action came first and would
+// have gone quietly green if that ever changed.
+\preg_match_all('~"([^"]*action=step[^"]*)"~', $detail, $urls);
+Assert::same(
+	[],
+	\array_values(\array_filter(
+		$urls[1],
+		fn(string $url): bool => \str_contains($url, 'type=run'),
+	)),
+	'run must not skip the picker'
+);
 Assert::match('~href="[^"]*type=set~', $detail, 'set still goes straight to the form');
 
 FileSystem::delete(TEMP_DIR);

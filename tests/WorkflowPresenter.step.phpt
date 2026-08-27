@@ -31,7 +31,10 @@ FileSystem::createDir($project . '/workflows');
 FileSystem::write($project . '/blocks/jq.json', json_encode([
 	'name' => 'jq', 'command' => 'jq', 'args' => [['{%filter%}'], ['{%compact%}']],
 	'inputs' => [
-		'filter' => ['required' => true],
+		// The description is here so that step.latte's hint under the input
+		// name is actually rendered by a test — a typo there would otherwise
+		// ship. The same text as in BlockInputs.phpt's fixture.
+		'filter' => ['required' => true, 'description' => 'jq expression'],
 		'compact' => ['required' => true, 'default' => '-c'],
 	],
 	'stdin' => ['required' => true],
@@ -75,9 +78,21 @@ Assert::notContains('name="in[0][key]"', $html);
 
 // required exactly where the validator would complain: filter has no
 // default, compact has one, stdin follows stdin.required
-Assert::match('~name="in\[0\]\[value\]"[^>]*required~', $html);
-Assert::notMatch('~name="in\[1\]\[value\]"[^>]*required~', $html);
-Assert::match('~name="in\[2\]\[value\]"[^>]*required~', $html);
+//
+// The word "required" also occurs inside the data-nette-rules message
+// (`Fill in the required input "filter".`), and [^>]* reaches it — so a rule
+// that carried that message without marking the field required would keep
+// these green on the raw HTML. The rules attribute is therefore stripped
+// before asking about the bare attribute. The same stripped haystack for all
+// three, the negative one included, so they stay one assertion in three
+// directions.
+$attrs = preg_replace("~ data-nette-rules='[^']*'~", '', $html);
+Assert::match('~name="in\[0\]\[value\]"[^>]*required~', $attrs);
+Assert::notMatch('~name="in\[1\]\[value\]"[^>]*required~', $attrs);
+Assert::match('~name="in\[2\]\[value\]"[^>]*required~', $attrs);
+
+// the description from the block declaration is shown under the input name
+Assert::contains('jq expression', $html);
 
 // the declaration is shown, not hidden: the default as a placeholder
 Assert::match('~name="in\[1\]\[value\]"[^>]*placeholder="-c"~', $html);
@@ -335,7 +350,7 @@ Assert::match('~name="in\[3\]\[value\]"[^>]*value="\.old"~', $html, 'undeclared 
 $leftover = fn(): array => (new WorkflowParser)
 	->parseFile($project . '/workflows/leftover.json')->steps;
 
-runWorkflowPresenterIn(
+[, $html] = runWorkflowPresenterIn(
 	$project,
 	['action' => 'step', 'name' => 'leftover', 'at' => 'leftover.json:steps[0]', 'do' => 'stepForm-submit'],
 	[
@@ -351,6 +366,10 @@ Assert::same(
 	array_keys($leftover()[0]->in),
 	'a filled-in undeclared field must not save'
 );
+// The refusal is the Form::Blank rule's, and it says so in its own words —
+// the Latte sentence above it is a different string and would survive the
+// rule being dropped.
+Assert::contains('does not declare the input', $html, 'the refusal says why');
 
 // cleared, it saves and the key is gone
 runWorkflowPresenterIn(
@@ -399,6 +418,45 @@ Assert::same('jq', $fresh[0]->block, 'a new step keeps the block it was picked w
 Assert::same(['filter', 'stdin'], array_keys($fresh[0]->in));
 Assert::same('.x', $fresh[0]->in['filter']->getSource());
 Assert::same('y', $fresh[0]->in['stdin']->getSource());
+
+// --- a block with no inputs at all: the sentence, and a save that keeps out ---
+//
+// step.latte's {if !$slots} branch is not reachable with the jq fixture, and
+// an input-less block is a perfectly normal thing to call. The form is still
+// built (with an empty `in` container), so a save has to round-trip.
+
+FileSystem::write($project . '/blocks/echo.json', json_encode([
+	'name' => 'echo', 'command' => 'echo', 'args' => [],
+]));
+FileSystem::write($project . '/workflows/bare.json', json_encode([
+	'name' => 'bare',
+	'steps' => [['type' => 'run', 'block' => 'echo', 'out' => ['stdout' => 'said']]],
+]));
+
+[, $html] = runWorkflowPresenterIn($project, [
+	'action' => 'step', 'name' => 'bare', 'at' => 'bare.json:steps[0]',
+]);
+
+Assert::contains('The block has no inputs.', $html);
+Assert::contains('<form', $html, 'the form is still built, there is out and the rest to edit');
+Assert::notContains('name="in[0][value]"', $html, 'and it has no input rows');
+Assert::match('~name="out\[stdout\]"[^>]*value="said"~', $html);
+
+runWorkflowPresenterIn(
+	$project,
+	['action' => 'step', 'name' => 'bare', 'at' => 'bare.json:steps[0]', 'do' => 'stepForm-submit'],
+	[
+		'type' => 'run', 'name' => '',
+		'out' => ['stdout' => 'said', 'stderr' => '', 'exit_code' => ''],
+		'timeout' => '', 'allowFailure' => 'inherit', 'allowFailureCodes' => '',
+		'save' => 'Save',
+	],
+);
+
+$bareStep = (new WorkflowParser)->parseFile($project . '/workflows/bare.json')->steps[0];
+Assert::type(RunStep::class, $bareStep);
+Assert::same([], $bareStep->in, 'no slots, no inputs written');
+Assert::same(['stdout' => 'said'], $bareStep->out, 'and the rest of the step survives');
 
 // --- a block that cannot be read: the page survives a GET, a POST is a 4xx ---
 //

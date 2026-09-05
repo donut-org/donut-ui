@@ -1,5 +1,10 @@
 # Donut GUI
 
+[![Build Status](https://github.com/donut-org/donut-gui/workflows/Build/badge.svg)](https://github.com/donut-org/donut-gui/actions)
+[![Downloads this Month](https://img.shields.io/packagist/dm/donut-org/donut-gui.svg)](https://packagist.org/packages/donut-org/donut-gui)
+[![Latest Stable Version](https://poser.pugx.org/donut-org/donut-gui/v/stable)](https://github.com/donut-org/donut-gui/releases)
+[![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/donut-org/donut-gui/blob/master/license.md)
+
 Autorské prostředí pro workflow a kameny donutu. Ukazuje, co by řekl
 validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny,
 celá workflow i jejich jednotlivé kroky založit, upravit a smazat.

@@ -22,7 +22,7 @@ require __DIR__ . '/bootstrap.php';
 // the rule "the GUI must not reach outside itself" is about gui/src, not
 // about fixtures in tests.
 
-$root = __DIR__ . '/../../docs/workflows/donut';
+$root = __DIR__ . '/../docs/workflows/donut';
 
 $blocks = new BlockRepository($root . '/blocks');
 $parser = new WorkflowParser;

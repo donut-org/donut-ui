@@ -17,7 +17,7 @@ require __DIR__ . '/bootstrap.php';
 // The form doesn't edit steps, so they aren't taken into the comparison —
 // toWorkflow() gets them from the original workflow.
 
-$files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
+$files = \glob(__DIR__ . '/../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $files === false ? [] : $files);
 
 foreach ($files === false ? [] : $files as $file) {

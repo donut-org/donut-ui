@@ -1,0 +1,14 @@
+{
+  "name": "format-prompt",
+  "description": "Z task JSON sestaví text promptu pro agenta.",
+  "command": "olw-task",
+  "args": [
+    [
+      "format-prompt"
+    ]
+  ],
+  "stdin": {
+    "required": true,
+    "description": "Task JSON"
+  }
+}

@@ -37,7 +37,7 @@ make server
 Nad ukázkovou sadou z repozitáře (`docs/workflows/donut`) přes proměnné:
 
 ```bash
-make server home=$(pwd)/../docs/workflows profile=donut
+make server home=$(pwd)/docs/workflows profile=donut
 ```
 
 GUI běží ve **výchozím stavu v produkčním režimu** — bez Tracy baru, protože

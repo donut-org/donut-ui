@@ -1,0 +1,6 @@
+{
+  "name": "fail",
+  "description": "Vždy selže. Slouží k zastavení běhu ve větvi if; důvod nese name kroku.",
+  "command": "/usr/bin/false",
+  "args": []
+}

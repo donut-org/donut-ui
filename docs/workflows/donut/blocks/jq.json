@@ -1,0 +1,26 @@
+{
+  "name": "jq",
+  "description": "Transformace JSON/textu na stdin filtrem jq. Výsledek na stdout.",
+  "command": "jq",
+  "args": [
+    [
+      "{%flags%}"
+    ],
+    [
+      "{%filter%}"
+    ]
+  ],
+  "inputs": {
+    "flags": {
+      "required": false,
+      "description": "Volby jq v jednom tokenu: -r, -Rs, -rs …"
+    },
+    "filter": {
+      "required": true,
+      "description": "Program jq"
+    }
+  },
+  "stdin": {
+    "required": true
+  }
+}

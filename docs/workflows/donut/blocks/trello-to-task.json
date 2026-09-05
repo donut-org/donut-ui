@@ -1,0 +1,20 @@
+{
+  "name": "trello-to-task",
+  "description": "Odpověď Trello API o kartě převede na univerzální task JSON.",
+  "command": "olw-trello-to-task",
+  "args": [
+    [
+      "--my-id={%myId%}"
+    ]
+  ],
+  "inputs": {
+    "myId": {
+      "required": false,
+      "description": "ID přihlášeného člena; podle něj se komentáře značí rolí assistant"
+    }
+  },
+  "stdin": {
+    "required": true,
+    "description": "Karta z /1/cards/{id} včetně actions, attachments a checklists"
+  }
+}

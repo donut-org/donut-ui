@@ -67,7 +67,7 @@ foreach ([
 // built from.
 
 $parser = new WorkflowParser;
-$files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
+$files = \glob(__DIR__ . '/../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $files === false ? [] : $files);
 
 $checked = 0;

@@ -6,7 +6,7 @@ tests_dir = tests/
 # $DONUT_HOME/$DONUT_PROFILE, by default ~/.config/donut/default. An empty
 # value is the same as unset, so leaving these blank hands the decision to
 # Profile::fromEnvironment(). To browse the repository's own sample set:
-#   make server home=$(CURDIR)/../docs/workflows profile=donut
+#   make server home=$(CURDIR)/docs/workflows profile=donut
 home =
 profile =
 port = 8000

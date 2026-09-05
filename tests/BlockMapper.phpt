@@ -22,7 +22,7 @@ $mapper = new BlockMapper;
 // serializer's round-trip.
 
 $parser = new BlockParser;
-$blocks = \glob(__DIR__ . '/../../docs/workflows/donut/blocks/*.json');
+$blocks = \glob(__DIR__ . '/../docs/workflows/donut/blocks/*.json');
 Assert::count(15, $blocks === false ? [] : $blocks);
 
 foreach ($blocks === false ? [] : $blocks as $path) {

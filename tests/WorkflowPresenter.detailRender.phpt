@@ -112,7 +112,7 @@ function renderDetailIn(string $dir, string $name, ?string $key = null): string
 }
 
 
-$root = __DIR__ . '/../../docs/workflows/donut';
+$root = __DIR__ . '/../docs/workflows/donut';
 
 // --- without a key: both branches of the "Selected key" condition ---
 

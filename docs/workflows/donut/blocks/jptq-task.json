@@ -1,0 +1,87 @@
+{
+  "name": "jptq-task",
+  "description": "Zařadí do fronty zpracování jedné karty. Exit 0 zařazeno, 1 už tam je; cokoliv jiného je skutečné selhání.",
+  "command": "jptq",
+  "args": [
+    [
+      "task"
+    ],
+    [
+      "{%queueFile%}"
+    ],
+    [
+      "{%taskId%}"
+    ],
+    [
+      "donut"
+    ],
+    [
+      "{%workflow%}"
+    ],
+    [
+      "--shortId={%shortId%}"
+    ],
+    [
+      "--expectStatus={%expectStatus%}"
+    ],
+    [
+      "--model={%model%}"
+    ],
+    [
+      "--systemPrompt={%systemPrompt%}"
+    ],
+    [
+      "--targetList={%targetList%}"
+    ],
+    [
+      "--tag={%tag%}"
+    ],
+    [
+      "--curlrc={%curlrc%}"
+    ],
+    [
+      "--workRoot={%workRoot%}"
+    ]
+  ],
+  "inputs": {
+    "queueFile": {
+      "required": true
+    },
+    "taskId": {
+      "required": true,
+      "description": "Identita úlohy ve frontě, kvůli deduplikaci"
+    },
+    "workflow": {
+      "required": true,
+      "description": "card-dev | card-spec"
+    },
+    "shortId": {
+      "required": true
+    },
+    "expectStatus": {
+      "required": true
+    },
+    "model": {
+      "required": true
+    },
+    "systemPrompt": {
+      "required": true
+    },
+    "targetList": {
+      "required": true
+    },
+    "tag": {
+      "required": true
+    },
+    "curlrc": {
+      "required": false
+    },
+    "workRoot": {
+      "required": true
+    }
+  },
+  "allow_failure": [
+    0,
+    1
+  ]
+}

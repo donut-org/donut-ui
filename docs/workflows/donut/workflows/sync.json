@@ -1,0 +1,241 @@
+{
+  "name": "sync",
+  "description": "Projde sledované seznamy na Trello boardech a každou nalezenou kartu zařadí do fronty ke zpracování. Nahrazuje jpw-indev-sync.",
+
+  "inputs": {
+    "queueFile":  { "required": true,  "description": "Soubor s frontou úloh" },
+    "promptsDir": { "required": true,  "description": "Adresář se systémovými prompty" },
+    "workRoot":   { "required": true,  "description": "Nadřazený adresář pro workspace, předává se dál" },
+    "curlrc":     { "required": false, "description": "Soubor s přihlašovací hlavičkou pro Trello API" }
+  },
+
+  "steps": [
+    {
+      "type": "run", "block": "test-file",
+      "in":  { "path": "{%queueFile%}" },
+      "out": { "exit_code": "queueExists" }
+    },
+    {
+      "type": "if", "name": "fronta ještě neexistuje",
+      "condition": { "left": "{%queueExists%}", "op": "neq", "right": "0" },
+      "then": [
+        { "type": "run", "block": "jptq-init", "in": { "queueFile": "{%queueFile%}" } }
+      ]
+    },
+
+    {
+      "type": "run", "name": "načíst boardy",
+      "block": "curl-get",
+      "in":  { "url": "https://api.trello.com/1/members/me/boards?fields=id,name", "curlrc": "{%curlrc%}" },
+      "out": { "stdout": "boardsJson" }
+    },
+
+    {
+      "type": "set", "key": "devBoards",
+      "value": "INDEV-CLIENTS\nINDEV-INTERNALS\nINDEV-OSS\nDEV"
+    },
+    {
+      "type": "set", "key": "assistBoards",
+      "value": "INDEV-PERSONAL\nASISTENT"
+    },
+
+    {
+      "type": "foreach", "name": "vývojové boardy",
+      "over": "{%devBoards%}", "as": "board",
+      "steps": [
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"{%board%}\") | .id", "stdin": "{%boardsJson%}" },
+          "out": { "stdout": "boardId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/boards/{%boardId%}/lists?fields=id,name", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "listsJson" }
+        },
+
+        {
+          "type": "run", "name": "ToSpec → tech lead",
+          "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"ToSpec\") | .id", "stdin": "{%listsJson%}" },
+          "out": { "stdout": "listId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/lists/{%listId%}/cards?fields=shortLink", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "cardsJson" }
+        },
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[].shortLink", "stdin": "{%cardsJson%}" },
+          "out": { "stdout": "cards" }
+        },
+        {
+          "type": "foreach", "over": "{%cards%}", "as": "shortId",
+          "steps": [
+            {
+              "type": "run", "block": "jptq-task",
+              "in": {
+                "queueFile": "{%queueFile%}", "taskId": "trello-{%shortId%}",
+                "workflow": "card-spec", "shortId": "{%shortId%}",
+                "expectStatus": "ToSpec", "model": "sonnet",
+                "systemPrompt": "{%promptsDir%}/techlead.md",
+                "targetList": "SpecReview", "tag": "#tech-lead",
+                "curlrc": "{%curlrc%}", "workRoot": "{%workRoot%}"
+              }
+            }
+          ]
+        },
+
+        {
+          "type": "run", "name": "ReadyToDev → developer",
+          "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"ReadyToDev\") | .id", "stdin": "{%listsJson%}" },
+          "out": { "stdout": "listId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/lists/{%listId%}/cards?fields=shortLink", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "cardsJson" }
+        },
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[].shortLink", "stdin": "{%cardsJson%}" },
+          "out": { "stdout": "cards" }
+        },
+        {
+          "type": "foreach", "over": "{%cards%}", "as": "shortId",
+          "steps": [
+            {
+              "type": "run", "block": "jptq-task",
+              "in": {
+                "queueFile": "{%queueFile%}", "taskId": "trello-{%shortId%}",
+                "workflow": "card-dev", "shortId": "{%shortId%}",
+                "expectStatus": "ReadyToDev", "model": "sonnet",
+                "systemPrompt": "{%promptsDir%}/developer.md",
+                "targetList": "Testing", "tag": "#developer",
+                "curlrc": "{%curlrc%}", "workRoot": "{%workRoot%}"
+              }
+            }
+          ]
+        },
+
+        {
+          "type": "run", "name": "ReadyToDev-Haiku → developer na haiku",
+          "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"ReadyToDev-Haiku\") | .id", "stdin": "{%listsJson%}" },
+          "out": { "stdout": "listId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/lists/{%listId%}/cards?fields=shortLink", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "cardsJson" }
+        },
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[].shortLink", "stdin": "{%cardsJson%}" },
+          "out": { "stdout": "cards" }
+        },
+        {
+          "type": "foreach", "over": "{%cards%}", "as": "shortId",
+          "steps": [
+            {
+              "type": "run", "block": "jptq-task",
+              "in": {
+                "queueFile": "{%queueFile%}", "taskId": "trello-{%shortId%}",
+                "workflow": "card-dev", "shortId": "{%shortId%}",
+                "expectStatus": "ReadyToDev-Haiku", "model": "haiku",
+                "systemPrompt": "{%promptsDir%}/developer.md",
+                "targetList": "Testing", "tag": "#developer",
+                "curlrc": "{%curlrc%}", "workRoot": "{%workRoot%}"
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "type": "foreach", "name": "asistentské boardy",
+      "over": "{%assistBoards%}", "as": "board",
+      "steps": [
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"{%board%}\") | .id", "stdin": "{%boardsJson%}" },
+          "out": { "stdout": "boardId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/boards/{%boardId%}/lists?fields=id,name", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "listsJson" }
+        },
+
+        {
+          "type": "run", "name": "Assistent",
+          "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"Assistent\") | .id", "stdin": "{%listsJson%}" },
+          "out": { "stdout": "listId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/lists/{%listId%}/cards?fields=shortLink", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "cardsJson" }
+        },
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[].shortLink", "stdin": "{%cardsJson%}" },
+          "out": { "stdout": "cards" }
+        },
+        {
+          "type": "foreach", "over": "{%cards%}", "as": "shortId",
+          "steps": [
+            {
+              "type": "run", "block": "jptq-task",
+              "in": {
+                "queueFile": "{%queueFile%}", "taskId": "trello-{%shortId%}",
+                "workflow": "card-dev", "shortId": "{%shortId%}",
+                "expectStatus": "Assistent", "model": "sonnet",
+                "systemPrompt": "{%promptsDir%}/assistent.md",
+                "targetList": "Review", "tag": "#assistent",
+                "curlrc": "{%curlrc%}", "workRoot": "{%workRoot%}"
+              }
+            }
+          ]
+        },
+
+        {
+          "type": "run", "name": "Assistent-Haiku",
+          "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[] | select(.name == \"Assistent-Haiku\") | .id", "stdin": "{%listsJson%}" },
+          "out": { "stdout": "listId" }
+        },
+        {
+          "type": "run", "block": "curl-get",
+          "in":  { "url": "https://api.trello.com/1/lists/{%listId%}/cards?fields=shortLink", "curlrc": "{%curlrc%}" },
+          "out": { "stdout": "cardsJson" }
+        },
+        {
+          "type": "run", "block": "jq",
+          "in":  { "flags": "-r", "filter": ".[].shortLink", "stdin": "{%cardsJson%}" },
+          "out": { "stdout": "cards" }
+        },
+        {
+          "type": "foreach", "over": "{%cards%}", "as": "shortId",
+          "steps": [
+            {
+              "type": "run", "block": "jptq-task",
+              "in": {
+                "queueFile": "{%queueFile%}", "taskId": "trello-{%shortId%}",
+                "workflow": "card-dev", "shortId": "{%shortId%}",
+                "expectStatus": "Assistent-Haiku", "model": "haiku",
+                "systemPrompt": "{%promptsDir%}/assistent.md",
+                "targetList": "Review", "tag": "#assistent",
+                "curlrc": "{%curlrc%}", "workRoot": "{%workRoot%}"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

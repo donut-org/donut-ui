@@ -15,7 +15,7 @@ use Tester\Assert;
 require __DIR__ . '/bootstrap.php';
 
 $parser = new WorkflowParser;
-$files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
+$files = \glob(__DIR__ . '/../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $files === false ? [] : $files);
 
 /** @return list<StepPath> */

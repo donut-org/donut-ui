@@ -38,7 +38,7 @@ Assert::same(0, StepCount::subtree($leaf));
 // count reported 14, in reality 17 nested steps disappear (+ the step
 // itself = 18 steps in the file in total). ---
 
-$sync = (new WorkflowParser)->parseFile(__DIR__ . '/../../docs/workflows/donut/workflows/sync.json');
+$sync = (new WorkflowParser)->parseFile(__DIR__ . '/../docs/workflows/donut/workflows/sync.json');
 $step = StepTree::get($sync, StepPath::parse('sync.json:steps[5]'));
 
 Assert::type(ForeachStep::class, $step);

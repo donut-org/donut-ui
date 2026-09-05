@@ -1,0 +1,39 @@
+{
+  "name": "workspace-init",
+  "description": "Připraví pracovní adresář. S repozitářem forkne, synchronizuje, naklonuje a přepne větev; bez něj jen vytvoří adresář.",
+  "command": "olw-workspace",
+  "args": [
+    [
+      "init"
+    ],
+    [
+      "--root={%workRoot%}"
+    ],
+    [
+      "--project={%project%}"
+    ],
+    [
+      "--repo={%repo%}"
+    ],
+    [
+      "--branch={%branch%}"
+    ]
+  ],
+  "inputs": {
+    "workRoot": {
+      "required": true,
+      "description": "Nadřazený adresář pro workspace"
+    },
+    "project": {
+      "required": true
+    },
+    "repo": {
+      "required": false,
+      "description": "owner/name; nevyplněno = pracuje se bez repozitáře"
+    },
+    "branch": {
+      "required": false
+    }
+  },
+  "timeout": 300
+}

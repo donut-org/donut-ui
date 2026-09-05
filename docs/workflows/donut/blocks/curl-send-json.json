@@ -1,0 +1,46 @@
+{
+  "name": "curl-send-json",
+  "description": "HTTP POST/PUT s JSON tělem ze stdin. Tělo odpovědi jde na stdout.",
+  "command": "curl",
+  "args": [
+    [
+      "-sS",
+      "--fail"
+    ],
+    [
+      "--config",
+      "{%curlrc%}"
+    ],
+    [
+      "-X",
+      "{%method%}"
+    ],
+    [
+      "-H",
+      "Content-Type: application/json"
+    ],
+    [
+      "-d",
+      "@-"
+    ],
+    [
+      "{%url%}"
+    ]
+  ],
+  "inputs": {
+    "method": {
+      "required": true,
+      "description": "POST | PUT | PATCH | DELETE"
+    },
+    "url": {
+      "required": true
+    },
+    "curlrc": {
+      "required": false
+    }
+  },
+  "stdin": {
+    "required": true,
+    "description": "Tělo requestu (JSON)"
+  }
+}

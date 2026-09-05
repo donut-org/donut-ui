@@ -29,14 +29,14 @@ $roundTrip = function (array $inputs) use (&$checked): void {
 	$checked += \count($inputs);
 };
 
-$blocks = \glob(__DIR__ . '/../../docs/workflows/donut/blocks/*.json');
+$blocks = \glob(__DIR__ . '/../docs/workflows/donut/blocks/*.json');
 Assert::count(15, $blocks === false ? [] : $blocks);
 
 foreach ($blocks === false ? [] : $blocks as $file) {
 	$roundTrip((new BlockParser)->parseFile($file)->inputs);
 }
 
-$workflows = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
+$workflows = \glob(__DIR__ . '/../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $workflows === false ? [] : $workflows);
 
 foreach ($workflows === false ? [] : $workflows as $file) {

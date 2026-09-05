@@ -1,0 +1,35 @@
+{
+  "name": "workspace-pr",
+  "description": "Založí pull request. Vypíše URL, jen když PR sám vytvořil — pro už existující PR nevypíše nic.",
+  "command": "olw-workspace",
+  "args": [
+    [
+      "pr"
+    ],
+    [
+      "--work-dir={%workDir%}"
+    ],
+    [
+      "--repo={%repo%}"
+    ],
+    [
+      "--title={%title%}"
+    ]
+  ],
+  "inputs": {
+    "workDir": {
+      "required": true
+    },
+    "repo": {
+      "required": false
+    },
+    "title": {
+      "required": true
+    }
+  },
+  "stdin": {
+    "required": true,
+    "description": "Tělo pull requestu"
+  },
+  "timeout": 300
+}

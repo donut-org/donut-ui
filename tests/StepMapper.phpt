@@ -22,7 +22,7 @@ require __DIR__ . '/bootstrap.php';
 // allow_failure or name, this would catch it.
 
 $parser = new WorkflowParser;
-$files = \glob(__DIR__ . '/../../docs/workflows/donut/workflows/*.json');
+$files = \glob(__DIR__ . '/../docs/workflows/donut/workflows/*.json');
 Assert::count(4, $files === false ? [] : $files);
 
 $checked = 0;
@@ -102,7 +102,7 @@ Assert::same(96, $checked, 'the reference workload has 96 steps');
 // existing workflow through the new form is lossless, and it fails loudly the
 // day a block stops declaring an input that a workflow still passes it.
 
-$blocks = new BlockRepository(__DIR__ . '/../../docs/workflows/donut/blocks');
+$blocks = new BlockRepository(__DIR__ . '/../docs/workflows/donut/blocks');
 $runs = 0;
 
 $walkIn = function (array $steps) use (&$walkIn, $blocks, &$runs): void {

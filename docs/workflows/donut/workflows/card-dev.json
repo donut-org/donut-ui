@@ -1,0 +1,170 @@
+{
+  "name": "card-dev",
+  "description": "Zpracuje kartu agentem, výsledek pushne jako pull request, okomentuje kartu a přesune ji dál. Nahrazuje jpw-indev-developer, -developer-haiku, -assistent a -assistent-haiku.",
+
+  "inputs": {
+    "shortId":      { "required": true,  "description": "shortLink karty v Trellu" },
+    "expectStatus": { "required": true,  "description": "Seznam, ve kterém karta musí být, jinak se běh zastaví" },
+    "model":        { "required": true,  "description": "sonnet | haiku | opus" },
+    "systemPrompt": { "required": true,  "description": "Cesta k souboru se systémovým promptem" },
+    "targetList":   { "required": true,  "description": "Seznam, kam se karta na konci přesune" },
+    "tag":          { "required": true,  "description": "Značka na začátku komentáře, např. #developer" },
+    "workRoot":     { "required": true,  "description": "Nadřazený adresář pro workspace" },
+    "curlrc":       { "required": false, "description": "Soubor s přihlašovací hlavičkou pro Trello API" }
+  },
+
+  "steps": [
+    {
+      "type": "run", "name": "zjistit vlastní ID v Trellu",
+      "block": "curl-get",
+      "in":  { "url": "https://api.trello.com/1/members/me?fields=id", "curlrc": "{%curlrc%}" },
+      "out": { "stdout": "meJson" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".id", "stdin": "{%meJson%}" },
+      "out": { "stdout": "myId" }
+    },
+
+    {
+      "type": "run", "name": "stáhnout kartu včetně komentářů, příloh a checklistů",
+      "block": "curl-get",
+      "in":  { "url": "https://api.trello.com/1/cards/{%shortId%}?list=true&actions=commentCard&attachments=true&checklists=all", "curlrc": "{%curlrc%}" },
+      "out": { "stdout": "cardJson" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".id", "stdin": "{%cardJson%}" },
+      "out": { "stdout": "cardId" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".idBoard", "stdin": "{%cardJson%}" },
+      "out": { "stdout": "boardId" }
+    },
+    {
+      "type": "run", "name": "převést kartu na task JSON",
+      "block": "trello-to-task",
+      "in":  { "myId": "{%myId%}", "stdin": "{%cardJson%}" },
+      "out": { "stdout": "task" }
+    },
+
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".status", "stdin": "{%task%}" },
+      "out": { "stdout": "status" }
+    },
+    {
+      "type": "if", "name": "karta už není ve stavu {%expectStatus%} — mezitím se přesunula",
+      "condition": { "left": "{%status%}", "op": "neq", "right": "{%expectStatus%}" },
+      "then": [ { "type": "run", "block": "fail" } ]
+    },
+
+    {
+      "type": "run", "name": "odvodit projekt z prefixu v názvu karty",
+      "block": "jq",
+      "in": {
+        "filter": "if (.title | test(\"^[^ ]+ - \")) then (.project = (.title | sub(\" - .*\"; \"\")) | .title = (.title | sub(\"^[^ ]* - \"; \"\"))) else . end",
+        "stdin": "{%task%}"
+      },
+      "out": { "stdout": "task" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".project", "stdin": "{%task%}" },
+      "out": { "stdout": "project" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".branch", "stdin": "{%task%}" },
+      "out": { "stdout": "branch" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".title", "stdin": "{%task%}" },
+      "out": { "stdout": "title" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".description", "stdin": "{%task%}" },
+      "out": { "stdout": "description" }
+    },
+
+    {
+      "type": "run", "name": "najít repozitář; prázdný výstup = pracuje se bez repozitáře",
+      "block": "repo-find",
+      "in":  { "project": "{%project%}" },
+      "out": { "stdout": "repo" }
+    },
+    {
+      "type": "run", "name": "připravit workspace",
+      "block": "workspace-init",
+      "in":  { "workRoot": "{%workRoot%}", "project": "{%project%}", "repo": "{%repo%}", "branch": "{%branch%}" },
+      "out": { "stdout": "workDir" }
+    },
+
+    {
+      "type": "run", "block": "format-prompt",
+      "in":  { "stdin": "{%task%}" },
+      "out": { "stdout": "prompt" }
+    },
+    {
+      "type": "run", "name": "spustit agenta",
+      "block": "agent",
+      "in":  { "model": "{%model%}", "systemPrompt": "{%systemPrompt%}", "workDir": "{%workDir%}", "stdin": "{%prompt%}" },
+      "out": { "stdout": "agentResult" }
+    },
+
+    {
+      "type": "run", "name": "commitnout a pushnout",
+      "block": "workspace-finish",
+      "in":  { "workDir": "{%workDir%}", "repo": "{%repo%}", "message": "{%branch%}: {%title%}" }
+    },
+    {
+      "type": "run", "name": "založit pull request",
+      "block": "workspace-pr",
+      "in":  { "workDir": "{%workDir%}", "repo": "{%repo%}", "title": "{%title%}", "stdin": "{%description%}" },
+      "out": { "stdout": "prUrl" }
+    },
+
+    {
+      "type": "set", "key": "comment", "value": "{%tag%}\n\n{%agentResult%}"
+    },
+    {
+      "type": "if", "name": "PR vznikl teď — připojit odkaz",
+      "condition": { "left": "{%prUrl%}", "op": "not_empty" },
+      "then": [
+        { "type": "set", "key": "comment", "value": "{%comment%}\n\nPR: {%prUrl%}" }
+      ]
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-Rs", "filter": "{text: .}", "stdin": "{%comment%}" },
+      "out": { "stdout": "commentJson" }
+    },
+    {
+      "type": "run", "name": "přidat komentář ke kartě",
+      "block": "curl-send-json",
+      "in":  { "method": "POST", "url": "https://api.trello.com/1/cards/{%cardId%}/actions/comments", "curlrc": "{%curlrc%}", "stdin": "{%commentJson%}" }
+    },
+
+    {
+      "type": "run", "block": "curl-get",
+      "in":  { "url": "https://api.trello.com/1/boards/{%boardId%}/lists?fields=id,name", "curlrc": "{%curlrc%}" },
+      "out": { "stdout": "listsJson" }
+    },
+    {
+      "type": "run", "block": "jq",
+      "in":  { "flags": "-r", "filter": ".[] | select(.name == \"{%targetList%}\") | .id", "stdin": "{%listsJson%}" },
+      "out": { "stdout": "targetListId" }
+    },
+    {
+      "type": "set", "key": "moveBody", "value": "{\"idList\": \"{%targetListId%}\"}"
+    },
+    {
+      "type": "run", "name": "přesunout kartu do {%targetList%}",
+      "block": "curl-send-json",
+      "in":  { "method": "PUT", "url": "https://api.trello.com/1/cards/{%cardId%}", "curlrc": "{%curlrc%}", "stdin": "{%moveBody%}" }
+    }
+  ]
+}

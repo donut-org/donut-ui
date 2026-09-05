@@ -1,0 +1,31 @@
+{
+  "name": "repo-check",
+  "description": "Zjistí, jestli k projektu existuje GitHub repozitář — stejným hledáním, jaké dělá card-dev. Odpovídá na otázku, proč karta skončila ve workspace bez gitu.",
+
+  "inputs": {
+    "project": { "required": true, "description": "Jméno projektu, nebo rovnou owner/name" }
+  },
+
+  "steps": [
+    {
+      "type": "run", "name": "najít repozitář",
+      "block": "repo-find",
+      "in":  { "project": "{%project%}" },
+      "out": { "stdout": "repo" }
+    },
+    {
+      "type": "if", "name": "prázdný výstup znamená, že se nic nenašlo",
+      "condition": { "left": "{%repo%}", "op": "not_empty" },
+      "then": [
+        { "type": "set", "key": "message", "value": "{%project%} → {%repo%}" }
+      ],
+      "else": [
+        { "type": "set", "key": "message", "value": "{%project%}: repozitář nenalezen, workspace by vznikl bez gitu" }
+      ]
+    },
+    {
+      "type": "run", "block": "echo",
+      "in": { "text": "{%message%}" }
+    }
+  ]
+}

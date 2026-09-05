@@ -14,6 +14,15 @@ Návrhový dokument: `docs/superpowers/specs/2026-08-05-gui-design.md`.
 
 ## Instalace
 
+Balíček je `type: project`, takže se instaluje přes `create-project`:
+
+```bash
+composer create-project donut-org/donut-gui
+```
+
+Composer založí nový adresář `donut-gui` a rovnou do něj stáhne i závislosti.
+Kdo pracuje přímo z klonu tohoto repozitáře, spustí místo toho:
+
 ```bash
 composer install
 ```

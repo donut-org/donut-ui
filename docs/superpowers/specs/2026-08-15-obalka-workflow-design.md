@@ -10,7 +10,7 @@ Je to druhý ze dvou projektů, na které se rozpadla editace workflow, a
 **poslední projekt vrstvy 3 GUI**. Až bude hotový, je hotový celý krok 5
 zadání.
 
-Referenční pravda formátu je `docs/format-specifikace.md` verze 0.3.
+Referenční pravda formátu je `format-specifikace.md` v repozitáři `donut-org/donut`, verze 0.3.
 První projekt popisuje `2026-08-14-editace-workflow-kroky-design.md`.
 
 ## Dvě části

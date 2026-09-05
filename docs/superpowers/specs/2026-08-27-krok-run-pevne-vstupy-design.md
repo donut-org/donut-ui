@@ -10,7 +10,7 @@ políčka, do kterých uživatel jméno vstupu opisuje. Výstupy do mapy přesta
 být proměnlivým seznamem selectboxů a stanou se třemi pevnými poli, protože
 kanály jsou právě tři.
 
-Referenční pravda formátu je `docs/format-specifikace.md`.
+Referenční pravda formátu je `format-specifikace.md` v repozitáři `donut-org/donut`.
 
 ## Co je hotové a na čem se staví
 

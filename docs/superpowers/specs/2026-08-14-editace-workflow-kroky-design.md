@@ -9,7 +9,7 @@ Přidávat, upravovat, přesouvat a mazat kroky existujícího workflow v GUI.
 Je to první ze dvou projektů, na které se rozpadla editace workflow — třetí
 a poslední část vrstvy 3 GUI (builder).
 
-Referenční pravda formátu je `docs/format-specifikace.md` verze 0.3.
+Referenční pravda formátu je `format-specifikace.md` v repozitáři `donut-org/donut`, verze 0.3.
 
 ## Rozdělení na dva projekty
 

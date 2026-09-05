@@ -11,7 +11,7 @@ Kámen jde první před workflow, protože je to nejmenší objekt bez vnořený
 kroků — ověří celou zápisovou cestu formulář → objekt → serializér → soubor
 → znovu naparsovat na tvaru, který se dá udržet v hlavě.
 
-Referenční pravda formátu je `docs/format-specifikace.md` verze 0.3.
+Referenční pravda formátu je `format-specifikace.md` v repozitáři `donut-org/donut`, verze 0.3.
 Serializér, na kterém to stojí, popisuje
 `2026-08-06-serializer-design.md` v repozitáři `donut-org/donut`.
 
@@ -169,8 +169,8 @@ Je to vědomá díra, ne přehlédnutí.
 - **Přejmenování kamene.** Změna jména by znamenala přesun souboru a úpravu
   všech workflow, která na kámen odkazují. Jméno je ve formuláři jen při
   zakládání.
-- **Validace jmen vstupů proti formátu.** `docs/format-specifikace.md`
-  povoluje `[A-Za-z0-9_]+`, což zahrnuje `"0"`; PHP by z toho udělalo
+- **Validace jmen vstupů proti formátu.** `format-specifikace.md`
+  v repozitáři `donut-org/donut` povoluje `[A-Za-z0-9_]+`, což zahrnuje `"0"`; PHP by z toho udělalo
   celočíselný klíč a `inputs` by se zakódovaly jako pole. Parser má tutéž
   slepou skvrnu, takže žádný *soubor* takový objekt nevyrobí — vyrobit ho
   umí až GUI. Je to skutečná díra, ale patří do samostatné kontroly jmen

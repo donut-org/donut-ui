@@ -7,7 +7,7 @@
 		{"type": "path", "url": "../"}
 	],
 	"require": {
-		"php": ">=8.3",
+		"php": ">=8.4",
 		"donut-org/donut": "*",
 		"nette/application": "^3.2",
 		"nette/bootstrap": "^3.2",

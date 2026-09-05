@@ -3,18 +3,12 @@
 	"description": "Authoring environment for Donut workflows and blocks",
 	"license": "BSD-3-Clause",
 	"type": "project",
-	"authors": [
-		{
-			"name": "Jan Pecha",
-			"homepage": "https://www.janpecha.cz/"
-		}
-	],
-	"funding": [
-		{"type": "other", "url": "https://www.janpecha.cz/donate/"}
+	"repositories": [
+		{"type": "path", "url": "../donut", "options": {"symlink": true}}
 	],
 	"require": {
 		"php": ">=8.4",
-		"donut-org/donut": "^1.0",
+		"donut-org/donut": "*",
 		"nette/application": "^3.2",
 		"nette/bootstrap": "^3.2",
 		"latte/latte": "^3.0",
@@ -27,5 +21,7 @@
 	},
 	"autoload": {
 		"psr-4": {"Donut\\Gui\\": "src/"}
-	}
+	},
+	"minimum-stability": "dev",
+	"prefer-stable": true
 }

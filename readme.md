@@ -4,19 +4,31 @@ Autorské prostředí pro workflow a kameny donutu. Ukazuje, co by řekl
 validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny,
 celá workflow i jejich jednotlivé kroky založit, upravit a smazat.
 
-Návrhový dokument: „2026-08-05-gui-design.md" ve specifikacích repozitáře
-`donut-org/donut` (`docs/superpowers/specs/`).
+Návrhový dokument: `docs/superpowers/specs/2026-08-05-gui-design.md`.
 
 
 ## Instalace
 
 ```bash
-cd gui
 composer install
 ```
 
-`gui/temp/` si Nette vytvoří samo, stačí aby adresář `gui/` byl zapisovatelný.
+`temp/` si Nette vytvoří samo, stačí aby adresář repozitáře byl zapisovatelný.
 Používá ho pro cache kontejneru a šablon.
+
+
+### Vývoj proti rozpracovanému jádru
+
+`composer.json` požaduje vydané jádro. Při souběžné práci na jádru
+i GUI použij druhý manifest, který si vezme sousední checkout donutu:
+
+```bash
+COMPOSER=composer-dev.json composer install
+```
+
+Nainstaluje `donut-org/donut` symlinkem z `../donut`, takže změny
+v jádru jsou vidět okamžitě. Přibude-li závislost, musí se zapsat do
+`composer.json` i `composer-dev.json`.
 
 
 ## Spuštění
@@ -26,11 +38,10 @@ GUI hledá `blocks/` a `workflows/` v **profilu**, stejně jako CLI: v
 `~/.config/donut/default`. Pracovní adresář, odkud server spustíš, roli
 nehraje.
 
-Nejrychlejší cesta je `make server` v `gui/` — spustí vestavěný PHP server
+Nejrychlejší cesta je `make server` — spustí vestavěný PHP server
 nad **výchozím profilem**, tedy nad tím samým, který by vzal CLI:
 
 ```bash
-cd gui
 make server
 ```
 
@@ -42,7 +53,7 @@ make server home=$(pwd)/docs/workflows profile=donut
 
 GUI běží ve **výchozím stavu v produkčním režimu** — bez Tracy baru, protože
 pro toho, kdo v něm autoruje, je to hotová aplikace. Neodchycená chyba se
-zapíše do `gui/log/exception.log` a uživatel dostane stránku, ne bluescreen.
+zapíše do `log/exception.log` a uživatel dostane stránku, ne bluescreen.
 
 Při práci na samotném GUI:
 
@@ -52,33 +63,33 @@ make server debug=1
 
 To zapne Tracy a zároveň **rozmrazí cache Latte a DI kontejneru**, které
 produkční režim schválně drží — bez toho se úprava šablony neprojeví, dokud
-nesmažeš `gui/temp/cache`. Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
+nesmažeš `temp/cache`. Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
 
 Ruční spuštění nad libovolným profilem:
 
 ```bash
 DONUT_HOME=~/.config/donut DONUT_PROFILE=default \
-	php -S 127.0.0.1:8000 -t /cesta/k/donut/gui/www /cesta/k/donut/gui/www/index.php
+	php -S 127.0.0.1:8000 -t /cesta/k/donut-gui/www /cesta/k/donut-gui/www/index.php
 ```
 
 a otevřít <http://127.0.0.1:8000/>.
 
-Router script (`gui/www/index.php` jako poslední argument) je nutný proto,
+Router script (`www/index.php` jako poslední argument) je nutný proto,
 aby vestavěný server **neudělal** `chdir()` do docrootu — díky tomu může
-`-t` ukazovat na `gui/www` (odkud se servírují assety), a GUI přitom
+`-t` ukazovat na `www` (odkud se servírují assety), a GUI přitom
 `blocks/` a `workflows/` vůbec nehledá podle toho, odkud proces běží —
 o tom rozhoduje jen profil z `DONUT_HOME`/`DONUT_PROFILE`.
 
 Router zároveň každý požadavek nejdřív pošle do `index.php`; statický soubor
 se vydá jen tehdy, když ho `Donut\Gui\StaticFile::shouldServe()` uzná za
-existující soubor uvnitř `gui/www`, kromě routeru samotného.
+existující soubor uvnitř `www`, kromě routeru samotného.
 
-Assety leží v `gui/www/assets/`. Bootstrap je verze **5.3.8**, vendorovaný
+Assety leží v `www/assets/`. Bootstrap je verze **5.3.8**, vendorovaný
 ručně z `https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/`; aktualizace
 znamená nahradit `bootstrap.min.css` a `bootstrap.bundle.min.js` novými
 soubory odtamtud. Žádný build krok, žádný `npm`.
 
-`netteForms.min.js` je zkopírovaný z `gui/vendor/nette/forms/src/assets/`;
+`netteForms.min.js` je zkopírovaný z `vendor/nette/forms/src/assets/`;
 po `composer update` ho zkopíruj znovu. Zapíná klientskou validaci pro
 všechny formuláře a je to i to, co dává smysl `toggle()` — bez něj se
 pravidla vykreslí a nikdo je nezpracuje.
@@ -157,18 +168,13 @@ Není to seznam nedodělků — jsou to rozhodnutí z návrhu:
 
 ## Testy a statická analýza
 
-`gui/` je samostatný composer projekt (viz `gui/composer.json`), testy
-a PHPStan se proto spouští z `gui/`, ne z kořene repozitáře:
+Testy a statická analýza se spouští z kořene repozitáře:
 
 ```bash
-cd gui
 vendor/bin/tester tests -C
 vendor/bin/phpstan analyse
 ```
 
-`gui/phpstan.neon` běží na `level: max`, stejně jako kořenový
-`phpstan.neon` donutu — nula chyb platí pro obojí, ne jen pro `src/`
-a `tests/` donutu.
-
-CI matice donutu `gui/` zatím nespouští — je to jiný composer projekt
-a chystá se do vlastního repozitáře.
+`phpstan.neon` běží na `level: max`, stejně jako `phpstan.neon`
+v kořeni repozitáře `donut-org/donut` — nula chyb platí pro obojí, ne jen
+pro `src/` a `tests/` donutu.

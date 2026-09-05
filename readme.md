@@ -1,9 +1,9 @@
 # Donut GUI
 
-[![Build Status](https://github.com/donut-org/donut-gui/workflows/Build/badge.svg)](https://github.com/donut-org/donut-gui/actions)
-[![Downloads this Month](https://img.shields.io/packagist/dm/donut-org/donut-gui.svg)](https://packagist.org/packages/donut-org/donut-gui)
-[![Latest Stable Version](https://poser.pugx.org/donut-org/donut-gui/v/stable)](https://github.com/donut-org/donut-gui/releases)
-[![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/donut-org/donut-gui/blob/master/license.md)
+[![Build Status](https://github.com/donut-org/donut-ui/workflows/Build/badge.svg)](https://github.com/donut-org/donut-ui/actions)
+[![Downloads this Month](https://img.shields.io/packagist/dm/donut-org/donut-ui.svg)](https://packagist.org/packages/donut-org/donut-ui)
+[![Latest Stable Version](https://poser.pugx.org/donut-org/donut-ui/v/stable)](https://github.com/donut-org/donut-ui/releases)
+[![License](https://img.shields.io/badge/license-New%20BSD-blue.svg)](https://github.com/donut-org/donut-ui/blob/master/license.md)
 
 Autorské prostředí pro workflow a kameny donutu. Ukazuje, co by řekl
 validátor, ještě než workflow doběhne na skutečnou kartu, a umí kameny,
@@ -17,10 +17,10 @@ Návrhový dokument: `docs/superpowers/specs/2026-08-05-gui-design.md`.
 Balíček je `type: project`, takže se instaluje přes `create-project`:
 
 ```bash
-composer create-project donut-org/donut-gui
+composer create-project donut-org/donut-ui
 ```
 
-Composer založí nový adresář `donut-gui` a rovnou do něj stáhne i závislosti.
+Composer založí nový adresář `donut-ui` a rovnou do něj stáhne i závislosti.
 Kdo pracuje přímo z klonu tohoto repozitáře, spustí místo toho:
 
 ```bash
@@ -83,7 +83,7 @@ Ruční spuštění nad libovolným profilem:
 
 ```bash
 DONUT_HOME=~/.config/donut DONUT_PROFILE=default \
-	php -S 127.0.0.1:8000 -t /cesta/k/donut-gui/www /cesta/k/donut-gui/www/index.php
+	php -S 127.0.0.1:8000 -t /cesta/k/donut-ui/www /cesta/k/donut-ui/www/index.php
 ```
 
 a otevřít <http://127.0.0.1:8000/>.

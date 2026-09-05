@@ -1,5 +1,5 @@
 {
-	"name": "donut-org/donut-gui",
+	"name": "donut-org/donut-ui",
 	"description": "Authoring environment for Donut workflows and blocks",
 	"license": "BSD-3-Clause",
 	"type": "project",

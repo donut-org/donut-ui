@@ -1,10 +1,10 @@
 # Přepis workflow do formátu donut
 
 Ověřovací přepis existujících bashových workflow z `../jpw/` do formátu
-popsaného v `../../format-specifikace.md`. Slouží k ověření formátu —
+popsaného v `format-specifikace.md` v repozitáři `donut-org/donut`. Slouží k ověření formátu —
 engine (`bin/donut`), který to spouští, viz níže.
 
-Návrh a jeho zdůvodnění: `../../superpowers/specs/2026-07-31-prepis-workflow-design.md`
+Návrh a jeho zdůvodnění: `2026-07-31-prepis-workflow-design.md` v repozitáři `donut-org/donut`
 
 ```
 blocks/      15 kamenů — curl a jq obslouží většinu, zbytek jsou

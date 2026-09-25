@@ -27,8 +27,12 @@ Kdo pracuje přímo z klonu tohoto repozitáře, spustí místo toho:
 composer install
 ```
 
-`temp/` si Nette vytvoří samo, stačí aby adresář repozitáře byl zapisovatelný.
-Používá ho pro cache kontejneru a šablon.
+Do adresáře repozitáře se za běhu nezapisuje. Kompilát kontejneru a šablon
+i sessions jdou do `$XDG_CACHE_HOME/donut-ui` (výchozí `~/.cache/donut-ui`),
+log do `$XDG_STATE_HOME/donut-ui/log` (výchozí
+`~/.local/state/donut-ui/log`). Obojí si aplikace založí sama a obojí jde
+přepsat — `DONUT_GUI_CACHE` a `DONUT_GUI_LOG`. Instalace tak může patřit
+rootovi a být pro toho, kdo GUI spouští, jen ke čtení.
 
 
 ### Vývoj proti rozpracovanému jádru
@@ -67,7 +71,8 @@ make server home=$(pwd)/docs/workflows profile=donut
 
 GUI běží ve **výchozím stavu v produkčním režimu** — bez Tracy baru, protože
 pro toho, kdo v něm autoruje, je to hotová aplikace. Neodchycená chyba se
-zapíše do `log/exception.log` a uživatel dostane stránku, ne bluescreen.
+zapíše do `exception.log` v adresáři logu (`~/.local/state/donut-ui/log`)
+a uživatel dostane stránku, ne bluescreen.
 
 Při práci na samotném GUI:
 
@@ -75,9 +80,10 @@ Při práci na samotném GUI:
 make server debug=1
 ```
 
-To zapne Tracy a zároveň **rozmrazí cache Latte a DI kontejneru**, které
-produkční režim schválně drží — bez toho se úprava šablony neprojeví, dokud
-nesmažeš `temp/cache`. Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
+To zapne Tracy a zároveň **rozmrazí cache DI kontejneru**. Úpravy šablon se
+projeví i bez toho — Latte si obsah hlídá pořád. Kontejner se jinak přestaví
+sám až s novou instalací, poznanou podle `vendor/composer/installed.php`.
+Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
 
 Ruční spuštění nad libovolným profilem:
 

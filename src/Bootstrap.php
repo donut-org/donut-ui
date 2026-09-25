@@ -52,8 +52,10 @@ final class Bootstrap
 
 		// PHP writes sessions but does not create the directory for them.
 		// Without it the flash message after a save turns into a warning
-		// from session_start().
-		FileSystem::createDir($cache . '/sessions');
+		// from session_start(). Mode 0700 rather than createDir()'s default
+		// 0777: a session file's name is its session ID, so anyone able to
+		// list the directory could hijack a session.
+		FileSystem::createDir($cache . '/sessions', 0o700);
 
 		$configurator->setTempDirectory($cache);
 		$configurator->addStaticParameters([

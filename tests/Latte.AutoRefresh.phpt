@@ -31,8 +31,10 @@ FileSystem::write($script, \sprintf(
 	\var_export($template, true),
 ));
 
+// 2>&1 folds the child's stderr into the captured output, so a fatal error
+// there surfaces in the assertion failure instead of vanishing silently.
 $render = static fn(): string => \trim((string) \shell_exec(
-	\escapeshellarg(\PHP_BINARY) . ' ' . \escapeshellarg($script)
+	\escapeshellarg(\PHP_BINARY) . ' ' . \escapeshellarg($script) . ' 2>&1'
 ));
 
 FileSystem::write($template, 'PRVNI');

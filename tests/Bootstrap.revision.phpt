@@ -33,4 +33,7 @@ Assert::same('b', $other->getParameter('revision'));
 $real = Bootstrap::boot($env)->createContainer(initialize: false);
 
 Assert::same(Revision::of(\dirname(__DIR__)), $real->getParameter('revision'));
+// Not redundant: if vendor/composer/installed.php were missing, both sides
+// of the assertion above would independently be '' and it would pass
+// vacuously. This is what rules that out.
 Assert::notSame('', $real->getParameter('revision'));

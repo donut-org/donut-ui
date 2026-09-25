@@ -33,6 +33,8 @@ log do `$XDG_STATE_HOME/donut-ui/log` (výchozí
 `~/.local/state/donut-ui/log`). Obojí si aplikace založí sama a obojí jde
 přepsat — `DONUT_GUI_CACHE` a `DONUT_GUI_LOG`. Instalace tak může patřit
 rootovi a být pro toho, kdo GUI spouští, jen ke čtení.
+Účet, který nemá `HOME` ani `XDG_*`, spadne zpátky do instalace — tam ty
+dvě proměnné nastavit musí.
 
 
 ### Vývoj proti rozpracovanému jádru

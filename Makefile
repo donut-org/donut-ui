@@ -13,8 +13,8 @@ port = 8000
 
 # The GUI runs in production mode: its user is not its developer, and a Tracy
 # bar over a finished application is noise. `make server debug=1` turns it on
-# for working on the GUI itself — and it also thaws the Latte and DI caches,
-# which production deliberately freezes, so template edits show up.
+# for working on the GUI itself — and it also thaws the DI container cache,
+# which production deliberately freezes. Template edits show up either way.
 debug =
 
 # The docroot must be www/ (assets are served from there) and the router script

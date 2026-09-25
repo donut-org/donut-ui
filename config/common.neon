@@ -40,3 +40,9 @@ session:
 	# user's directory, so sessions belong there; they are as disposable as the
 	# compiled cache.
 	savePath: %cacheDir%/sessions
+
+	# php.ini's session.gc_probability is 0 on Debian-family distros, because
+	# a cron job sweeps their managed session directory instead. Moving
+	# savePath out of that directory inherits the zero without inheriting the
+	# cleaner, so this directory would otherwise grow without bound.
+	gcProbability: 1

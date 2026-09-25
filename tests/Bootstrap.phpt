@@ -17,13 +17,18 @@ require __DIR__ . '/bootstrap.php';
 // same reason Profile::fromEnvironment() takes one: otherwise none of this
 // could be tested without putenv().
 
-Assert::false(Bootstrap::boot([])->isDebugMode(), 'no variable means production');
-Assert::false(Bootstrap::boot(['DONUT_GUI_DEBUG' => ''])->isDebugMode(), 'an empty value is the same as unset');
-Assert::false(Bootstrap::boot(['DONUT_GUI_DEBUG' => '0'])->isDebugMode(), '0 means off, not "a value is present"');
+// boot() creates the log directory and the sessions directory right away,
+// so even a test that only asks about debug mode needs somewhere to point
+// it. Without this it would write into the working copy.
+$dirs = ['DONUT_GUI_CACHE' => TEMP_DIR . '/cache', 'DONUT_GUI_LOG' => TEMP_DIR . '/log'];
 
-Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => '1'])->isDebugMode());
+Assert::false(Bootstrap::boot($dirs)->isDebugMode(), 'no variable means production');
+Assert::false(Bootstrap::boot(['DONUT_GUI_DEBUG' => ''] + $dirs)->isDebugMode(), 'an empty value is the same as unset');
+Assert::false(Bootstrap::boot(['DONUT_GUI_DEBUG' => '0'] + $dirs)->isDebugMode(), '0 means off, not "a value is present"');
+
+Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => '1'] + $dirs)->isDebugMode());
 
 // Anything else truthy also turns it on: the variable is a switch a person
 // flips by hand, and refusing "true" or "yes" would only be a puzzle.
-Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => 'true'])->isDebugMode());
-Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => 'yes'])->isDebugMode());
+Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => 'true'] + $dirs)->isDebugMode());
+Assert::true(Bootstrap::boot(['DONUT_GUI_DEBUG' => 'yes'] + $dirs)->isDebugMode());

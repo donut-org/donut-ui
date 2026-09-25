@@ -5,5 +5,13 @@ parameters:
 		- src
 		- tests
 
+	# tests/bootstrap.php points TEMP_DIR here, and Bootstrap.dirs.phpt and
+	# Bootstrap.revision.phpt compile containers into it via
+	# createContainer(). Those compiled classes are generated output, not
+	# test source, and analysing them breaks under level max, so they are
+	# excluded the same way .gitignore already treats the directory.
+	excludePaths:
+		- tests/tmp/*
+
 	bootstrapFiles:
 		- vendor/autoload.php

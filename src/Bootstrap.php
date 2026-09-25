@@ -35,6 +35,9 @@ final class Bootstrap
 		$flag = $env['DONUT_GUI_DEBUG'] ?? '';
 		$debug = $flag !== '' && $flag !== '0';
 
+		$cache = Dirs::cache($env, $root);
+		$log = Dirs::log($env, $root);
+
 		$configurator = new Configurator;
 		$configurator->setDebugMode($debug);
 
@@ -43,10 +46,26 @@ final class Bootstrap
 		// directory instead — without one, the error the user just hit would
 		// go nowhere at all. Tracy refuses to start when that directory is
 		// missing rather than creating it, so this does.
-		FileSystem::createDir($root . '/log');
-		$configurator->enableTracy($root . '/log');
+		FileSystem::createDir($log);
+		$configurator->enableTracy($log);
 
-		$configurator->setTempDirectory($root . '/temp');
+		// PHP writes sessions but does not create the directory for them.
+		// Without it the flash message after a save turns into a warning
+		// from session_start().
+		FileSystem::createDir($cache . '/sessions');
+
+		$configurator->setTempDirectory($cache);
+		$configurator->addStaticParameters([
+			// The same directory under the name the configuration uses.
+			// %tempDir% is what the framework's own extensions reach for;
+			// pointing it at the user's cache is what makes anything added
+			// later write where the account may.
+			'cacheDir' => $cache,
+			// Static parameters are in the container cache key in full, so
+			// this one line is the whole mechanism: a new installation
+			// compiles a new container.
+			'revision' => Revision::of($root),
+		]);
 		$configurator->addConfig($root . '/config/common.neon');
 
 		return $configurator;

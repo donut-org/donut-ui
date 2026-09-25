@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Donut\Gui\Bootstrap;
+use Donut\Gui\Revision;
 use Tester\Assert;
 
 require __DIR__ . '/bootstrap.php';
@@ -24,3 +25,12 @@ Assert::notSame(\get_class($first), \get_class($other));
 // And the revision really does reach the container, rather than quietly
 // getting lost along the way.
 Assert::same('b', $other->getParameter('revision'));
+
+// The assertions above prove the mechanism: a different revision means a
+// different container. They would pass even against a boot() that never put
+// a revision in the key at all, so this is the one that ties the mechanism
+// to the wiring — boot() must fingerprint the installation it runs from.
+$real = Bootstrap::boot($env)->createContainer(initialize: false);
+
+Assert::same(Revision::of(\dirname(__DIR__)), $real->getParameter('revision'));
+Assert::notSame('', $real->getParameter('revision'));

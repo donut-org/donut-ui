@@ -21,3 +21,11 @@ services:
 	# tool needs nothing prettier. Without a router the application would not
 	# start — nette/application requires it as a service.
 	- Nette\Application\Routers\SimpleRouter(Workflow:default)
+
+session:
+	# Without this, session.save_path from php.ini applies, to which an
+	# unprivileged account usually cannot write — and a flash message after
+	# saving would change to a warning from session_start(). %cacheDir% is the
+	# user's directory, so sessions belong there; they are as disposable as the
+	# compiled cache.
+	savePath: %cacheDir%/sessions

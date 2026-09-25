@@ -6,20 +6,20 @@ namespace Donut\Gui;
 
 
 /**
- * Kam GUI za běhu zapisuje: cache a log.
+ * Where the GUI writes at runtime: cache and log.
  *
- * Obojí leží v XDG adresářích uživatele, ne v instalaci. Aplikace pak může
- * být nainstalovaná globálně a patřit rootovi — účet, který ji spouští,
- * nepotřebuje uvnitř ní zapisovat nikam.
+ * Both live in the user's XDG directories, not in the installation. The
+ * application can then be installed globally and owned by root — the account
+ * that runs it doesn't need to write anywhere inside it.
  *
- * Dělítko je to, co těmi dvěma proměnnými myslí XDG. Kompilát kontejneru,
- * kompilát šablon i sessions jsou zahoditelné: smažou se a vyrobí znovu,
- * takže patří do cache. Log je jediná stopa po chybě, kterou uživatel
- * viděl, takže patří do stavového adresáře — specifikace tam logy jmenuje
- * výslovně.
+ * The divider is what XDG means by these two variables. The compiled container,
+ * compiled templates and sessions are disposable: they are deleted and recreated,
+ * so they belong in cache. Log is the only trace of an error the user saw,
+ * so it belongs in the state directory — the specification explicitly names
+ * logs there.
  *
- * Prostředí přichází jako pole, ne přes getenv(), stejně jako ho bere
- * Donut\Profile — jinak by se tahle tabulka nedala otestovat.
+ * The environment comes as an array, not via getenv(), just as Donut\Profile
+ * takes it — otherwise this table couldn't be tested.
  */
 final class Dirs
 {
@@ -45,17 +45,17 @@ final class Dirs
 			return $explicit;
 		}
 
-		// Stavový adresář drží zatím jen log, ale jmenuje se podle
-		// aplikace — kdyby přibylo něco dalšího, nebude to muset stát
-		// vedle souborů Tracy.
+		// The state directory holds only log for now, but it's named after the
+		// application — if something else gets added later, it won't have to sit
+		// next to Tracy's files.
 		return (self::userDir($env, 'XDG_STATE_HOME', '/.local/state') ?? $root) . '/log';
 	}
 
 
 	/**
-	 * Vrací null, když se z prostředí domov určit nedá. Volající pak sáhne
-	 * do instalace — v zapisovatelném klonu je to přesně ten adresář, kde
-	 * dneska všechno leží.
+	 * Returns null when home cannot be determined from the environment. The
+	 * caller then falls back to the installation — in a writable clone that's
+	 * exactly the directory where everything lives today.
 	 *
 	 * @param array<string, string> $env
 	 */
@@ -74,8 +74,8 @@ final class Dirs
 
 
 	/**
-	 * Prázdná hodnota je totéž co nenastavená — stejné pravidlo, jaké má
-	 * Donut\Profile pro své vlastní proměnné.
+	 * An empty value is the same as unset — the same rule that Donut\Profile
+	 * applies to its own variables.
 	 *
 	 * @param array<string, string> $env
 	 */

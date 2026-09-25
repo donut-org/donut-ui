@@ -18,9 +18,10 @@ final class Bootstrap
 	 * detectDebugMode() guesses from the client's address, which on a tool
 	 * that only ever listens on localhost would mean everyone.
 	 *
-	 * The price is that production freezes the Latte and DI caches — editing
-	 * a template has no effect until `gui/temp/cache` is cleared. That is the
-	 * developer's problem, and the developer is the one setting the variable.
+	 * The price is that production freezes the compiled container; editing
+	 * a template is not affected, as config/common.neon keeps Latte's own
+	 * revalidation switched on. See Donut\Gui\Revision for what expires the
+	 * container instead.
 	 *
 	 * The environment arrives as an array rather than through getenv(), the
 	 * same way Donut\Profile takes it, so that this decision can be tested.

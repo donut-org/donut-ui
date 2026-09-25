@@ -22,6 +22,17 @@ services:
 	# start — nette/application requires it as a service.
 	- Nette\Application\Routers\SimpleRouter(Workflow:default)
 
+	# Latte can revalidate, it is just that LatteExtension ties it to debug
+	# mode. Without this, a template would never recompile after an upgrade
+	# — production does not check mtime, and Latte's version lives only in a
+	# comment in the compiled file's header, not in its name. Setup from
+	# configuration is appended after the extension's own, so it wins. The
+	# price is a lock and a read of the template source on every render; on
+	# a tool that runs on localhost, that is nothing.
+	latte.latteFactory:
+		setup:
+			- setAutoRefresh(true)
+
 session:
 	# Without this, session.save_path from php.ini applies, to which an
 	# unprivileged account usually cannot write — and a flash message after

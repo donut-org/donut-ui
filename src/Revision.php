@@ -16,23 +16,45 @@ namespace Donut\Gui;
  * dependencies are upgraded. Without something else in the key, an upgraded
  * installation would still run on a container compiled for the previous one.
  *
- * installed.php is overwritten by every `composer install` and `update`, and
- * an installation unpacked as a new tree brings a new file. False alarm — an
- * installation that changed nothing — costs one extra compilation, which is
- * the cheaper error.
+ * Two files date the installation, because neither moves the other:
  *
- * Templates don't need this: they are refreshed by Latte's own revalidation,
- * enabled in config/common.neon.
+ * - installed.php is overwritten by every `composer install` and `update` that
+ *   changes something, and an installation unpacked as a new tree brings a new
+ *   file. An install with nothing to do leaves it alone.
+ * - common.neon is what `git pull` rewrites when the configuration changed. It
+ *   defines the services, so the container compiled from it is stale — and
+ *   without this, nothing would say so.
+ *
+ * A false alarm — an installation that changed nothing — costs one extra
+ * compilation, which is the cheaper error.
+ *
+ * The set of presenters is not covered: they are scanned at compile time and
+ * baked into the container, so an upgrade that adds one needs the cache thrown
+ * away. That failure is loud, which is why it is left to say so itself.
+ *
+ * Templates don't need any of this: they are refreshed by Latte's own
+ * revalidation, enabled in config/common.neon.
  */
 final class Revision
 {
 	public static function of(string $root): string
 	{
-		// File may not exist, so suppress the warning.
-		$time = @\filemtime($root . '/vendor/composer/installed.php');
+		$time = \max(
+			self::mtime($root . '/vendor/composer/installed.php'),
+			self::mtime($root . '/config/common.neon'),
+		);
 
 		// A broken installation holds an empty revision. Anything variable
 		// would mean a new container on every request.
-		return $time === false ? '' : (string) $time;
+		return $time === 0 ? '' : (string) $time;
+	}
+
+
+	private static function mtime(string $file): int
+	{
+		// File may not exist, so suppress the warning.
+		$time = @\filemtime($file);
+
+		return $time === false ? 0 : $time;
 	}
 }

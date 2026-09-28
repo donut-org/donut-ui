@@ -14,17 +14,32 @@ Návrhový dokument: `docs/superpowers/specs/2026-08-05-gui-design.md`.
 
 ## Instalace
 
-Balíček je `type: project`, takže se instaluje přes `create-project`:
+Klonem:
 
 ```bash
-composer create-project donut-org/donut-ui
+git clone https://github.com/donut-org/donut-ui.git
+cd donut-ui
+make install
 ```
 
-Composer založí nový adresář `donut-ui` a rovnou do něj stáhne i závislosti.
-Kdo pracuje přímo z klonu tohoto repozitáře, spustí místo toho:
+`make install` stáhne závislosti. Tester ani PHPStan instalace nepotřebuje,
+takže se vynechají; kdo bude pracovat na GUI samotném, použije
+`make install dev=1` — bez nich nemá `make test` co spouštět.
+
+Aktualizace:
 
 ```bash
-composer install
+make upgrade
+```
+
+Udělá `git pull` a doinstaluje, co přibylo. Kompilát kontejneru i šablon se
+pak přestaví sám a není co mazat. Jedinou výjimkou je upgrade, který
+**přidá presenter**: ty se do kontejneru zapékají při kompilaci a revize je
+nepozná. Pozná se to samo — GUI ohlásí, že presenter neexistuje — a spraví
+to smazání cache:
+
+```bash
+rm -rf ~/.cache/donut-ui
 ```
 
 Do adresáře repozitáře se za běhu nezapisuje. Kompilát kontejneru a šablon
@@ -84,8 +99,9 @@ make server debug=1
 
 To zapne Tracy a zároveň **rozmrazí cache DI kontejneru**. Úpravy šablon se
 projeví i bez toho — Latte si obsah hlídá pořád. Kontejner se jinak přestaví
-sám až s novou instalací, poznanou podle `vendor/composer/installed.php`.
-Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
+sám, jakmile se změní `vendor/composer/installed.php` nebo
+`config/common.neon` — tedy při upgradu, který přinesl novou závislost nebo
+novou konfiguraci. Přepínač odpovídá proměnné `DONUT_GUI_DEBUG`.
 
 Ruční spuštění nad libovolným profilem:
 

@@ -17,11 +17,17 @@ port = 8000
 # which production deliberately freezes. Template edits show up either way.
 debug =
 
+# An installation needs neither Tester nor PHPStan, so `make install` and
+# `make upgrade` leave them out. `make install dev=1` keeps them, which is what
+# working on the GUI itself needs — without them `make test` has nothing to run.
+dev =
+
 # The docroot must be www/ (assets are served from there) and the router script
 # is required: without it the built-in server would look for files by URL.
 docroot = $(CURDIR)/www
 
-.PHONY: server test phpstan
+# `server` stays first so that a bare `make` still starts the GUI.
+.PHONY: server test phpstan install upgrade
 server:
 	@echo "GUI: http://127.0.0.1:$(port)  (the page header names the profile)$(if $(debug),  [debug])"
 	@DONUT_HOME=$(home) DONUT_PROFILE=$(profile) DONUT_GUI_DEBUG=$(debug) $(php_bin) -S 127.0.0.1:$(port) -t $(docroot) $(docroot)/index.php
@@ -31,3 +37,16 @@ test:
 
 phpstan:
 	@vendor/bin/phpstan analyse
+
+install:
+	@composer install $(if $(dev),,--no-dev)
+
+# The compiled container and templates take care of themselves afterwards: the
+# container is keyed on the mtimes of installed.php and config/common.neon,
+# both of which this touches when anything changed, and Latte revalidates its
+# own templates. A pulled change that adds a presenter is the exception —
+# presenters are baked into the container, so that one needs the cache thrown
+# away (`rm -rf ~/.cache/donut-ui`). It says so itself: the GUI reports that
+# the presenter does not exist.
+upgrade:
+	@git pull && composer install $(if $(dev),,--no-dev)

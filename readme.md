@@ -90,6 +90,16 @@ variables:
 make server home=$(pwd)/docs/workflows profile=donut
 ```
 
+It listens on `127.0.0.1:8000`, which `host` and `port` move:
+
+```bash
+make server host=0.0.0.0 port=9000
+```
+
+Loopback is the default because the GUI has no authentication of its own — it
+writes to `blocks/` and `workflows/` for whoever reaches it. Opening it to the
+network is worth meaning.
+
 The GUI runs **in production mode by default** — no Tracy bar, because to
 whoever authors in it this is a finished application. An uncaught error is
 written to `exception.log` in the log directory (`~/.local/state/donut-ui/log`)

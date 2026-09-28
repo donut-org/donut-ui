@@ -11,6 +11,11 @@ home =
 profile =
 port = 8000
 
+# Loopback, because the GUI has no authentication of its own — it writes to
+# blocks/ and workflows/ for whoever reaches it. `make server host=0.0.0.0`
+# hands that to everyone on the network, so it is worth meaning it.
+host = 127.0.0.1
+
 # The GUI runs in production mode: its user is not its developer, and a Tracy
 # bar over a finished application is noise. `make server debug=1` turns it on
 # for working on the GUI itself — and it also thaws the DI container cache,
@@ -29,8 +34,8 @@ docroot = $(CURDIR)/www
 # `server` stays first so that a bare `make` still starts the GUI.
 .PHONY: server test phpstan install upgrade
 server:
-	@echo "GUI: http://127.0.0.1:$(port)  (the page header names the profile)$(if $(debug),  [debug])"
-	@DONUT_HOME=$(home) DONUT_PROFILE=$(profile) DONUT_GUI_DEBUG=$(debug) $(php_bin) -S 127.0.0.1:$(port) -t $(docroot) $(docroot)/index.php
+	@echo "GUI: http://$(host):$(port)  (the page header names the profile)$(if $(debug),  [debug])"
+	@DONUT_HOME=$(home) DONUT_PROFILE=$(profile) DONUT_GUI_DEBUG=$(debug) $(php_bin) -S $(host):$(port) -t $(docroot) $(docroot)/index.php
 
 test:
 	@$(tester_bin) -p $(php_bin) -C $(tests_dir)
